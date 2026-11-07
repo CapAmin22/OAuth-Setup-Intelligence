@@ -43,10 +43,12 @@ export const Intake: React.FC = () => {
         capabilities: selectedCaps,
         currentStage,
       });
-      navigate(`/jobs/${result.jobId}?query=${encodeURIComponent(query.trim())}`);
+      const webParam = website.trim() ? `&website=${encodeURIComponent(website.trim())}` : '';
+      navigate(`/jobs/${result.jobId}?query=${encodeURIComponent(query.trim())}${webParam}`);
     } catch (err) {
       console.error(err);
-      navigate(`/jobs/mock-${Date.now()}?query=${encodeURIComponent(query.trim())}`);
+      const webParam = website.trim() ? `&website=${encodeURIComponent(website.trim())}` : '';
+      navigate(`/jobs/mock-${Date.now()}?query=${encodeURIComponent(query.trim())}${webParam}`);
     }
   };
 
@@ -194,3 +196,4 @@ export const Intake: React.FC = () => {
     </div>
   );
 };
+

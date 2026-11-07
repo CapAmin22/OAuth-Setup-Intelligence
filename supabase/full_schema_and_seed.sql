@@ -401,6 +401,54 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION save_researched_guide(
+  p_slug             TEXT,
+  p_display_name     TEXT,
+  p_canonical_domain TEXT,
+  p_aliases          TEXT[],
+  p_official_domains TEXT[],
+  p_content          JSONB,
+  p_evidence_quality JSONB DEFAULT '{}'::JSONB
+)
+RETURNS JSONB
+LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+  v_provider_id UUID;
+  v_version_id  UUID;
+BEGIN
+  -- Insert or update provider (protect curated providers from being overwritten)
+  INSERT INTO providers (slug, display_name, canonical_domain, aliases, official_domains, is_curated)
+  VALUES (p_slug, p_display_name, p_canonical_domain, p_aliases, p_official_domains, FALSE)
+  ON CONFLICT (slug) DO UPDATE
+    SET display_name     = EXCLUDED.display_name,
+        canonical_domain = EXCLUDED.canonical_domain,
+        aliases          = EXCLUDED.aliases,
+        official_domains = EXCLUDED.official_domains
+    WHERE providers.is_curated = FALSE
+  RETURNING id INTO v_provider_id;
+
+  IF v_provider_id IS NULL THEN
+    SELECT id INTO v_provider_id FROM providers WHERE slug = p_slug;
+  END IF;
+
+  -- Insert or update guide version 1 as published
+  INSERT INTO guide_versions (
+    provider_id, version, schema_version, status, content, evidence_quality, checked_at, published_at
+  )
+  VALUES (
+    v_provider_id, 1, '1.0', 'published', p_content, p_evidence_quality, NOW(), NOW()
+  )
+  ON CONFLICT (provider_id, version) DO UPDATE
+    SET content          = EXCLUDED.content,
+        evidence_quality = EXCLUDED.evidence_quality,
+        checked_at       = NOW(),
+        status           = 'published'
+  RETURNING id INTO v_version_id;
+
+  RETURN jsonb_build_object('success', true, 'provider_id', v_provider_id, 'version_id', v_version_id);
+END;
+$$;
+
 -- ============================================================
 -- STEP 4: SEED CURATED PROVIDERS
 -- ============================================================

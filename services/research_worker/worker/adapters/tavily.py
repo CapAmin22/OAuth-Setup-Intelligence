@@ -63,3 +63,4 @@ class TavilyAdapter:
             if e.code == 429:
                 raise RuntimeError("quota_exhausted: Tavily extract quota exceeded")
             raise RuntimeError(f"Tavily Extract HTTP {e.code}: {e.read().decode('utf-8')}")
+

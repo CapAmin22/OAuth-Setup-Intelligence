@@ -64,3 +64,4 @@ Extract the OAuth setup facts and return ONLY a valid JSON object with these key
                 {"claim": "OAuth apps require a registered client ID and redirect URI.", "doc_id": "doc_1", "critical": True}
             ]
         }
+

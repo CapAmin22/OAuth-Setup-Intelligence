@@ -151,3 +151,4 @@ export const SearchBar: React.FC<SearchBarProps> = ({ autoFocus = false, size = 
     </div>
   );
 };
+

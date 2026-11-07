@@ -51,3 +51,4 @@ class CloudflareAIAdapter:
             if e.code == 429:
                 raise RuntimeError("quota_exhausted: Cloudflare Workers AI neuron quota reached")
             raise RuntimeError(f"Cloudflare AI HTTP {e.code}: {error_body}")
+

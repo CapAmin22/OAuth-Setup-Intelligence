@@ -149,3 +149,4 @@ class DatabaseClient:
             self._request("claims", method="POST", body=claim_payloads)
 
         return guide_id
+

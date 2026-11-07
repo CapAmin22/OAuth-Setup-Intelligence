@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
-import { CheckCircle2, Clock, Globe, AlertCircle, ArrowRight, Sparkles, Shield } from 'lucide-react';
-import { fetchJob } from '../lib/api';
-import { JobState } from '../types';
+import { CheckCircle2, Globe, ArrowRight, Sparkles, BookOpen } from 'lucide-react';
+import { fetchJob, saveCustomGuide } from '../lib/api';
+import { normalizeProviderName, generateRunbookForProvider } from '../lib/guideGenerator';
 
 const STAGES = [
   { key: 'resolving', label: 'Resolve Provider Identity', desc: 'Validating official domains and canonical aliases' },
@@ -18,13 +18,30 @@ export const Job: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const query = searchParams.get('query') || 'OAuth Provider';
+  const website = searchParams.get('website') || '';
+
+  const { slug: normalizedSlug, displayName, canonicalDomain } = normalizeProviderName(query, website);
 
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [terminalState, setTerminalState] = useState<string | null>(null);
   const [discoveredDomains, setDiscoveredDomains] = useState<string[]>([]);
+  const [generatedSlug, setGeneratedSlug] = useState<string>(normalizedSlug);
 
-  // Simulation timer for smooth preview if live worker isn't running on the user's terminal right now
+  useEffect(() => {
+    // Immediately pre-generate and persist guide so it's ready in dashboard & library
+    const { guide, provider } = generateRunbookForProvider({
+      query,
+      website,
+      intent: {
+        distribution: 'external',
+        capabilities: ['User Authentication (SSO)', 'Read User Profile'],
+      },
+    });
+    saveCustomGuide(guide, provider);
+    setGeneratedSlug(provider.slug);
+  }, [query, website]);
+
   useEffect(() => {
     const timer = setInterval(() => {
       setElapsed((prev) => prev + 1);
@@ -35,7 +52,7 @@ export const Job: React.FC = () => {
   useEffect(() => {
     let active = true;
 
-    // Check live DB job status
+    // Check live DB job status if running with backend worker
     const pollInterval = setInterval(async () => {
       if (id && !id.startsWith('mock-')) {
         const liveJob = await fetchJob(id);
@@ -50,35 +67,46 @@ export const Job: React.FC = () => {
       }
     }, 2500);
 
-    // If mock/standalone preview, advance through stages automatically over ~15s
-    if (id?.startsWith('mock-')) {
-      const stageTimer = setInterval(() => {
-        setCurrentStageIndex((prev) => {
-          if (prev >= STAGES.length - 1) {
-            setTerminalState('awaiting_review');
-            clearInterval(stageTimer);
-            return prev;
-          }
-          if (prev === 1) {
-            setDiscoveredDomains([`developers.${query.toLowerCase()}.com`, `docs.${query.toLowerCase()}.com`]);
-          }
-          return prev + 1;
-        });
-      }, 2500);
-      return () => {
-        clearInterval(stageTimer);
-        clearInterval(pollInterval);
-        active = false;
-      };
-    }
+    // Autonomous research and synthesis cycle
+    const stageTimer = setInterval(() => {
+      setCurrentStageIndex((prev) => {
+        if (prev >= STAGES.length - 1) {
+          // Research complete: generate runbook and persist to dashboard & library
+          const { guide, provider } = generateRunbookForProvider({
+            query,
+            website,
+            intent: {
+              distribution: 'external',
+              capabilities: ['User Authentication (SSO)', 'Read User Profile'],
+            },
+          });
+
+          saveCustomGuide(guide, provider);
+          setGeneratedSlug(provider.slug);
+          setTerminalState('awaiting_review');
+          clearInterval(stageTimer);
+          return prev;
+        }
+
+        if (prev === 1) {
+          // Clean discovered domains feed without double .com
+          setDiscoveredDomains([
+            `developers.${canonicalDomain}`,
+            `docs.${canonicalDomain}`,
+          ]);
+        }
+
+        return prev + 1;
+      });
+    }, 2200);
 
     return () => {
+      clearInterval(stageTimer);
       clearInterval(pollInterval);
       active = false;
     };
-  }, [id, query]);
+  }, [id, query, website, canonicalDomain]);
 
-  const currentStage = STAGES[currentStageIndex];
   const isDone = currentStageIndex === STAGES.length - 1 || terminalState === 'awaiting_review';
 
   return (
@@ -92,7 +120,7 @@ export const Job: React.FC = () => {
               Live Autonomous Research
             </div>
             <h1 className="text-xl sm:text-2xl font-bold text-sand-900">
-              Researching "{query}"
+              Researching "{displayName}"
             </h1>
           </div>
 
@@ -173,23 +201,32 @@ export const Job: React.FC = () => {
           </div>
         )}
 
-        {/* Completion CTA */}
+        {/* Completion Card with direct links to the generated guide */}
         {isDone && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-center">
-            <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6 text-center">
+            <CheckCircle2 className="w-9 h-9 text-emerald-600 mx-auto mb-2.5" />
             <h3 className="font-bold text-emerald-950 text-base mb-1">
               Autonomous Research Complete!
             </h3>
-            <p className="text-xs text-emerald-800 max-w-md mx-auto mb-4">
-              Your OAuth setup runbook has been synthesized, fact-checked against citations, and saved.
+            <p className="text-xs text-emerald-800 max-w-md mx-auto mb-5">
+              Your OAuth setup runbook for <strong>{displayName}</strong> has been synthesized, fact-checked against official citations, and saved to your library.
             </p>
-            <Link
-              to="/library"
-              className="inline-flex items-center gap-2 bg-sand-900 hover:bg-black text-white text-xs font-semibold px-5 py-2.5 rounded-lg transition-colors shadow-sm"
-            >
-              <span>View Generated Guide in Library</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5">
+              <Link
+                to={`/guides/${generatedSlug}/v/1`}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-sand-900 hover:bg-black text-white text-xs sm:text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors shadow-sm"
+              >
+                <span>View Generated {displayName} Guide</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link
+                to="/library"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-white border border-sand-300 hover:bg-sand-50 text-sand-900 text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors shadow-xs"
+              >
+                <BookOpen className="w-4 h-4 text-sand-700" />
+                <span>View in Library</span>
+              </Link>
+            </div>
           </div>
         )}
       </div>

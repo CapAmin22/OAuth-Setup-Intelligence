@@ -51,3 +51,4 @@ def verify_and_score(guide: Dict[str, Any]) -> Tuple[bool, int, List[str]]:
     # Publication gate: Phase 1 MVP guides default to awaiting_review for safety
     passed = len(issues) == 0 and total_score >= 50
     return passed, total_score, issues
+

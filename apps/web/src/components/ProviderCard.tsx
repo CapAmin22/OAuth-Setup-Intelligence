@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, CheckCircle, Shield, ArrowUpRight } from 'lucide-react';
+import { Clock, CheckCircle, Shield, ArrowUpRight, Sparkles } from 'lucide-react';
 import { GuideVersion, Provider } from '../types';
 
 interface ProviderCardProps {
@@ -46,10 +46,15 @@ export const ProviderCard: React.FC<ProviderCardProps> = ({ guide, provider }) =
             </div>
           </div>
 
-          {isCurated && (
+          {isCurated ? (
             <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
               <CheckCircle className="w-3 h-3" />
               Curated
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-900 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+              <Sparkles className="w-3 h-3 text-amber-600" />
+              AI Researched
             </span>
           )}
         </div>
@@ -84,3 +89,4 @@ export const ProviderCard: React.FC<ProviderCardProps> = ({ guide, provider }) =
     </Link>
   );
 };
+

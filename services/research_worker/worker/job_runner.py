@@ -111,3 +111,4 @@ def run_job(job: Dict[str, Any], worker_id: str, db: DatabaseClient, cf_ai: Clou
         else:
             db.update_job_state(job_id, "failed", error_code="internal_error", error_detail=err_str)
         db.record_event(job_id, 99, "failed", "failed", {"error": err_str})
+

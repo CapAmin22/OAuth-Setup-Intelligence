@@ -28,3 +28,4 @@ def resolve_provider(query: str, website: str = "") -> Tuple[Dict[str, Any], boo
         "official_domains": [canonical_domain],
         "aliases": [clean_query.lower(), f"{slug} oauth", f"{slug} api"]
     }, True
+

@@ -191,3 +191,4 @@ export const EvidencePanel: React.FC<EvidencePanelProps> = ({ guide, activeClaim
     </div>
   );
 };
+

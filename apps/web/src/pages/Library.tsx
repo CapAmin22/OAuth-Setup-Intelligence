@@ -12,11 +12,20 @@ export const Library: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([fetchProviders(), fetchAllGuides()]).then(([p, g]) => {
-      setProviders(p);
-      setGuides(g);
-      setLoading(false);
-    });
+    const load = () => {
+      Promise.all([fetchProviders(), fetchAllGuides()]).then(([p, g]) => {
+        setProviders(p);
+        setGuides(g);
+        setLoading(false);
+      });
+    };
+    load();
+    window.addEventListener('oauth_custom_guide_saved', load);
+    window.addEventListener('storage', load);
+    return () => {
+      window.removeEventListener('oauth_custom_guide_saved', load);
+      window.removeEventListener('storage', load);
+    };
   }, []);
 
   const filteredProviders = providers.filter((p) => {
@@ -87,7 +96,9 @@ export const Library: React.FC = () => {
       {/* Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredProviders.map((p) => {
-          const matchedGuide = guides.find((g) => g.providerSlug === p.slug);
+          const matchedGuide = guides.find(
+            (g) => g.providerSlug === p.slug || g.providerSlug === p.slug.replace(/\.[a-z0-9]+$/, '')
+          );
           return <ProviderCard key={p.slug} provider={p} guide={matchedGuide} />;
         })}
       </div>
@@ -107,3 +118,4 @@ export const Library: React.FC = () => {
     </div>
   );
 };
+

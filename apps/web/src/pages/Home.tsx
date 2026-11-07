@@ -14,12 +14,24 @@ export const Home: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    Promise.all([fetchProviders(), fetchAllGuides()]).then(([p, g]) => {
-      setProviders(p);
-      setGuides(g);
-      setLoading(false);
-    });
+    const load = () => {
+      Promise.all([fetchProviders(), fetchAllGuides()]).then(([p, g]) => {
+        setProviders(p);
+        setGuides(g);
+        setLoading(false);
+      });
+    };
+    load();
+    window.addEventListener('oauth_custom_guide_saved', load);
+    window.addEventListener('storage', load);
+    return () => {
+      window.removeEventListener('oauth_custom_guide_saved', load);
+      window.removeEventListener('storage', load);
+    };
   }, []);
+
+  const curatedProviders = providers.filter((p) => p.isCurated);
+  const generatedProviders = providers.filter((p) => !p.isCurated);
 
   const handleGenerateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +62,35 @@ export const Home: React.FC = () => {
           <SearchBar size="large" autoFocus={true} />
         </div>
 
+        {/* AI Researched Guides Section (shows immediately when any custom provider is researched) */}
+        {generatedProviders.length > 0 && (
+          <div className="mb-14">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-900 text-xs font-semibold uppercase tracking-wider mb-1.5 border border-amber-500/20">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                  AI Researched Guides
+                </div>
+                <h2 className="text-lg sm:text-xl font-bold text-sand-900 tracking-tight">
+                  Recently Researched Providers
+                </h2>
+                <p className="text-xs sm:text-sm text-sand-700">
+                  Dynamically synthesized and verified runbooks for requested OAuth providers.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {generatedProviders.map((p) => {
+                const matchedGuide = guides.find(
+                  (g) => g.providerSlug === p.slug || g.providerSlug === p.slug.replace(/\.[a-z0-9]+$/, '')
+                );
+                return <ProviderCard key={p.slug} provider={p} guide={matchedGuide} />;
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Curated Guides Library Grid */}
         <div className="mb-14">
           <div className="flex items-center justify-between mb-6">
@@ -71,7 +112,7 @@ export const Home: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {providers.slice(0, 5).map((p) => {
+            {curatedProviders.map((p) => {
               const matchedGuide = guides.find((g) => g.providerSlug === p.slug);
               return <ProviderCard key={p.slug} provider={p} guide={matchedGuide} />;
             })}
@@ -134,3 +175,4 @@ export const Home: React.FC = () => {
     </div>
   );
 };
+
