@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { RunbookStep } from '../components/RunbookStep';
 import { EvidencePanel } from '../components/EvidencePanel';
+import { BlockerWizard } from '../components/BlockerWizard';
 import { fetchGuide } from '../lib/api';
 import { GuideVersion } from '../types';
 
@@ -25,6 +26,13 @@ export const Guide: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [copiedShare, setCopiedShare] = useState(false);
   const [activeClaimId, setActiveClaimId] = useState<string | null>(null);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardQuery, setWizardQuery] = useState('redirect_uri_mismatch');
+
+  const openTroubleshooter = (initialText: string = 'redirect_uri_mismatch') => {
+    setWizardQuery(initialText);
+    setWizardOpen(true);
+  };
 
   const [completedSteps, setCompletedSteps] = useState<string[]>(() => {
     if (!slug) return [];
@@ -158,6 +166,13 @@ ${guide.sources.map((src) => `- [${src.id}] ${src.url} (Hash: ${src.contentHash}
         </Link>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => openTroubleshooter('redirect_uri_mismatch')}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-semibold transition-colors shadow-xs"
+          >
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+            <span>Troubleshoot Error</span>
+          </button>
           <button
             onClick={handleShare}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-sand-300 bg-white hover:bg-sand-50 text-sand-900 text-xs font-medium transition-colors shadow-xs"
@@ -352,6 +367,7 @@ ${guide.sources.map((src) => `- [${src.id}] ${src.url} (Hash: ${src.contentHash}
                   isCompleted={completedSteps.includes(step.id)}
                   onToggle={() => toggleStep(step.id)}
                   onClaimClick={(cid) => setActiveClaimId(cid)}
+                  onTroubleshoot={(title) => openTroubleshooter(title)}
                 />
               ))}
             </div>
@@ -360,10 +376,18 @@ ${guide.sources.map((src) => `- [${src.id}] ${src.url} (Hash: ${src.contentHash}
           {/* Blockers & Gotchas */}
           {guide.blockers && guide.blockers.length > 0 && (
             <div>
-              <h3 className="font-bold text-sand-900 text-sm mb-3 uppercase tracking-wider flex items-center gap-1.5 text-amber-800">
-                <AlertTriangle className="w-4 h-4 text-amber-600" />
-                Known Blockers & Approval Gates
-              </h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-bold text-sand-900 text-sm uppercase tracking-wider flex items-center gap-1.5 text-amber-800">
+                  <AlertTriangle className="w-4 h-4 text-amber-600" />
+                  Known Blockers & Approval Gates
+                </h3>
+                <button
+                  onClick={() => openTroubleshooter('redirect_uri_mismatch')}
+                  className="text-xs font-semibold text-amber-800 hover:text-amber-900 underline flex items-center gap-1"
+                >
+                  Diagnose another error →
+                </button>
+              </div>
               <div className="space-y-3">
                 {guide.blockers.map((b) => (
                   <div key={b.id} className="bg-amber-50/50 border border-amber-200 rounded-xl p-4 text-xs">
@@ -396,6 +420,15 @@ ${guide.sources.map((src) => `- [${src.id}] ${src.url} (Hash: ${src.contentHash}
           </div>
         </div>
       </div>
+
+      {/* Interactive Blocker Diagnostics Wizard */}
+      <BlockerWizard
+        isOpen={wizardOpen}
+        onClose={() => setWizardOpen(false)}
+        initialQuery={wizardQuery}
+        providerSlug={guide.providerSlug}
+        providerName={guide.providerName}
+      />
     </div>
   );
 };

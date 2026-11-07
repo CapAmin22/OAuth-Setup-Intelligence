@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, Copy, ChevronRight, User, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { Check, Copy, ChevronRight, User, ShieldAlert, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Step } from '../types';
 
 interface RunbookStepProps {
@@ -8,6 +8,7 @@ interface RunbookStepProps {
   isCompleted?: boolean;
   onToggle?: () => void;
   onClaimClick?: (claimId: string) => void;
+  onTroubleshoot?: (stepTitle: string) => void;
 }
 
 export const RunbookStep: React.FC<RunbookStepProps> = ({
@@ -16,6 +17,7 @@ export const RunbookStep: React.FC<RunbookStepProps> = ({
   isCompleted: externalCompleted,
   onToggle,
   onClaimClick,
+  onTroubleshoot,
 }) => {
   const [internalCompleted, setInternalCompleted] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -83,20 +85,31 @@ export const RunbookStep: React.FC<RunbookStepProps> = ({
               </div>
             )}
 
-            {step.claimIds && step.claimIds.length > 0 && (
-              <div className="flex items-center gap-1.5 text-xs text-sand-700">
-                <span className="text-[11px] font-medium text-sand-700">Backed by claims:</span>
-                {step.claimIds.map((cid) => (
-                  <button
-                    key={cid}
-                    onClick={() => onClaimClick?.(cid)}
-                    className="px-1.5 py-0.5 rounded bg-sand-100 hover:bg-amber-100 text-sand-700 hover:text-amber-800 font-mono text-[10px] font-medium border border-sand-200 transition-colors"
-                  >
-                    #{cid}
-                  </button>
-                ))}
-              </div>
-            )}
+            <div className="flex items-center justify-between gap-2 mt-3 pt-2.5 border-t border-sand-100 flex-wrap">
+              {step.claimIds && step.claimIds.length > 0 ? (
+                <div className="flex items-center gap-1.5 text-xs text-sand-700">
+                  <span className="text-[11px] font-medium text-sand-700">Backed by claims:</span>
+                  {step.claimIds.map((cid) => (
+                    <button
+                      key={cid}
+                      onClick={() => onClaimClick?.(cid)}
+                      className="px-1.5 py-0.5 rounded bg-sand-100 hover:bg-amber-100 text-sand-700 hover:text-amber-800 font-mono text-[10px] font-medium border border-sand-200 transition-colors"
+                    >
+                      #{cid}
+                    </button>
+                  ))}
+                </div>
+              ) : <div />}
+
+              <button
+                onClick={() => onTroubleshoot?.(step.title)}
+                className="inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-900 bg-amber-500/10 hover:bg-amber-500/20 px-2.5 py-1 rounded-md border border-amber-600/20 transition-colors self-start sm:self-auto"
+                title="Troubleshoot errors on this step"
+              >
+                <AlertTriangle className="w-3 h-3 text-amber-600" />
+                <span>Troubleshoot Step</span>
+              </button>
+            </div>
           </div>
         </div>
 
