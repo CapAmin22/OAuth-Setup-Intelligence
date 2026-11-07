@@ -5,12 +5,12 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 export function redactSensitiveData(text: string): string {
   return text
-    .replace(/(client_secret|clientsecret|secret|password|bearer|api_key|apikey|token)[=:\s]+[A-Za-z0-9_\-\.]{8,}/gi, '$1=[REDACTED]')
     .replace(/ghp_[A-Za-z0-9]{20,}/g, '[REDACTED_GITHUB_TOKEN]')
     .replace(/xox[baprs]-[A-Za-z0-9\-]{15,}/g, '[REDACTED_SLACK_TOKEN]')
     .replace(/ya29\.[A-Za-z0-9_\-]{20,}/g, '[REDACTED_GOOGLE_TOKEN]')
     .replace(/cf[a-z0-9_]{4,}[A-Za-z0-9_\-]{20,}/g, '[REDACTED_API_KEY]')
-    .replace(/tvly-[A-Za-z0-9_\-]{20,}/g, '[REDACTED_TAVILY_KEY]');
+    .replace(/tvly-[A-Za-z0-9_\-]{20,}/g, '[REDACTED_TAVILY_KEY]')
+    .replace(/(client_secret|clientsecret|secret|password|bearer|api_key|apikey|token)[=:\s]+[A-Za-z0-9_\-\.]{8,}/gi, '$1=[REDACTED]');
 }
 
 export const Feedback: React.FC = () => {

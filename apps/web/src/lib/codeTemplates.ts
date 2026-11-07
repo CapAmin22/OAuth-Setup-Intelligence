@@ -10,15 +10,109 @@ export interface CodeTemplateParams {
   userInfoUrl?: string;
 }
 
+export interface ProviderEndpointConfig {
+  authUrl: string;
+  tokenUrl: string;
+  userUrl: string;
+  scopeDelimiter: ' ' | ',';
+  authMethod: 'body' | 'basic';
+}
+
+export const PROVIDER_ENDPOINTS: Record<string, ProviderEndpointConfig> = {
+  google: {
+    authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+    tokenUrl: 'https://oauth2.googleapis.com/token',
+    userUrl: 'https://www.googleapis.com/oauth2/v3/userinfo',
+    scopeDelimiter: ' ',
+    authMethod: 'body',
+  },
+  github: {
+    authUrl: 'https://github.com/login/oauth/authorize',
+    tokenUrl: 'https://github.com/login/oauth/access_token',
+    userUrl: 'https://api.github.com/user',
+    scopeDelimiter: ',',
+    authMethod: 'body',
+  },
+  slack: {
+    authUrl: 'https://slack.com/oauth/v2/authorize',
+    tokenUrl: 'https://slack.com/api/oauth.v2.access',
+    userUrl: 'https://slack.com/api/users.identity',
+    scopeDelimiter: ',',
+    authMethod: 'body',
+  },
+  notion: {
+    authUrl: 'https://api.notion.com/v1/oauth/authorize',
+    tokenUrl: 'https://api.notion.com/v1/oauth/token',
+    userUrl: 'https://api.notion.com/v1/users/me',
+    scopeDelimiter: ' ',
+    authMethod: 'basic',
+  },
+  salesforce: {
+    authUrl: 'https://login.salesforce.com/services/oauth2/authorize',
+    tokenUrl: 'https://login.salesforce.com/services/oauth2/token',
+    userUrl: 'https://login.salesforce.com/services/oauth2/userinfo',
+    scopeDelimiter: ' ',
+    authMethod: 'body',
+  },
+  discord: {
+    authUrl: 'https://discord.com/api/oauth2/authorize',
+    tokenUrl: 'https://discord.com/api/oauth2/token',
+    userUrl: 'https://discord.com/api/users/@me',
+    scopeDelimiter: ' ',
+    authMethod: 'body',
+  },
+  spotify: {
+    authUrl: 'https://accounts.spotify.com/authorize',
+    tokenUrl: 'https://accounts.spotify.com/api/token',
+    userUrl: 'https://api.spotify.com/v1/me',
+    scopeDelimiter: ' ',
+    authMethod: 'basic',
+  },
+  linear: {
+    authUrl: 'https://linear.app/oauth/authorize',
+    tokenUrl: 'https://api.linear.app/oauth/token',
+    userUrl: 'https://api.linear.app/graphql',
+    scopeDelimiter: ',',
+    authMethod: 'body',
+  },
+  hubspot: {
+    authUrl: 'https://app.hubspot.com/oauth/authorize',
+    tokenUrl: 'https://api.hubapi.com/oauth/v1/token',
+    userUrl: 'https://api.hubapi.com/oauth/v1/access-tokens/',
+    scopeDelimiter: ' ',
+    authMethod: 'body',
+  },
+  zoom: {
+    authUrl: 'https://zoom.us/oauth/authorize',
+    tokenUrl: 'https://zoom.us/oauth/token',
+    userUrl: 'https://api.zoom.us/v2/users/me',
+    scopeDelimiter: ' ',
+    authMethod: 'basic',
+  },
+};
+
+function getEndpointConfig(slug: string): ProviderEndpointConfig {
+  const norm = slug.toLowerCase();
+  return PROVIDER_ENDPOINTS[norm] || {
+    authUrl: `https://${norm}.com/oauth/authorize`,
+    tokenUrl: `https://${norm}.com/oauth/token`,
+    userUrl: `https://${norm}.com/api/v1/user`,
+    scopeDelimiter: norm === 'slack' || norm === 'github' ? ',' : ' ',
+    authMethod: norm === 'zoom' || norm === 'spotify' || norm === 'notion' ? 'basic' : 'body',
+  };
+}
+
 export function generateNextAuthSnippet(params: CodeTemplateParams): string {
   const slug = params.providerSlug.toLowerCase();
   const name = params.providerName;
+  const cfg = getEndpointConfig(slug);
+
   const scopes = (params.scopes && params.scopes.length > 0)
-    ? params.scopes.join(slug === 'slack' || slug === 'github' ? ',' : ' ')
+    ? params.scopes.join(cfg.scopeDelimiter)
     : 'identify email';
-  const authUrl = params.authUrl || `https://${slug}.com/oauth/authorize`;
-  const tokenUrl = params.tokenUrl || `https://${slug}.com/oauth/token`;
-  const userUrl = params.userInfoUrl || `https://${slug}.com/api/v1/user`;
+  const authUrl = params.authUrl || cfg.authUrl;
+  const tokenUrl = params.tokenUrl || cfg.tokenUrl;
+  const userUrl = params.userInfoUrl || cfg.userUrl;
 
   return `// app/api/auth/[...nextauth]/route.ts (or auth.ts for Auth.js v5)
 import NextAuth from "next-auth";
@@ -54,146 +148,148 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 export function generateNodeSnippet(params: CodeTemplateParams): string {
   const slug = params.providerSlug.toLowerCase();
   const name = params.providerName;
+  const cfg = getEndpointConfig(slug);
+
   const clientId = params.clientId || `process.env.${slug.toUpperCase()}_CLIENT_ID`;
   const redirectUri = params.redirectUri || `http://localhost:3000/api/auth/callback/${slug}`;
   const scopes = (params.scopes && params.scopes.length > 0)
-    ? params.scopes.join(slug === 'slack' || slug === 'github' ? ',' : ' ')
+    ? params.scopes.join(cfg.scopeDelimiter)
     : 'identify email';
-  const authUrl = params.authUrl || `https://${slug}.com/oauth/authorize`;
-  const tokenUrl = params.tokenUrl || `https://${slug}.com/oauth/token`;
+  const authUrl = params.authUrl || cfg.authUrl;
+  const tokenUrl = params.tokenUrl || cfg.tokenUrl;
+  const isBasicAuth = cfg.authMethod === 'basic';
 
-  const isBasicAuth = slug === 'zoom' || slug === 'spotify';
-
-  return `// server.js - Node.js Express OAuth 2.0 Flow
-import express from 'express';
-import crypto from 'crypto';
-
+  return `// server.js — Node.js Express OAuth 2.0 Integration for ${name}
+const express = require('express');
+const axios = require('axios');
 const app = express();
 
-const CLIENT_ID = ${clientId.startsWith('process') ? clientId : `'${clientId}'`};
-const CLIENT_SECRET = process.env.${slug.toUpperCase()}_CLIENT_SECRET;
-const REDIRECT_URI = '${redirectUri}';
+const CLIENT_ID = process.env.${slug.toUpperCase()}_CLIENT_ID || "${params.clientId || 'YOUR_CLIENT_ID'}";
+const CLIENT_SECRET = process.env.${slug.toUpperCase()}_CLIENT_SECRET || "${params.clientSecret || 'YOUR_CLIENT_SECRET'}";
+const REDIRECT_URI = "${redirectUri}";
 
-// 1. Redirect user to ${name} Authorization Endpoint
-app.get('/auth/login', (req, res) => {
-  const state = crypto.randomBytes(16).toString('hex');
-  const url = new URL('${authUrl}');
-  url.searchParams.set('client_id', CLIENT_ID);
-  url.searchParams.set('redirect_uri', REDIRECT_URI);
-  url.searchParams.set('response_type', 'code');
-  url.searchParams.set('scope', '${scopes}');
-  url.searchParams.set('state', state);
-
-  res.redirect(url.toString());
+// 1. Redirect user to ${name} Authorization page
+app.get('/login', (req, res) => {
+  const params = new URLSearchParams({
+    client_id: CLIENT_ID,
+    redirect_uri: REDIRECT_URI,
+    response_type: 'code',
+    scope: "${scopes}",
+    state: Math.random().toString(36).substring(7)
+  });
+  res.redirect(\`${authUrl}?\${params.toString()}\`);
 });
 
-// 2. Callback Route: Exchange Authorization Code for Tokens
+// 2. Handle OAuth 2.0 Callback and Exchange Code for Tokens
 app.get('/api/auth/callback/${slug}', async (req, res) => {
   const { code, error } = req.query;
-  if (error) return res.status(400).send('Authorization failed: ' + error);
+  if (error) return res.status(400).send(\`OAuth authorization error: \${error}\`);
+  if (!code) return res.status(400).send('Missing authorization code');
 
   try {
     ${
       isBasicAuth
-        ? `const authHeader = 'Basic ' + Buffer.from(CLIENT_ID + ':' + CLIENT_SECRET).toString('base64');
-    const tokenResponse = await fetch('${tokenUrl}', {
-      method: 'POST',
-      headers: {
-        'Authorization': authHeader,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
+        ? `// ${name} requires HTTP Basic Auth header for client authentication
+    const credentials = Buffer.from(\`\${CLIENT_ID}:\${CLIENT_SECRET}\`).toString('base64');
+    const tokenResponse = await axios.post(
+      '${tokenUrl}',
+      new URLSearchParams({
         grant_type: 'authorization_code',
         code: String(code),
-        redirect_uri: REDIRECT_URI,
-      }),
-    });`
-        : `const tokenResponse = await fetch('${tokenUrl}', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
+        redirect_uri: REDIRECT_URI
+      }).toString(),
+      {
+        headers: {
+          'Authorization': \`Basic \${credentials}\`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }
+    );`
+        : `const tokenResponse = await axios.post(
+      '${tokenUrl}',
+      new URLSearchParams({
         grant_type: 'authorization_code',
-        code: String(code),
         client_id: CLIENT_ID,
         client_secret: CLIENT_SECRET,
-        redirect_uri: REDIRECT_URI,
-      }),
-    });`
+        code: String(code),
+        redirect_uri: REDIRECT_URI
+      }).toString(),
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }
+    );`
     }
 
-    const tokens = await tokenResponse.json();
-    if (!tokenResponse.ok) throw new Error(JSON.stringify(tokens));
-
-    // Access Token is ready! Store securely in session
-    res.json({ message: '${name} authentication successful!', tokens });
+    const { access_token, refresh_token, token_type } = tokenResponse.data;
+    // Securely persist access_token and refresh_token in encrypted session/database
+    res.json({ status: 'authenticated', provider: '${slug}', tokens: tokenResponse.data });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    const errorDetails = err.response ? err.response.data : err.message;
+    console.error('Token exchange failure:', errorDetails);
+    res.status(500).json({ error: 'Token exchange failed', details: errorDetails });
   }
 });
 
-app.listen(3000, () => console.log('Listening on http://localhost:3000'));
+app.listen(3000, () => console.log('OAuth server listening on http://localhost:3000'));
 `;
 }
 
 export function generatePythonSnippet(params: CodeTemplateParams): string {
   const slug = params.providerSlug.toLowerCase();
   const name = params.providerName;
-  const redirectUri = params.redirectUri || `http://localhost:8000/callback`;
-  const scopes = (params.scopes && params.scopes.length > 0)
-    ? params.scopes.join(slug === 'slack' || slug === 'github' ? ',' : ' ')
-    : 'identify email';
-  const authUrl = params.authUrl || `https://${slug}.com/oauth/authorize`;
-  const tokenUrl = params.tokenUrl || `https://${slug}.com/oauth/token`;
-  const isBasicAuth = slug === 'zoom' || slug === 'spotify';
+  const cfg = getEndpointConfig(slug);
 
-  return `# main.py - FastAPI + httpx OAuth 2.0 Flow
+  const redirectUri = params.redirectUri || `http://localhost:8000/auth/callback/${slug}`;
+  const scopes = (params.scopes && params.scopes.length > 0)
+    ? params.scopes.join(cfg.scopeDelimiter)
+    : 'identify email';
+  const authUrl = params.authUrl || cfg.authUrl;
+  const tokenUrl = params.tokenUrl || cfg.tokenUrl;
+  const isBasicAuth = cfg.authMethod === 'basic';
+
+  return `# main.py — FastAPI + httpx OAuth 2.0 Integration for ${name}
 import os
-import secrets
-import base64
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
-app = FastAPI(title="${name} OAuth Flow")
+app = FastAPI(title="${name} OAuth Service")
 
-CLIENT_ID = os.getenv("${slug.toUpperCase()}_CLIENT_ID", "your_client_id")
-CLIENT_SECRET = os.getenv("${slug.toUpperCase()}_CLIENT_SECRET", "your_client_secret")
+CLIENT_ID = os.getenv("${slug.toUpperCase()}_CLIENT_ID", "${params.clientId || 'YOUR_CLIENT_ID'}")
+CLIENT_SECRET = os.getenv("${slug.toUpperCase()}_CLIENT_SECRET", "${params.clientSecret || 'YOUR_CLIENT_SECRET'}")
 REDIRECT_URI = "${redirectUri}"
 
 @app.get("/login")
 def login():
-    state = secrets.token_urlsafe(16)
-    auth_url = (
-        f"${authUrl}?"
-        f"client_id={CLIENT_ID}&"
-        f"redirect_uri={REDIRECT_URI}&"
-        f"response_type=code&"
-        f"scope=${scopes}&"
-        f"state={state}"
-    )
-    return RedirectResponse(auth_url)
+    params = {
+        "client_id": CLIENT_ID,
+        "redirect_uri": REDIRECT_URI,
+        "response_type": "code",
+        "scope": "${scopes}",
+        "state": "secure_random_state"
+    }
+    query = "&".join(f"{k}={v}" for k, v in params.items())
+    return RedirectResponse(f"${authUrl}?{query}")
 
-@app.get("/callback")
+@app.get("/auth/callback/${slug}")
 async def callback(code: str = None, error: str = None):
     if error:
-        raise HTTPException(status_code=400, detail=f"OAuth Error: {error}")
+        raise HTTPException(status_code=400, detail=f"OAuth error: {error}")
     if not code:
         raise HTTPException(status_code=400, detail="Missing authorization code")
 
     async with httpx.AsyncClient() as client:
         ${
           isBasicAuth
-            ? `creds = f"{CLIENT_ID}:{CLIENT_SECRET}".encode("utf-8")
-        headers = {
-            "Authorization": f"Basic {base64.b64encode(creds).decode('utf-8')}",
-            "Content-Type": "application/x-www-form-urlencoded"
-        }
+            ? `auth = (CLIENT_ID, CLIENT_SECRET)
         data = {
             "grant_type": "authorization_code",
             "code": code,
             "redirect_uri": REDIRECT_URI
         }
-        res = await client.post("${tokenUrl}", data=data, headers=headers)`
+        res = await client.post("${tokenUrl}", data=data, auth=auth)`
             : `data = {
             "grant_type": "authorization_code",
             "code": code,
@@ -215,15 +311,17 @@ async def callback(code: str = None, error: str = None):
 export function generateCurlSnippet(params: CodeTemplateParams): string {
   const slug = params.providerSlug.toLowerCase();
   const name = params.providerName;
+  const cfg = getEndpointConfig(slug);
+
   const clientId = params.clientId || `YOUR_${slug.toUpperCase()}_CLIENT_ID`;
   const clientSecret = params.clientSecret || `YOUR_${slug.toUpperCase()}_CLIENT_SECRET`;
   const redirectUri = params.redirectUri || `http://localhost:3000/api/auth/callback/${slug}`;
   const scopes = (params.scopes && params.scopes.length > 0)
-    ? params.scopes.join(slug === 'slack' || slug === 'github' ? ',' : ' ')
+    ? params.scopes.join(cfg.scopeDelimiter)
     : 'identify email';
-  const authUrl = params.authUrl || `https://${slug}.com/oauth/authorize`;
-  const tokenUrl = params.tokenUrl || `https://${slug}.com/oauth/token`;
-  const isBasicAuth = slug === 'zoom' || slug === 'spotify';
+  const authUrl = params.authUrl || cfg.authUrl;
+  const tokenUrl = params.tokenUrl || cfg.tokenUrl;
+  const isBasicAuth = cfg.authMethod === 'basic';
 
   return `# Step 1: Open the Authorization URL in your web browser:
 "${authUrl}?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scopes)}"
