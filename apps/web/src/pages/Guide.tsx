@@ -17,6 +17,7 @@ import {
 import { RunbookStep } from '../components/RunbookStep';
 import { EvidencePanel } from '../components/EvidencePanel';
 import { BlockerWizard } from '../components/BlockerWizard';
+import { CodePlayground } from '../components/CodePlayground';
 import { fetchGuide } from '../lib/api';
 import { GuideVersion } from '../types';
 
@@ -371,6 +372,18 @@ ${guide.sources.map((src) => `- [${src.id}] ${src.url} (Hash: ${src.contentHash}
                 />
               ))}
             </div>
+          </div>
+
+          {/* Multi-Language Code Implementation Playground */}
+          <div>
+            <h3 className="font-bold text-sand-900 text-sm mb-3 uppercase tracking-wider">
+              Ready-to-Run Code Boilerplate
+            </h3>
+            <CodePlayground
+              providerSlug={guide.providerSlug}
+              providerName={guide.providerName}
+              defaultScopes={guide.intent?.capabilities}
+            />
           </div>
 
           {/* Blockers & Gotchas */}
