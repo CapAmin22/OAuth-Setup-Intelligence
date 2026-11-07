@@ -64,3 +64,4 @@ def audit_guide_freshness(
         "status": "drift_detected" if has_drift else "verified_fresh",
         "sources": results
     }
+

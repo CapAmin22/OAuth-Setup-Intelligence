@@ -18,6 +18,7 @@ import { RunbookStep } from '../components/RunbookStep';
 import { EvidencePanel } from '../components/EvidencePanel';
 import { BlockerWizard } from '../components/BlockerWizard';
 import { CodePlayground } from '../components/CodePlayground';
+import { ProviderLogo } from '../components/ProviderLogo';
 import { fetchGuide } from '../lib/api';
 import { GuideVersion } from '../types';
 
@@ -195,8 +196,8 @@ ${guide.sources.map((src) => `- [${src.id}] ${src.url} (Hash: ${src.contentHash}
       <div className="bg-white border border-sand-200 rounded-2xl p-6 sm:p-8 shadow-sm mb-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-sand-100">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-xl bg-sand-100 border border-sand-200 flex items-center justify-center font-bold text-2xl text-sand-900">
-              {guide.providerName[0]}
+            <div className="w-14 h-14 rounded-xl bg-sand-50 border border-sand-200 flex items-center justify-center p-2.5 shrink-0 shadow-xs">
+              <ProviderLogo slug={guide.providerSlug} name={guide.providerName} size="xl" />
             </div>
             <div>
               <div className="flex items-center gap-2.5 mb-1 flex-wrap">

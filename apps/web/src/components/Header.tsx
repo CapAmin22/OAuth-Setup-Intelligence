@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ShieldCheck, Compass, Sparkles, BookOpen, Key, AlertCircle } from 'lucide-react';
+import { ShieldCheck, Compass, Sparkles, BookOpen, Key, AlertCircle, HelpCircle } from 'lucide-react';
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  onOpenTour?: () => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({ onOpenTour }) => {
   const location = useLocation();
   const [workerOnline, setWorkerOnline] = useState<boolean>(true);
 
@@ -46,6 +50,16 @@ export const Header: React.FC = () => {
             <span>Generate</span>
           </Link>
           <Link
+            to="/states"
+            className={`hidden md:inline-block px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              location.pathname === '/states'
+                ? 'bg-sand-100 text-sand-900'
+                : 'text-sand-700 hover:text-sand-900 hover:bg-sand-50'
+            }`}
+          >
+            States
+          </Link>
+          <Link
             to="/api-reference"
             className={`hidden sm:inline-block px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
               location.pathname === '/api-reference'
@@ -55,6 +69,17 @@ export const Header: React.FC = () => {
           >
             API
           </Link>
+
+          {onOpenTour && (
+            <button
+              onClick={onOpenTour}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-semibold text-sand-700 hover:text-sand-900 hover:bg-sand-100 transition-colors"
+              title="Open onboarding tour"
+            >
+              <HelpCircle className="w-3.5 h-3.5 text-amber-600" />
+              <span className="hidden sm:inline">Tour</span>
+            </button>
+          )}
 
           <div className="h-4 w-px bg-sand-200 mx-1 sm:mx-2" />
 

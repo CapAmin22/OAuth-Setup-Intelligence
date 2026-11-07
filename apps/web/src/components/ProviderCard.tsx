@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Clock, CheckCircle, Shield, ArrowUpRight, Sparkles } from 'lucide-react';
 import { GuideVersion, Provider } from '../types';
+import { ProviderLogo } from './ProviderLogo';
 
 interface ProviderCardProps {
   guide?: GuideVersion;
@@ -28,12 +29,8 @@ export const ProviderCard: React.FC<ProviderCardProps> = ({ guide, provider }) =
       <div>
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-sand-100 border border-sand-200 flex items-center justify-center font-bold text-base text-sand-900 group-hover:scale-105 transition-transform">
-              {provider?.logoUrl ? (
-                <img src={provider.logoUrl} alt={name} className="w-6 h-6 object-contain" />
-              ) : (
-                <span>{name[0]}</span>
-              )}
+            <div className="w-10 h-10 rounded-lg bg-sand-50 border border-sand-200 flex items-center justify-center p-2 group-hover:scale-105 transition-transform shrink-0">
+              <ProviderLogo slug={slug} name={name} logoUrl={provider?.logoUrl} size="md" />
             </div>
             <div>
               <h3 className="font-semibold text-sand-900 text-base group-hover:text-amber-700 transition-colors flex items-center gap-1.5">
