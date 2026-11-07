@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Check, Copy, ChevronRight, User, ShieldAlert, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Check, Copy, ChevronRight, User, ShieldAlert, CheckCircle2, AlertTriangle, MessageSquare } from 'lucide-react';
 import { Step } from '../types';
 
 interface RunbookStepProps {
   step: Step;
   index: number;
+  providerSlug?: string;
   isCompleted?: boolean;
   onToggle?: () => void;
   onClaimClick?: (claimId: string) => void;
@@ -14,6 +16,7 @@ interface RunbookStepProps {
 export const RunbookStep: React.FC<RunbookStepProps> = ({
   step,
   index,
+  providerSlug,
   isCompleted: externalCompleted,
   onToggle,
   onClaimClick,
@@ -101,14 +104,25 @@ export const RunbookStep: React.FC<RunbookStepProps> = ({
                 </div>
               ) : <div />}
 
-              <button
-                onClick={() => onTroubleshoot?.(step.title)}
-                className="inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-900 bg-amber-500/10 hover:bg-amber-500/20 px-2.5 py-1 rounded-md border border-amber-600/20 transition-colors self-start sm:self-auto"
-                title="Troubleshoot errors on this step"
-              >
-                <AlertTriangle className="w-3 h-3 text-amber-600" />
-                <span>Troubleshoot Step</span>
-              </button>
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                <button
+                  onClick={() => onTroubleshoot?.(step.title)}
+                  className="inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-900 bg-amber-500/10 hover:bg-amber-500/20 px-2.5 py-1 rounded-md border border-amber-600/20 transition-colors"
+                  title="Troubleshoot errors on this step"
+                >
+                  <AlertTriangle className="w-3 h-3 text-amber-600" />
+                  <span>Troubleshoot Step</span>
+                </button>
+
+                <Link
+                  to={`/feedback?provider=${encodeURIComponent(providerSlug || '')}&step=${encodeURIComponent(step.title)}`}
+                  className="inline-flex items-center gap-1.5 text-[11px] font-medium text-sand-600 hover:text-sand-900 bg-sand-100/70 hover:bg-sand-200/70 px-2.5 py-1 rounded-md border border-sand-200 transition-colors"
+                  title="Report documentation drift or console changes for this step"
+                >
+                  <MessageSquare className="w-3 h-3 text-sand-500" />
+                  <span>Report Drift</span>
+                </Link>
+              </div>
             </div>
           </div>
         </div>

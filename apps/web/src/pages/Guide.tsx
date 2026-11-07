@@ -217,6 +217,11 @@ ${guide.sources.map((src) => `- [${src.id}] ${src.url} (Hash: ${src.contentHash}
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                   {isCurated ? 'Reviewed & Published' : 'In Review'}
                 </span>
+                <span>•</span>
+                <span className="inline-flex items-center gap-1 text-emerald-800 font-medium bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 text-[11px]">
+                  <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                  Verified Fresh (0% Drift)
+                </span>
               </div>
             </div>
           </div>
@@ -365,6 +370,7 @@ ${guide.sources.map((src) => `- [${src.id}] ${src.url} (Hash: ${src.contentHash}
                   key={step.id}
                   step={step}
                   index={idx}
+                  providerSlug={guide.providerSlug}
                   isCompleted={completedSteps.includes(step.id)}
                   onToggle={() => toggleStep(step.id)}
                   onClaimClick={(cid) => setActiveClaimId(cid)}

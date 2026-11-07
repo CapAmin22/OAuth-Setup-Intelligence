@@ -202,6 +202,15 @@ DO $$ BEGIN
       EXISTS (SELECT 1 FROM generation_jobs gj WHERE gj.id = job_events.job_id AND gj.owner_id = auth.uid())
     );
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'public_insert_feedback') THEN
+    CREATE POLICY "public_insert_feedback" ON feedback FOR INSERT WITH CHECK (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'public_select_feedback') THEN
+    CREATE POLICY "public_select_feedback" ON feedback FOR SELECT USING (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'public_update_feedback') THEN
+    CREATE POLICY "public_update_feedback" ON feedback FOR UPDATE USING (true);
+  END IF;
 END $$;
 
 -- ============================================================
