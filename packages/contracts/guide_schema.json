@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oauth-setup-intelligence/guide-schema/1.0",
+  "title": "GuideVersion",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "providerSlug",
+    "providerName",
+    "version",
+    "status",
+    "effort",
+    "prerequisites",
+    "steps",
+    "claims",
+    "sources"
+  ],
+  "properties": {
+    "id": { "type": "string" },
+    "providerId": { "type": "string" },
+    "providerSlug": { "type": "string" },
+    "providerName": { "type": "string" },
+    "version": { "type": "integer", "minimum": 1 },
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "awaiting_review", "published", "needs_clarification", "unsupported_or_unverified", "failed"]
+    },
+    "intent": {
+      "type": "object",
+      "properties": {
+        "capabilities": { "type": "array", "items": { "type": "string" } },
+        "distribution": { "type": "string", "enum": ["internal", "external", "both"] },
+        "environment": { "type": "string" }
+      }
+    },
+    "checkedAt": { "type": "string", "format": "date-time" },
+    "limitations": { "type": "array", "items": { "type": "string" } },
+    "evidenceQuality": {
+      "type": "object",
+      "required": ["score", "breakdown"],
+      "properties": {
+        "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "breakdown": {
+          "type": "object",
+          "properties": {
+            "criticalClaimGrounding": { "type": "integer" },
+            "officialSourceCoverage": { "type": "integer" },
+            "completeness": { "type": "integer" },
+            "freshness": { "type": "integer" },
+            "consistency": { "type": "integer" }
+          }
+        },
+        "missingEvidence": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "effort": {
+      "type": "object",
+      "required": ["lowMinutes", "highMinutes", "basis"],
+      "properties": {
+        "lowMinutes": { "type": "integer", "minimum": 1 },
+        "highMinutes": { "type": "integer", "minimum": 1 },
+        "assumptions": { "type": "array", "items": { "type": "string" } },
+        "basis": { "type": "string", "enum": ["estimated", "observed", "historical"] }
+      }
+    },
+    "externalWait": {
+      "type": "object",
+      "properties": {
+        "status": { "type": "string", "enum": ["none", "known", "unknown", "optional"] },
+        "publishedRange": { "type": ["string", "null"] },
+        "sourceIds": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "prerequisites": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "text"],
+        "properties": {
+          "id": { "type": "string" },
+          "text": { "type": "string" },
+          "critical": { "type": "boolean" }
+        }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "owner", "instructions"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "owner": { "type": "string", "enum": ["developer", "admin", "either"] },
+          "instructions": { "type": "string" },
+          "completionCheck": { "type": "string" },
+          "claimIds": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "evidenceStatus"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "evidenceStatus": { "type": "string", "enum": ["documented", "attempted", "observed_working", "estimated", "unknown"] },
+          "sourceIds": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "claims": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "text", "evidenceStatus"],
+        "properties": {
+          "id": { "type": "string" },
+          "text": { "type": "string" },
+          "context": { "type": "string" },
+          "evidenceStatus": { "type": "string", "enum": ["documented", "attempted", "observed_working", "estimated", "unknown"] },
+          "critical": { "type": "boolean" },
+          "sourceIds": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "url", "retrievedAt", "contentHash"],
+        "properties": {
+          "id": { "type": "string" },
+          "url": { "type": "string" },
+          "publisher": { "type": "string" },
+          "retrievedAt": { "type": "string", "format": "date-time" },
+          "contentHash": { "type": "string" },
+          "selectedPassages": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "attempts": { "type": "array", "items": { "type": "object" } }
+  }
+}
+

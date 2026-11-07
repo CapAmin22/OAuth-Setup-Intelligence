@@ -1,0 +1,142 @@
+{
+  "id": "gv-notion-v1",
+  "providerId": "p-notion",
+  "providerSlug": "notion",
+  "providerName": "Notion",
+  "version": 1,
+  "schemaVersion": "1.0",
+  "status": "published",
+  "intent": {
+    "capabilities": ["Read user workspace content", "Create pages and databases"],
+    "distribution": "external",
+    "environment": "web"
+  },
+  "checkedAt": "2026-11-07T12:00:00Z",
+  "limitations": [
+    "Notion does not permit apps to read any pages or databases until the end-user explicitly selects and shares them with the integration during OAuth authorization.",
+    "Internal integrations use an internal token without OAuth; public distribution requires completing Notion's integration distribution form."
+  ],
+  "evidenceQuality": {
+    "score": 93,
+    "breakdown": {
+      "criticalClaimGrounding": 35,
+      "officialSourceCoverage": 25,
+      "completeness": 18,
+      "freshness": 8,
+      "consistency": 7
+    },
+    "missingEvidence": []
+  },
+  "effort": {
+    "lowMinutes": 15,
+    "highMinutes": 45,
+    "assumptions": [
+      "Developer has Notion account and workspace",
+      "Using standard Notion OAuth 2.0 flow for public integrations"
+    ],
+    "basis": "observed"
+  },
+  "externalWait": {
+    "status": "none",
+    "publishedRange": "Instant activation for self-hosted OAuth integrations",
+    "sourceIds": ["src-notion-docs"]
+  },
+  "prerequisites": [
+    {
+      "id": "prq-notion-1",
+      "text": "Notion account with at least one active workspace",
+      "critical": true
+    }
+  ],
+  "steps": [
+    {
+      "id": "step-n-1",
+      "title": "Create Integration in Notion Developer Portal",
+      "owner": "developer",
+      "instructions": "Navigate to notion.so/my-integrations. Click 'New integration'. Name your integration, associate it with an associated workspace, and select type: 'Public' (for multi-workspace OAuth) or 'Internal'.",
+      "completionCheck": "Integration created with OAuth credentials visible.",
+      "claimIds": ["claim-n-1"]
+    },
+    {
+      "id": "step-n-2",
+      "title": "Configure Redirect URIs and Public Settings",
+      "owner": "developer",
+      "instructions": "In the 'Distribution' tab, toggle on 'Make integration public'. Fill in Company or Developer name, Website URL, Privacy Policy URL, and Redirect URIs (e.g. `https://app.example.com/api/auth/callback/notion`). Click 'Submit'.",
+      "completionCheck": "Client ID and Client Secret are displayed.",
+      "claimIds": ["claim-n-2"]
+    },
+    {
+      "id": "step-n-3",
+      "title": "Build Authorization URL with Required Parameters",
+      "owner": "developer",
+      "instructions": "Construct the authorization URL: `https://api.notion.com/v1/oauth/authorize?client_id={CLIENT_ID}&response_type=code&owner=user&redirect_uri={ENCODED_REDIRECT_URI}`. Redirect the user to this link.",
+      "completionCheck": "Notion permission consent screen displays to users.",
+      "claimIds": ["claim-n-3"]
+    },
+    {
+      "id": "step-n-4",
+      "title": "Exchange Authorization Code via HTTP POST",
+      "owner": "developer",
+      "instructions": "When Notion redirects back to your callback URL with `?code=...`, send an HTTP POST to `https://api.notion.com/v1/oauth/token` using Basic Auth header with base64(`client_id:client_secret`). Include body `{'grant_type': 'authorization_code', 'code': '...', 'redirect_uri': '...'}`.",
+      "completionCheck": "JSON response returns `access_token`, `workspace_id`, and `workspace_name`.",
+      "claimIds": ["claim-n-4"]
+    }
+  ],
+  "blockers": [
+    {
+      "id": "blk-n-1",
+      "title": "No Workspace Pages Visible By Default",
+      "description": "After successful OAuth connection, API calls may return empty results unless the user explicitly chose 'Select pages' in Notion's authorization prompt.",
+      "evidenceStatus": "documented",
+      "sourceIds": ["src-notion-docs"]
+    }
+  ],
+  "claims": [
+    {
+      "id": "claim-n-1",
+      "text": "Public integrations require completing developer website and privacy policy fields in the developer portal.",
+      "context": "Registration rules",
+      "evidenceStatus": "documented",
+      "critical": true,
+      "sourceIds": ["src-notion-docs"]
+    },
+    {
+      "id": "claim-n-2",
+      "text": "Redirect URIs must use HTTPS, except for http://localhost.",
+      "context": "Redirect verification",
+      "evidenceStatus": "documented",
+      "critical": true,
+      "sourceIds": ["src-notion-docs"]
+    },
+    {
+      "id": "claim-n-3",
+      "text": "Notion OAuth requires Basic HTTP Authorization header encoded with client_id:client_secret during code exchange.",
+      "context": "Token exchange",
+      "evidenceStatus": "observed_working",
+      "critical": true,
+      "sourceIds": ["src-notion-docs"]
+    },
+    {
+      "id": "claim-n-4",
+      "text": "Notion access tokens do not currently expire and do not require refresh tokens for public integrations.",
+      "context": "Token lifecycle",
+      "evidenceStatus": "documented",
+      "critical": false,
+      "sourceIds": ["src-notion-docs"]
+    }
+  ],
+  "sources": [
+    {
+      "id": "src-notion-docs",
+      "url": "https://developers.notion.com/docs/authorization",
+      "publisher": "Notion Developers",
+      "retrievedAt": "2026-11-07T12:00:00Z",
+      "contentHash": "sha256:8b45612f0e81c7402a5c20ef22e8055621379b3017a419df178f28c46ea48239",
+      "selectedPassages": [
+        "Public integrations use OAuth 2.0 to request access to Notion workspaces from users.",
+        "Users choose which pages to grant access to during the authorization flow."
+      ]
+    }
+  ]
+}
+

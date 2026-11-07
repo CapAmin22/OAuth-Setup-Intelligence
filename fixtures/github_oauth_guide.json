@@ -1,0 +1,133 @@
+{
+  "id": "gv-github-v1",
+  "providerId": "p-github",
+  "providerSlug": "github",
+  "providerName": "GitHub",
+  "version": 1,
+  "schemaVersion": "1.0",
+  "status": "published",
+  "intent": {
+    "capabilities": ["Read user profile", "Read repositories", "Create webhooks"],
+    "distribution": "external",
+    "environment": "web"
+  },
+  "checkedAt": "2026-11-07T12:00:00Z",
+  "limitations": [
+    "Legacy OAuth Apps grant broad, account-wide permissions. GitHub strongly recommends GitHub Apps for granular repository-level access control."
+  ],
+  "evidenceQuality": {
+    "score": 96,
+    "breakdown": {
+      "criticalClaimGrounding": 35,
+      "officialSourceCoverage": 25,
+      "completeness": 20,
+      "freshness": 8,
+      "consistency": 8
+    },
+    "missingEvidence": []
+  },
+  "effort": {
+    "lowMinutes": 15,
+    "highMinutes": 45,
+    "assumptions": [
+      "Developer has active GitHub account",
+      "Setting up standard GitHub App or OAuth App with read:user, repo scopes"
+    ],
+    "basis": "observed"
+  },
+  "externalWait": {
+    "status": "none",
+    "publishedRange": "Instant activation (no review required for standard public or private usage)",
+    "sourceIds": ["src-github-docs"]
+  },
+  "prerequisites": [
+    {
+      "id": "prq-gh-1",
+      "text": "GitHub user account with verified email address",
+      "critical": true
+    }
+  ],
+  "steps": [
+    {
+      "id": "step-gh-1",
+      "title": "Decide Between GitHub App vs OAuth App",
+      "owner": "developer",
+      "instructions": "Determine your architecture: Choose 'GitHub App' (recommended) for fine-grained repository permissions, bot accounts, and higher API rate limits (5,000/hr per installation). Choose 'OAuth App' only if you strictly need simple user identity federation without repo-specific management.",
+      "completionCheck": "Architectural path chosen.",
+      "claimIds": ["claim-gh-1"]
+    },
+    {
+      "id": "step-gh-2",
+      "title": "Register Application in Developer Settings",
+      "owner": "developer",
+      "instructions": "In GitHub, click your profile avatar > 'Settings' > 'Developer settings'. Click either 'GitHub Apps' or 'OAuth Apps' > 'New App'. Provide Application name, Homepage URL, and Authorization callback URL (e.g. `https://app.example.com/api/auth/callback/github`).",
+      "completionCheck": "App dashboard displays generated Client ID.",
+      "claimIds": ["claim-gh-2"]
+    },
+    {
+      "id": "step-gh-3",
+      "title": "Generate Client Secret",
+      "owner": "developer",
+      "instructions": "Under 'Client secrets', click 'Generate a new client secret'. Immediately copy the secret string into your secure environment configuration.",
+      "completionCheck": "Client secret generated and recorded.",
+      "claimIds": ["claim-gh-3"]
+    },
+    {
+      "id": "step-gh-4",
+      "title": "Configure Webhooks & Scopes (GitHub Apps)",
+      "owner": "developer",
+      "instructions": "If using a GitHub App, configure the Webhook URL and Webhook secret to receive asynchronous events (e.g. push, pull_request). Under 'Permissions & events', configure repository and account permissions.",
+      "completionCheck": "Webhook active and permissions saved.",
+      "claimIds": ["claim-gh-1"]
+    }
+  ],
+  "blockers": [
+    {
+      "id": "blk-gh-1",
+      "title": "Organization OAuth App Restrictions",
+      "description": "If your users belong to an organization with 'Third-party application access restrictions' enabled, an organization owner must grant approval before members can access organizational data.",
+      "evidenceStatus": "documented",
+      "sourceIds": ["src-github-docs"]
+    }
+  ],
+  "claims": [
+    {
+      "id": "claim-gh-1",
+      "text": "GitHub Apps offer fine-grained permissions per repository, whereas OAuth Apps grant permissions across all repositories accessible by the user.",
+      "context": "App architecture",
+      "evidenceStatus": "documented",
+      "critical": true,
+      "sourceIds": ["src-github-docs"]
+    },
+    {
+      "id": "claim-gh-2",
+      "text": "Callback URLs must be exact matches; wildcards are not permitted on GitHub OAuth registrations.",
+      "context": "Redirect verification",
+      "evidenceStatus": "documented",
+      "critical": true,
+      "sourceIds": ["src-github-docs"]
+    },
+    {
+      "id": "claim-gh-3",
+      "text": "Client secrets are only displayed once upon creation and cannot be retrieved later.",
+      "context": "Secret management",
+      "evidenceStatus": "documented",
+      "critical": true,
+      "sourceIds": ["src-github-docs"]
+    }
+  ],
+  "sources": [
+    {
+      "id": "src-github-docs",
+      "url": "https://docs.github.com/en/apps/creating-github-apps/about-creating-github-apps",
+      "publisher": "GitHub Docs",
+      "retrievedAt": "2026-11-07T11:30:00Z",
+      "contentHash": "sha256:3a76e2716182c161819bb2c5efc0d358bc725b88237b67035ab2912423ef9a8a",
+      "selectedPassages": [
+        "GitHub Apps are the officially recommended way to integrate with GitHub because they offer much more granular permissions.",
+        "No manual approval is required from GitHub to begin using your app with end users."
+      ]
+    }
+  ]
+}
+

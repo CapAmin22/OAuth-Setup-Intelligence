@@ -1,0 +1,157 @@
+{
+  "id": "gv-salesforce-v1",
+  "providerId": "p-salesforce",
+  "providerSlug": "salesforce",
+  "providerName": "Salesforce",
+  "version": 1,
+  "schemaVersion": "1.0",
+  "status": "published",
+  "intent": {
+    "capabilities": ["Access CRM records", "Manage leads & contacts", "REST API integration"],
+    "distribution": "external",
+    "environment": "web"
+  },
+  "checkedAt": "2026-11-07T12:00:00Z",
+  "limitations": [
+    "External client app creation requires System Administrator permissions in Salesforce Setup.",
+    "Connected Apps must use PKCE (Proof Key for Code Exchange) or client secrets; modern Salesforce instances mandate External Client Apps over legacy Connected Apps."
+  ],
+  "evidenceQuality": {
+    "score": 91,
+    "breakdown": {
+      "criticalClaimGrounding": 34,
+      "officialSourceCoverage": 25,
+      "completeness": 18,
+      "freshness": 7,
+      "consistency": 7
+    },
+    "missingEvidence": []
+  },
+  "effort": {
+    "lowMinutes": 30,
+    "highMinutes": 90,
+    "assumptions": [
+      "Developer has access to a Salesforce Developer Edition org with System Administrator profile",
+      "Using OAuth 2.0 Web Server Flow with PKCE"
+    ],
+    "basis": "observed"
+  },
+  "externalWait": {
+    "status": "none",
+    "publishedRange": "Instant activation (allow 2-10 minutes for global DNS replication across Salesforce login servers)",
+    "sourceIds": ["src-salesforce-docs"]
+  },
+  "prerequisites": [
+    {
+      "id": "prq-sf-1",
+      "text": "Salesforce Developer Edition or Sandbox org with System Administrator credentials",
+      "critical": true
+    }
+  ],
+  "steps": [
+    {
+      "id": "step-sf-1",
+      "title": "Navigate to App Manager in Setup",
+      "owner": "admin",
+      "instructions": "Log in to your Salesforce org. Click the gear icon in the top right > 'Setup'. In the Quick Find box on the left, type 'App Manager' and select it.",
+      "completionCheck": "Lightning Experience App Manager table appears.",
+      "claimIds": ["claim-sf-1"]
+    },
+    {
+      "id": "step-sf-2",
+      "title": "Create a New Connected App",
+      "owner": "admin",
+      "instructions": "Click 'New Connected App' (or 'New External Client App'). Provide Connected App Name, API Name, and Contact Email.",
+      "completionCheck": "Basic Information section is complete.",
+      "claimIds": ["claim-sf-1"]
+    },
+    {
+      "id": "step-sf-3",
+      "title": "Enable OAuth Settings & Callback URL",
+      "owner": "admin",
+      "instructions": "Check the box 'Enable OAuth Settings'. Enter your Callback URL (e.g. `https://app.example.com/api/auth/callback/salesforce`). Check 'Require PKCE' for enhanced security.",
+      "completionCheck": "OAuth settings enabled with valid callback URL.",
+      "claimIds": ["claim-sf-2"]
+    },
+    {
+      "id": "step-sf-4",
+      "title": "Select OAuth Scopes",
+      "owner": "developer",
+      "instructions": "In Selected OAuth Scopes, move 'Manage user data via APIs (api)' and 'Perform requests at any time (refresh_token, offline_access)' from Available to Selected. Click 'Save' and then 'Continue'.",
+      "completionCheck": "Scopes saved; notice shows 2-10 minute replication delay.",
+      "claimIds": ["claim-sf-3"]
+    },
+    {
+      "id": "step-sf-5",
+      "title": "Retrieve Consumer Key and Consumer Secret",
+      "owner": "developer",
+      "instructions": "Under 'API (Enable OAuth Settings)', click 'Manage Consumer Details'. Verify identity via SMS/email OTP. Copy the Consumer Key (Client ID) and Consumer Secret into your app configuration.",
+      "completionCheck": "Consumer key and secret copied to environment.",
+      "claimIds": ["claim-sf-4"]
+    }
+  ],
+  "blockers": [
+    {
+      "id": "blk-sf-1",
+      "title": "Propagation Delay on New Connected Apps",
+      "description": "Salesforce takes between 2 to 10 minutes to replicate newly created Connected Apps across all global login clusters. Immediate OAuth requests may fail with 'invalid_client_id'.",
+      "evidenceStatus": "documented",
+      "sourceIds": ["src-salesforce-docs"]
+    },
+    {
+      "id": "blk-sf-2",
+      "title": "IP Restrictions & Relax IP Settings",
+      "description": "By default, Salesforce policies may enforce 'Enforce IP restrictions'. Under 'Manage' > 'Edit Policies', set 'IP Relaxation' to 'Relax IP restrictions' if your server environment uses dynamic IPs.",
+      "evidenceStatus": "documented",
+      "sourceIds": ["src-salesforce-docs"]
+    }
+  ],
+  "claims": [
+    {
+      "id": "claim-sf-1",
+      "text": "Connected Apps and External Client Apps are the official mechanisms for integrating external applications with Salesforce via OAuth 2.0.",
+      "context": "App model",
+      "evidenceStatus": "documented",
+      "critical": true,
+      "sourceIds": ["src-salesforce-docs"]
+    },
+    {
+      "id": "claim-sf-2",
+      "text": "Salesforce supports PKCE (RFC 7636) and strongly recommends it for web server flows.",
+      "context": "OAuth flow security",
+      "evidenceStatus": "documented",
+      "critical": true,
+      "sourceIds": ["src-salesforce-docs"]
+    },
+    {
+      "id": "claim-sf-3",
+      "text": "The 'refresh_token, offline_access' scope is required to obtain long-lived refresh tokens.",
+      "context": "Token scope configuration",
+      "evidenceStatus": "documented",
+      "critical": true,
+      "sourceIds": ["src-salesforce-docs"]
+    },
+    {
+      "id": "claim-sf-4",
+      "text": "New Connected Apps can take 2 to 10 minutes to become active across all Salesforce authentication endpoints.",
+      "context": "Replication timing",
+      "evidenceStatus": "documented",
+      "critical": true,
+      "sourceIds": ["src-salesforce-docs"]
+    }
+  ],
+  "sources": [
+    {
+      "id": "src-salesforce-docs",
+      "url": "https://help.salesforce.com/s/articleView?id=sf.connected_app_create.htm&type=5",
+      "publisher": "Salesforce Help Documentation",
+      "retrievedAt": "2026-11-07T12:30:00Z",
+      "contentHash": "sha256:1a82e9955e4e892c5a2c20ef22e8055621379b3017a419df178f28c46ea48231",
+      "selectedPassages": [
+        "A connected app integrates an application with Salesforce using APIs.",
+        "Allow 2-10 minutes for your changes to take effect on the server before trying to connect."
+      ]
+    }
+  ]
+}
+

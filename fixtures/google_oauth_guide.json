@@ -1,0 +1,183 @@
+{
+  "id": "gv-google-v1",
+  "providerId": "p-google",
+  "providerSlug": "google",
+  "providerName": "Google",
+  "version": 1,
+  "schemaVersion": "1.0",
+  "status": "published",
+  "intent": {
+    "capabilities": ["Sign in with Google", "User profile info"],
+    "distribution": "external",
+    "environment": "web"
+  },
+  "checkedAt": "2026-11-07T12:00:00Z",
+  "limitations": [
+    "Unverified apps are restricted to 100 test users and display an 'unverified app' consent warning screen.",
+    "Restricted scopes (e.g. Gmail full access, Google Drive) mandate a third-party CASA security assessment costing $15k-$75k/year."
+  ],
+  "evidenceQuality": {
+    "score": 92,
+    "breakdown": {
+      "criticalClaimGrounding": 35,
+      "officialSourceCoverage": 25,
+      "completeness": 18,
+      "freshness": 8,
+      "consistency": 6
+    },
+    "missingEvidence": [
+      "Exact human review turnaround variance during global holiday quarters."
+    ]
+  },
+  "effort": {
+    "lowMinutes": 25,
+    "highMinutes": 90,
+    "assumptions": [
+      "Developer has existing Google Cloud account with active billing account linked",
+      "OAuth consent screen requires only non-sensitive scopes (openid, email, profile)"
+    ],
+    "basis": "observed"
+  },
+  "externalWait": {
+    "status": "known",
+    "publishedRange": "3 to 7 business days for verification",
+    "sourceIds": ["src-google-verify"]
+  },
+  "prerequisites": [
+    {
+      "id": "prq-1",
+      "text": "Google Cloud Console administrative access",
+      "critical": true
+    },
+    {
+      "id": "prq-2",
+      "text": "Verified domain ownership in Google Search Console (if publishing to production)",
+      "critical": false
+    }
+  ],
+  "steps": [
+    {
+      "id": "step-1",
+      "title": "Create a Google Cloud Project & Enable APIs",
+      "owner": "developer",
+      "instructions": "Navigate to the Google Cloud Console (console.cloud.google.com). In the top project selector dropdown, click 'New Project'. Provide a project name (e.g. 'My App OAuth') and click 'Create'. Once created, select the project from the notification bell.",
+      "completionCheck": "Project name appears in the top header breadcrumb.",
+      "claimIds": ["claim-g-1"]
+    },
+    {
+      "id": "step-2",
+      "title": "Configure OAuth Consent Screen",
+      "owner": "admin",
+      "instructions": "In the left navigation menu, go to 'APIs & Services' > 'OAuth consent screen'. Select User Type: 'External' (for multi-tenant/public users) or 'Internal' (Workspace users only). Enter App name, User support email, and Developer contact information. Click 'Save and Continue'.",
+      "completionCheck": "Consent screen status shows 'Testing' with user type configured.",
+      "claimIds": ["claim-g-2", "claim-g-3"]
+    },
+    {
+      "id": "step-3",
+      "title": "Select Scopes (Follow Least Privilege)",
+      "owner": "developer",
+      "instructions": "On the 'Scopes' step, click 'Add or Remove Scopes'. Select non-sensitive scopes needed: `.../auth/userinfo.email`, `.../auth/userinfo.profile`, `openid`. Do not select sensitive or restricted scopes unless mandatory for your core value proposition.",
+      "completionCheck": "Scopes list shows only non-sensitive classification.",
+      "claimIds": ["claim-g-4"]
+    },
+    {
+      "id": "step-4",
+      "title": "Add Test Users (Testing Phase)",
+      "owner": "developer",
+      "instructions": "While in 'Testing' mode, click 'Add Users' under the Test Users tab. Enter the Gmail or Google Workspace addresses of your developers/QA testers. Only these authorized accounts can sign in until verification or publishing.",
+      "completionCheck": "Test emails appear in the 'Test users' table.",
+      "claimIds": ["claim-g-3"]
+    },
+    {
+      "id": "step-5",
+      "title": "Create OAuth 2.0 Client ID Credentials",
+      "owner": "developer",
+      "instructions": "Navigate to 'APIs & Services' > 'Credentials' > 'Create Credentials' > 'OAuth client ID'. Select Application type: 'Web application'. Add your Authorized JavaScript origins (e.g. `http://localhost:3000`, `https://app.example.com`) and Authorized redirect URIs (e.g. `https://app.example.com/api/auth/callback/google`). Click 'Create'.",
+      "completionCheck": "Modal pops up showing your Client ID and Client Secret.",
+      "claimIds": ["claim-g-5"]
+    }
+  ],
+  "blockers": [
+    {
+      "id": "blk-g-1",
+      "title": "Google Consent Screen 'App Not Verified' Warning",
+      "description": "External apps requesting sensitive scopes show a deceptive red warning banner to end users unless they pass Google Brand & Scope Verification.",
+      "evidenceStatus": "documented",
+      "sourceIds": ["src-google-verify"]
+    },
+    {
+      "id": "blk-g-2",
+      "title": "Domain Verification Prerequisite",
+      "description": "Before Google approves an app branding logo or privacy policy URL, the root domain must be verified via DNS TXT record in Google Search Console under the same developer email.",
+      "evidenceStatus": "documented",
+      "sourceIds": ["src-google-verify"]
+    }
+  ],
+  "claims": [
+    {
+      "id": "claim-g-1",
+      "text": "Every OAuth client requires an active Google Cloud Project container.",
+      "context": "Project initialization",
+      "evidenceStatus": "documented",
+      "critical": true,
+      "sourceIds": ["src-google-docs"]
+    },
+    {
+      "id": "claim-g-2",
+      "text": "Internal user type restricts login to users inside your Google Workspace organization, bypassing external app verification.",
+      "context": "Consent screen configuration",
+      "evidenceStatus": "documented",
+      "critical": true,
+      "sourceIds": ["src-google-docs"]
+    },
+    {
+      "id": "claim-g-3",
+      "text": "Apps in Testing publishing status are capped at 100 designated test accounts.",
+      "context": "Testing limits",
+      "evidenceStatus": "documented",
+      "critical": false,
+      "sourceIds": ["src-google-verify"]
+    },
+    {
+      "id": "claim-g-4",
+      "text": "Email, profile, and openid scopes are classified as non-sensitive and do not require video submission or manual app review.",
+      "context": "Scope audit",
+      "evidenceStatus": "observed_working",
+      "critical": true,
+      "sourceIds": ["src-google-verify"]
+    },
+    {
+      "id": "claim-g-5",
+      "text": "Redirect URIs must match exact string characters including protocol, trailing slash, and port in development.",
+      "context": "Credential registration",
+      "evidenceStatus": "documented",
+      "critical": true,
+      "sourceIds": ["src-google-docs"]
+    }
+  ],
+  "sources": [
+    {
+      "id": "src-google-docs",
+      "url": "https://developers.google.com/identity/protocols/oauth2/web-server",
+      "publisher": "Google Identity Platform",
+      "retrievedAt": "2026-11-07T10:00:00Z",
+      "contentHash": "sha256:7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069",
+      "selectedPassages": [
+        "To use OAuth 2.0 in your application, you need an API console project to obtain OAuth 2.0 credentials and create a client ID.",
+        "Redirect URIs are the endpoints to which the OAuth 2.0 server can send responses."
+      ]
+    },
+    {
+      "id": "src-google-verify",
+      "url": "https://support.google.com/cloud/answer/9110914",
+      "publisher": "Google Cloud Support Documentation",
+      "retrievedAt": "2026-11-07T10:30:00Z",
+      "contentHash": "sha256:4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a",
+      "selectedPassages": [
+        "Unverified apps face quota restrictions and display an unverified app screen to users before authorization.",
+        "Brand verification reviews typically conclude within 3-7 business days."
+      ]
+    }
+  ]
+}
+
