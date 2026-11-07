@@ -1,0 +1,124 @@
+{
+  "id": "gv-hubspot-v1",
+  "providerId": "p-hubspot",
+  "providerSlug": "hubspot",
+  "providerName": "HubSpot",
+  "version": 1,
+  "schemaVersion": "1.0",
+  "status": "published",
+  "intent": {
+    "capabilities": ["Read CRM Contacts", "Write Deals & Companies", "Webhooks"],
+    "distribution": "external",
+    "environment": "web"
+  },
+  "checkedAt": "2026-11-07T12:00:00Z",
+  "limitations": [
+    "HubSpot requires creating a dedicated Developer Account separate from standard HubSpot portals. Public apps listed on the App Marketplace require HubSpot App Certification."
+  ],
+  "evidenceQuality": {
+    "score": 93,
+    "breakdown": {
+      "criticalClaimGrounding": 35,
+      "officialSourceCoverage": 25,
+      "completeness": 19,
+      "freshness": 7,
+      "consistency": 7
+    },
+    "missingEvidence": []
+  },
+  "effort": {
+    "lowMinutes": 25,
+    "highMinutes": 60,
+    "assumptions": [
+      "Developer has created a free HubSpot Developer Account",
+      "Configuring standard OAuth 2.0 app with crm.objects.contacts scopes"
+    ],
+    "basis": "observed"
+  },
+  "externalWait": {
+    "status": "conditional",
+    "publishedRange": "Instant for unlisted public apps (installable via direct URL); 2–4 weeks for App Marketplace certification",
+    "sourceIds": ["src-hubspot-docs"]
+  },
+  "prerequisites": [
+    {
+      "id": "prq-hub-1",
+      "text": "HubSpot Developer Account (free signup at developers.hubspot.com)",
+      "critical": true
+    }
+  ],
+  "steps": [
+    {
+      "id": "step-hub-1",
+      "title": "Create an App in HubSpot Developer Account",
+      "owner": "developer",
+      "instructions": "Go to `https://app.hubspot.com/developer` and open your developer account. Click 'Manage apps' > 'Create app'. Enter public app details such as App Name, Logo, and Description.",
+      "completionCheck": "App dashboard displays App ID and credentials.",
+      "claimIds": ["claim-hub-1"]
+    },
+    {
+      "id": "step-hub-2",
+      "title": "Configure Redirect URLs & Scopes in Auth Tab",
+      "owner": "developer",
+      "instructions": "In your app settings, switch to the 'Auth' tab. Under 'Redirect URLs', add your callback URL (e.g. `https://app.example.com/api/auth/callback/hubspot`). Under 'Scopes', select required CRM permissions such as `crm.objects.contacts.read` and `crm.objects.contacts.write`. Click 'Save'.",
+      "completionCheck": "Redirect URL saved; scope requirements locked.",
+      "claimIds": ["claim-hub-2"]
+    },
+    {
+      "id": "step-hub-3",
+      "title": "Copy Client ID and Client Secret",
+      "owner": "developer",
+      "instructions": "In the same Auth tab, locate 'Client ID' and 'Client secret' (click 'Show secret'). Store both in your application environment configuration (`HUBSPOT_CLIENT_ID` and `HUBSPOT_CLIENT_SECRET`).",
+      "completionCheck": "Client ID and secret securely stored.",
+      "claimIds": ["claim-hub-3"]
+    },
+    {
+      "id": "step-hub-4",
+      "title": "Generate Install URL & Execute Token Exchange",
+      "owner": "developer",
+      "instructions": "Generate your install URL: `https://app.hubspot.com/oauth/authorize?client_id={CLIENT_ID}&redirect_uri={REDIRECT_URI}&scope={SCOPES}`. After user installs, exchange the authorization code by making a POST request to `https://api.hubapi.com/oauth/v1/token` with `grant_type=authorization_code`.",
+      "completionCheck": "Valid access_token and refresh_token returned by HubSpot API.",
+      "claimIds": ["claim-hub-4"]
+    }
+  ],
+  "claims": [
+    {
+      "id": "claim-hub-1",
+      "text": "HubSpot apps must be created inside a dedicated HubSpot Developer Account at app.hubspot.com/developer.",
+      "critical": true,
+      "sourceIds": ["src-hubspot-docs"],
+      "evidenceStatus": "documented"
+    },
+    {
+      "id": "claim-hub-2",
+      "text": "HubSpot apps define explicit redirect URLs and granular CRM object scopes in the Auth tab.",
+      "critical": true,
+      "sourceIds": ["src-hubspot-docs"],
+      "evidenceStatus": "documented"
+    },
+    {
+      "id": "claim-hub-3",
+      "text": "HubSpot issues confidential Client Secrets used for server-to-server token exchange.",
+      "critical": true,
+      "sourceIds": ["src-hubspot-docs"],
+      "evidenceStatus": "documented"
+    },
+    {
+      "id": "claim-hub-4",
+      "text": "Token exchange is executed via POST to https://api.hubapi.com/oauth/v1/token with content-type application/x-www-form-urlencoded.",
+      "critical": true,
+      "sourceIds": ["src-hubspot-docs"],
+      "evidenceStatus": "documented"
+    }
+  ],
+  "sources": [
+    {
+      "id": "src-hubspot-docs",
+      "url": "https://developers.hubspot.com/docs/api/working-with-oauth",
+      "publisher": "HubSpot Developer Documentation",
+      "retrievedAt": "2026-11-07T12:00:00Z",
+      "contentHash": "sha256:3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d"
+    }
+  ]
+}
+

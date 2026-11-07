@@ -499,6 +499,51 @@ VALUES
     ARRAY['developers.notion.com'],
     TRUE,
     'https://www.notion.so/images/favicon.ico'
+  ),
+  (
+    'discord',
+    'Discord',
+    'discord.com',
+    ARRAY['discord bot', 'discord api', 'discord oauth'],
+    ARRAY['discord.com/developers/docs'],
+    TRUE,
+    'https://discord.com/favicon.ico'
+  ),
+  (
+    'spotify',
+    'Spotify',
+    'spotify.com',
+    ARRAY['spotify web api', 'spotify pkce', 'spotify oauth'],
+    ARRAY['developer.spotify.com'],
+    TRUE,
+    'https://developer.spotify.com/favicon.ico'
+  ),
+  (
+    'linear',
+    'Linear',
+    'linear.app',
+    ARRAY['linear api', 'linear app', 'linear oauth'],
+    ARRAY['developers.linear.app'],
+    TRUE,
+    'https://linear.app/favicon.ico'
+  ),
+  (
+    'hubspot',
+    'HubSpot',
+    'hubspot.com',
+    ARRAY['hubspot api', 'hubspot crm', 'hubspot oauth'],
+    ARRAY['developers.hubspot.com'],
+    TRUE,
+    'https://static.hsappstatic.net/StyleGuideUI/static-1.428/img/sprocket-favicon.ico'
+  ),
+  (
+    'zoom',
+    'Zoom',
+    'zoom.us',
+    ARRAY['zoom marketplace', 'zoom api', 'zoom oauth'],
+    ARRAY['developers.zoom.us'],
+    TRUE,
+    'https://marketplace.zoom.us/favicon.ico'
   )
 ON CONFLICT (slug) DO UPDATE
 SET

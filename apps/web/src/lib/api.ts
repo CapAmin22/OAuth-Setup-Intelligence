@@ -7,6 +7,11 @@ import slackFixture from '../../../../fixtures/slack_oauth_guide.json';
 import githubFixture from '../../../../fixtures/github_oauth_guide.json';
 import notionFixture from '../../../../fixtures/notion_oauth_guide.json';
 import salesforceFixture from '../../../../fixtures/salesforce_oauth_guide.json';
+import discordFixture from '../../../../fixtures/discord_oauth_guide.json';
+import spotifyFixture from '../../../../fixtures/spotify_oauth_guide.json';
+import linearFixture from '../../../../fixtures/linear_oauth_guide.json';
+import hubspotFixture from '../../../../fixtures/hubspot_oauth_guide.json';
+import zoomFixture from '../../../../fixtures/zoom_oauth_guide.json';
 
 const CUSTOM_GUIDES_KEY = 'oauth_custom_guides';
 const CUSTOM_PROVIDERS_KEY = 'oauth_custom_providers';
@@ -17,14 +22,24 @@ const FALLBACK_GUIDES: Record<string, GuideVersion> = {
   github: githubFixture as unknown as GuideVersion,
   notion: notionFixture as unknown as GuideVersion,
   salesforce: salesforceFixture as unknown as GuideVersion,
+  discord: discordFixture as unknown as GuideVersion,
+  spotify: spotifyFixture as unknown as GuideVersion,
+  linear: linearFixture as unknown as GuideVersion,
+  hubspot: hubspotFixture as unknown as GuideVersion,
+  zoom: zoomFixture as unknown as GuideVersion,
 };
 
 const FALLBACK_PROVIDERS: Provider[] = [
-  { id: 'p-google', slug: 'google', displayName: 'Google', isCurated: true, canonicalDomain: 'accounts.google.com', aliases: ['google identity'], officialDomains: ['developers.google.com'], createdAt: '2026-11-07T00:00:00Z', logoUrl: 'https://www.google.com/favicon.ico' },
-  { id: 'p-slack', slug: 'slack', displayName: 'Slack', isCurated: true, canonicalDomain: 'slack.com', aliases: ['slack api'], officialDomains: ['api.slack.com'], createdAt: '2026-11-07T00:00:00Z', logoUrl: 'https://a.slack-edge.com/80588/marketing/img/meta/favicon-32.png' },
-  { id: 'p-github', slug: 'github', displayName: 'GitHub', isCurated: true, canonicalDomain: 'github.com', aliases: ['gh'], officialDomains: ['docs.github.com'], createdAt: '2026-11-07T00:00:00Z', logoUrl: 'https://github.githubassets.com/favicons/favicon.svg' },
-  { id: 'p-notion', slug: 'notion', displayName: 'Notion', isCurated: true, canonicalDomain: 'api.notion.com', aliases: ['notion api'], officialDomains: ['developers.notion.com'], createdAt: '2026-11-07T00:00:00Z', logoUrl: 'https://www.notion.so/images/favicon.ico' },
-  { id: 'p-salesforce', slug: 'salesforce', displayName: 'Salesforce', isCurated: true, canonicalDomain: 'login.salesforce.com', aliases: ['sfdc'], officialDomains: ['developer.salesforce.com'], createdAt: '2026-11-07T00:00:00Z', logoUrl: 'https://www.salesforce.com/favicon.ico' },
+  { id: 'p-google', slug: 'google', displayName: 'Google', isCurated: true, canonicalDomain: 'accounts.google.com', aliases: ['google identity', 'gsuite'], officialDomains: ['developers.google.com'], createdAt: '2026-11-07T00:00:00Z', logoUrl: 'https://www.google.com/favicon.ico' },
+  { id: 'p-slack', slug: 'slack', displayName: 'Slack', isCurated: true, canonicalDomain: 'slack.com', aliases: ['slack api', 'slack bot'], officialDomains: ['api.slack.com'], createdAt: '2026-11-07T00:00:00Z', logoUrl: 'https://a.slack-edge.com/80588/marketing/img/meta/favicon-32.png' },
+  { id: 'p-github', slug: 'github', displayName: 'GitHub', isCurated: true, canonicalDomain: 'github.com', aliases: ['gh', 'github apps'], officialDomains: ['docs.github.com'], createdAt: '2026-11-07T00:00:00Z', logoUrl: 'https://github.githubassets.com/favicons/favicon.svg' },
+  { id: 'p-notion', slug: 'notion', displayName: 'Notion', isCurated: true, canonicalDomain: 'api.notion.com', aliases: ['notion api', 'notion integrations'], officialDomains: ['developers.notion.com'], createdAt: '2026-11-07T00:00:00Z', logoUrl: 'https://www.notion.so/images/favicon.ico' },
+  { id: 'p-salesforce', slug: 'salesforce', displayName: 'Salesforce', isCurated: true, canonicalDomain: 'login.salesforce.com', aliases: ['sfdc', 'connected apps'], officialDomains: ['developer.salesforce.com'], createdAt: '2026-11-07T00:00:00Z', logoUrl: 'https://www.salesforce.com/favicon.ico' },
+  { id: 'p-discord', slug: 'discord', displayName: 'Discord', isCurated: true, canonicalDomain: 'discord.com', aliases: ['discord bot', 'discord api'], officialDomains: ['discord.com/developers/docs'], createdAt: '2026-11-07T00:00:00Z', logoUrl: 'https://discord.com/favicon.ico' },
+  { id: 'p-spotify', slug: 'spotify', displayName: 'Spotify', isCurated: true, canonicalDomain: 'spotify.com', aliases: ['spotify web api', 'spotify pkce'], officialDomains: ['developer.spotify.com'], createdAt: '2026-11-07T00:00:00Z', logoUrl: 'https://developer.spotify.com/favicon.ico' },
+  { id: 'p-linear', slug: 'linear', displayName: 'Linear', isCurated: true, canonicalDomain: 'linear.app', aliases: ['linear api', 'linear app'], officialDomains: ['developers.linear.app'], createdAt: '2026-11-07T00:00:00Z', logoUrl: 'https://linear.app/favicon.ico' },
+  { id: 'p-hubspot', slug: 'hubspot', displayName: 'HubSpot', isCurated: true, canonicalDomain: 'hubspot.com', aliases: ['hubspot api', 'hubspot crm'], officialDomains: ['developers.hubspot.com'], createdAt: '2026-11-07T00:00:00Z', logoUrl: 'https://static.hsappstatic.net/StyleGuideUI/static-1.428/img/sprocket-favicon.ico' },
+  { id: 'p-zoom', slug: 'zoom', displayName: 'Zoom', isCurated: true, canonicalDomain: 'zoom.us', aliases: ['zoom marketplace', 'zoom api'], officialDomains: ['developers.zoom.us'], createdAt: '2026-11-07T00:00:00Z', logoUrl: 'https://marketplace.zoom.us/favicon.ico' },
 ];
 
 function getLocalProviders(): Provider[] {

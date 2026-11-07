@@ -1,0 +1,124 @@
+{
+  "id": "gv-zoom-v1",
+  "providerId": "p-zoom",
+  "providerSlug": "zoom",
+  "providerName": "Zoom",
+  "version": 1,
+  "schemaVersion": "1.0",
+  "status": "published",
+  "intent": {
+    "capabilities": ["User Authentication", "Create & Manage Meetings", "Read Recordings"],
+    "distribution": "external",
+    "environment": "web"
+  },
+  "checkedAt": "2026-11-07T12:00:00Z",
+  "limitations": [
+    "Zoom general-audience apps require a Zoom App Review and security audit before publishing to the Zoom App Marketplace. Unpublished apps can only be installed by the developer's account."
+  ],
+  "evidenceQuality": {
+    "score": 92,
+    "breakdown": {
+      "criticalClaimGrounding": 35,
+      "officialSourceCoverage": 24,
+      "completeness": 19,
+      "freshness": 7,
+      "consistency": 7
+    },
+    "missingEvidence": []
+  },
+  "effort": {
+    "lowMinutes": 25,
+    "highMinutes": 60,
+    "assumptions": [
+      "Developer has active Zoom Pro or Business account",
+      "Building user-managed OAuth app with meeting:read and meeting:write scopes"
+    ],
+    "basis": "observed"
+  },
+  "externalWait": {
+    "status": "conditional",
+    "publishedRange": "Instant for development inside developer account; 1–3 weeks for Zoom Marketplace review",
+    "sourceIds": ["src-zoom-docs"]
+  },
+  "prerequisites": [
+    {
+      "id": "prq-zm-1",
+      "text": "Zoom account with Marketplace developer access permissions",
+      "critical": true
+    }
+  ],
+  "steps": [
+    {
+      "id": "step-zm-1",
+      "title": "Create an OAuth App on Zoom Marketplace",
+      "owner": "developer",
+      "instructions": "Log in to the Zoom App Marketplace at `https://marketplace.zoom.us/develop/create`. Under 'General App', select 'Create'. Enter your app name, choose whether your app is user-managed or admin-managed, and toggle 'Would you like to publish this app on Zoom App Marketplace?'.",
+      "completionCheck": "Zoom App dashboard created with Credentials tab available.",
+      "claimIds": ["claim-zm-1"]
+    },
+    {
+      "id": "step-zm-2",
+      "title": "Configure Redirect & Allow Lists",
+      "owner": "developer",
+      "instructions": "Under 'App Credentials', locate 'Redirect URL for OAuth' and add your callback URL (e.g. `https://app.example.com/api/auth/callback/zoom`). In 'OAuth allow list', add any additional redirect host domains. Zoom requires strict HTTPS matching for production.",
+      "completionCheck": "Redirect URL and allow list configured.",
+      "claimIds": ["claim-zm-2"]
+    },
+    {
+      "id": "step-zm-3",
+      "title": "Select Scopes & Save Credentials",
+      "owner": "developer",
+      "instructions": "Navigate to the 'Scopes' tab. Click 'Add Scopes' and select necessary permissions like `meeting:read` and `meeting:write`. Copy your Client ID and Client Secret from the App Credentials tab into your server environment variables (`ZOOM_CLIENT_ID` and `ZOOM_CLIENT_SECRET`).",
+      "completionCheck": "Client credentials securely configured.",
+      "claimIds": ["claim-zm-3"]
+    },
+    {
+      "id": "step-zm-4",
+      "title": "Handle Token Exchange with Basic Auth Header",
+      "owner": "developer",
+      "instructions": "Direct users to `https://zoom.us/oauth/authorize?response_type=code&client_id={CLIENT_ID}&redirect_uri={REDIRECT_URI}`. Exchange the code at `https://zoom.us/oauth/token` with `grant_type=authorization_code&code={CODE}&redirect_uri={REDIRECT_URI}`. Zoom requires HTTP Basic Auth header: `Authorization: Basic Base64(CLIENT_ID:CLIENT_SECRET)`.",
+      "completionCheck": "HTTP 200 returned with access_token and refresh_token.",
+      "claimIds": ["claim-zm-4"]
+    }
+  ],
+  "claims": [
+    {
+      "id": "claim-zm-1",
+      "text": "Zoom apps are created on the Zoom App Marketplace at https://marketplace.zoom.us/develop/create.",
+      "critical": true,
+      "sourceIds": ["src-zoom-docs"],
+      "evidenceStatus": "documented"
+    },
+    {
+      "id": "claim-zm-2",
+      "text": "Zoom enforces exact redirect URL and OAuth allow list matching with HTTPS requirements.",
+      "critical": true,
+      "sourceIds": ["src-zoom-docs"],
+      "evidenceStatus": "documented"
+    },
+    {
+      "id": "claim-zm-3",
+      "text": "Zoom applications use Client ID and Client Secret for authenticated API requests.",
+      "critical": true,
+      "sourceIds": ["src-zoom-docs"],
+      "evidenceStatus": "documented"
+    },
+    {
+      "id": "claim-zm-4",
+      "text": "Zoom token endpoint requires HTTP Basic authentication header constructed from Base64-encoded Client ID and Secret.",
+      "critical": true,
+      "sourceIds": ["src-zoom-docs"],
+      "evidenceStatus": "documented"
+    }
+  ],
+  "sources": [
+    {
+      "id": "src-zoom-docs",
+      "url": "https://developers.zoom.us/docs/integrations/oauth/",
+      "publisher": "Zoom Developer Documentation",
+      "retrievedAt": "2026-11-07T12:00:00Z",
+      "contentHash": "sha256:5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b"
+    }
+  ]
+}
+

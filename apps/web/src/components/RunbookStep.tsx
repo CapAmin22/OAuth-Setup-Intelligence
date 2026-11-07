@@ -5,12 +5,30 @@ import { Step } from '../types';
 interface RunbookStepProps {
   step: Step;
   index: number;
+  isCompleted?: boolean;
+  onToggle?: () => void;
   onClaimClick?: (claimId: string) => void;
 }
 
-export const RunbookStep: React.FC<RunbookStepProps> = ({ step, index, onClaimClick }) => {
-  const [completed, setCompleted] = useState(false);
+export const RunbookStep: React.FC<RunbookStepProps> = ({
+  step,
+  index,
+  isCompleted: externalCompleted,
+  onToggle,
+  onClaimClick,
+}) => {
+  const [internalCompleted, setInternalCompleted] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const completed = externalCompleted !== undefined ? externalCompleted : internalCompleted;
+
+  const handleToggle = () => {
+    if (onToggle) {
+      onToggle();
+    } else {
+      setInternalCompleted(!internalCompleted);
+    }
+  };
 
   const copyInstructions = () => {
     navigator.clipboard.writeText(step.instructions);
@@ -27,10 +45,10 @@ export const RunbookStep: React.FC<RunbookStepProps> = ({ step, index, onClaimCl
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3.5">
           <button
-            onClick={() => setCompleted(!completed)}
+            onClick={handleToggle}
             className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 transition-all ${
               completed
-                ? 'bg-emerald-600 text-white'
+                ? 'bg-emerald-600 text-white shadow-xs'
                 : 'bg-sand-100 border border-sand-300 text-sand-700 hover:border-amber-600'
             }`}
             title={completed ? 'Mark incomplete' : 'Mark completed'}

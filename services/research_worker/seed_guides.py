@@ -44,8 +44,26 @@ def seed():
 
         slug = data["providerSlug"]
         if slug not in slug_to_id:
-            print(f"Skipping {slug} (provider not found in DB)")
-            continue
+            # Auto-provision provider in database
+            prov_payload = {
+                "slug": slug,
+                "display_name": data["providerName"],
+                "canonical_domain": data.get("canonicalDomain", f"{slug}.com"),
+                "is_curated": True,
+                "logo_url": f"https://{slug}.com/favicon.ico"
+            }
+            try:
+                new_p = request("providers", method="POST", body=prov_payload)
+                if new_p:
+                    provider_id = new_p[0]["id"]
+                    slug_to_id[slug] = provider_id
+                    print(f"[OK] Provisioned provider {slug} (ID: {provider_id})")
+                else:
+                    print(f"Skipping {slug} (could not provision provider)")
+                    continue
+            except Exception as e:
+                print(f"Failed to provision provider {slug}: {e}")
+                continue
 
         provider_id = slug_to_id[slug]
 
@@ -93,12 +111,15 @@ def seed():
             request(f"claims?guide_version_id=eq.{guide_id}", method="DELETE")
             claim_records = []
             for c in data.get("claims", []):
+                ev_status = c.get("evidenceStatus", "documented")
+                if ev_status not in ['documented', 'attempted', 'observed_working', 'estimated', 'unknown']:
+                    ev_status = 'documented'
                 claim_records.append({
                     "guide_version_id": guide_id,
                     "claim_ref": c.get("id", "claim"),
                     "text": c["text"],
                     "context": c.get("context"),
-                    "evidence_status": c.get("evidenceStatus", "documented"),
+                    "evidence_status": ev_status,
                     "critical": c.get("critical", False)
                 })
             if claim_records:

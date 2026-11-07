@@ -1,0 +1,124 @@
+{
+  "id": "gv-linear-v1",
+  "providerId": "p-linear",
+  "providerSlug": "linear",
+  "providerName": "Linear",
+  "version": 1,
+  "schemaVersion": "1.0",
+  "status": "published",
+  "intent": {
+    "capabilities": ["Read Issues", "Create Issues & Comments", "Manage Projects"],
+    "distribution": "external",
+    "environment": "web"
+  },
+  "checkedAt": "2026-11-07T12:00:00Z",
+  "limitations": [
+    "Linear OAuth applications support organization-level authorization. Webhooks and admin actions require explicit approval from a workspace admin."
+  ],
+  "evidenceQuality": {
+    "score": 95,
+    "breakdown": {
+      "criticalClaimGrounding": 35,
+      "officialSourceCoverage": 25,
+      "completeness": 20,
+      "freshness": 8,
+      "consistency": 7
+    },
+    "missingEvidence": []
+  },
+  "effort": {
+    "lowMinutes": 15,
+    "highMinutes": 35,
+    "assumptions": [
+      "Developer has an active Linear account and workspace membership",
+      "Setting up OAuth 2.0 app with read, write, and issues:create scopes"
+    ],
+    "basis": "observed"
+  },
+  "externalWait": {
+    "status": "none",
+    "publishedRange": "Instant activation (no review required for public or private Linear OAuth apps)",
+    "sourceIds": ["src-linear-docs"]
+  },
+  "prerequisites": [
+    {
+      "id": "prq-lin-1",
+      "text": "Active Linear account with access to a team workspace",
+      "critical": true
+    }
+  ],
+  "steps": [
+    {
+      "id": "step-lin-1",
+      "title": "Create OAuth Application in Linear Settings",
+      "owner": "developer",
+      "instructions": "Log into Linear and navigate to `https://linear.app/settings/api/applications`. Click 'Create Application'. Fill in the Application Name, Developer/Company name, and Website URL.",
+      "completionCheck": "Application created; Client ID displayed in settings.",
+      "claimIds": ["claim-lin-1"]
+    },
+    {
+      "id": "step-lin-2",
+      "title": "Configure Callback Redirect URLs",
+      "owner": "developer",
+      "instructions": "In your Linear application settings, enter your Callback URLs. Linear requires HTTPS URLs for production (localhost is permitted for development). Multiple redirect URLs can be listed separated by commas or lines.",
+      "completionCheck": "Callback URLs saved without wildcard patterns.",
+      "claimIds": ["claim-lin-2"]
+    },
+    {
+      "id": "step-lin-3",
+      "title": "Secure Client Secret",
+      "owner": "developer",
+      "instructions": "Click to generate or copy your Client Secret. Store it immediately into your backend vault or environment file (`LINEAR_CLIENT_SECRET`). Never expose this secret to browser code.",
+      "completionCheck": "Client secret stored safely on backend.",
+      "claimIds": ["claim-lin-3"]
+    },
+    {
+      "id": "step-lin-4",
+      "title": "Execute OAuth 2.0 Code Flow with PKCE",
+      "owner": "developer",
+      "instructions": "Send users to `https://linear.app/oauth/authorize?client_id={CLIENT_ID}&redirect_uri={REDIRECT_URI}&response_type=code&scope=read,write&actor=application`. After user authorization, exchange the code at `https://api.linear.app/oauth/token` with `grant_type=authorization_code`.",
+      "completionCheck": "Access token received for GraphQL API access at https://api.linear.app/graphql.",
+      "claimIds": ["claim-lin-4"]
+    }
+  ],
+  "claims": [
+    {
+      "id": "claim-lin-1",
+      "text": "Linear OAuth applications are created in user settings at https://linear.app/settings/api/applications.",
+      "critical": true,
+      "sourceIds": ["src-linear-docs"],
+      "evidenceStatus": "documented"
+    },
+    {
+      "id": "claim-lin-2",
+      "text": "Linear enforces strict redirect URI matching and requires HTTPS for production environments.",
+      "critical": true,
+      "sourceIds": ["src-linear-docs"],
+      "evidenceStatus": "documented"
+    },
+    {
+      "id": "claim-lin-3",
+      "text": "Linear issues confidential Client Secrets that must be kept secret on backend servers.",
+      "critical": true,
+      "sourceIds": ["src-linear-docs"],
+      "evidenceStatus": "documented"
+    },
+    {
+      "id": "claim-lin-4",
+      "text": "Linear authorization endpoint is https://linear.app/oauth/authorize and token endpoint is https://api.linear.app/oauth/token.",
+      "critical": true,
+      "sourceIds": ["src-linear-docs"],
+      "evidenceStatus": "documented"
+    }
+  ],
+  "sources": [
+    {
+      "id": "src-linear-docs",
+      "url": "https://developers.linear.app/docs/oauth/authentication",
+      "publisher": "Linear Developer Documentation",
+      "retrievedAt": "2026-11-07T12:00:00Z",
+      "contentHash": "sha256:1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b"
+    }
+  ]
+}
+

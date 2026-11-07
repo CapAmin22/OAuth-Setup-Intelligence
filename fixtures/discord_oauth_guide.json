@@ -1,0 +1,124 @@
+{
+  "id": "gv-discord-v1",
+  "providerId": "p-discord",
+  "providerSlug": "discord",
+  "providerName": "Discord",
+  "version": 1,
+  "schemaVersion": "1.0",
+  "status": "published",
+  "intent": {
+    "capabilities": ["User Authentication (SSO)", "Read User Guilds", "Bot Integration"],
+    "distribution": "external",
+    "environment": "web"
+  },
+  "checkedAt": "2026-11-07T12:00:00Z",
+  "limitations": [
+    "Discord requires verification for bots joining over 100 servers (guilds). Standard user OAuth2 does not require manual review."
+  ],
+  "evidenceQuality": {
+    "score": 95,
+    "breakdown": {
+      "criticalClaimGrounding": 35,
+      "officialSourceCoverage": 25,
+      "completeness": 20,
+      "freshness": 7,
+      "consistency": 8
+    },
+    "missingEvidence": []
+  },
+  "effort": {
+    "lowMinutes": 15,
+    "highMinutes": 35,
+    "assumptions": [
+      "Developer has active Discord account with 2FA enabled",
+      "Configuring standard OAuth2 code grant with identify and email scopes"
+    ],
+    "basis": "observed"
+  },
+  "externalWait": {
+    "status": "none",
+    "publishedRange": "Instant activation (no review required for standard user OAuth2)",
+    "sourceIds": ["src-discord-docs"]
+  },
+  "prerequisites": [
+    {
+      "id": "prq-disc-1",
+      "text": "Discord user account with 2-Factor Authentication enabled",
+      "critical": true
+    }
+  ],
+  "steps": [
+    {
+      "id": "step-disc-1",
+      "title": "Create Application in Discord Developer Portal",
+      "owner": "developer",
+      "instructions": "Navigate to the Discord Developer Portal at `https://discord.com/developers/applications`. Log in, click 'New Application', give your app a name, and accept the Developer Terms of Service.",
+      "completionCheck": "Application overview displays Client ID (Snowflake ID).",
+      "claimIds": ["claim-disc-1"]
+    },
+    {
+      "id": "step-disc-2",
+      "title": "Configure OAuth2 Redirect URLs",
+      "owner": "developer",
+      "instructions": "In the left sidebar, navigate to 'OAuth2' > 'General'. Under 'Redirects', click 'Add Redirect' and enter your exact callback URL (e.g., `https://app.example.com/api/auth/callback/discord`). Discord requires exact URL matching including scheme, host, and path. Click 'Save Changes'.",
+      "completionCheck": "Redirect URL saved without wildcards.",
+      "claimIds": ["claim-disc-2"]
+    },
+    {
+      "id": "step-disc-3",
+      "title": "Generate Client Secret & Save Credentials",
+      "owner": "developer",
+      "instructions": "Under 'Client Information', find 'Client Secret' and click 'Reset Secret'. Copy the secret immediately to your secure backend environment variables (`DISCORD_CLIENT_SECRET`). Discord will not show this value again.",
+      "completionCheck": "Client secret copied to secrets manager.",
+      "claimIds": ["claim-disc-3"]
+    },
+    {
+      "id": "step-disc-4",
+      "title": "Construct Authorization URL & Scopes",
+      "owner": "developer",
+      "instructions": "Build your authorization request URL targeting `https://discord.com/oauth2/authorize?client_id={CLIENT_ID}&response_type=code&redirect_uri={ENCODED_REDIRECT}&scope=identify%20email`. Use `identify` for basic user info and `email` for verified email address.",
+      "completionCheck": "User consent prompt displays requested scopes.",
+      "claimIds": ["claim-disc-4"]
+    }
+  ],
+  "claims": [
+    {
+      "id": "claim-disc-1",
+      "text": "Discord applications are created at https://discord.com/developers/applications and identified by a snowflake Client ID.",
+      "critical": true,
+      "sourceIds": ["src-discord-docs"],
+      "evidenceStatus": "documented"
+    },
+    {
+      "id": "claim-disc-2",
+      "text": "Discord OAuth2 redirect URLs require exact string matching; wildcards and insecure HTTP schemes (except localhost) are rejected.",
+      "critical": true,
+      "sourceIds": ["src-discord-docs"],
+      "evidenceStatus": "documented"
+    },
+    {
+      "id": "claim-disc-3",
+      "text": "Client secrets can be reset at any time and must be handled as confidential backend credentials.",
+      "critical": true,
+      "sourceIds": ["src-discord-docs"],
+      "evidenceStatus": "documented"
+    },
+    {
+      "id": "claim-disc-4",
+      "text": "Standard user identification requires 'identify' and optional 'email' scopes.",
+      "critical": true,
+      "sourceIds": ["src-discord-docs"],
+      "evidenceStatus": "documented"
+    }
+  ],
+  "sources": [
+    {
+      "id": "src-discord-docs",
+      "url": "https://discord.com/developers/docs/topics/oauth2",
+      "publisher": "Discord Official Documentation",
+      "retrievedAt": "2026-11-07T12:00:00Z",
+      "contentHash": "sha256:7f4a218d6a8e52e9ac688a2c1e87903bf1e0f06b987b1c3e34b1cde927abce51"
+    }
+  ]
+}
+

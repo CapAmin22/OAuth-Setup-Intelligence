@@ -11,7 +11,8 @@ import {
   ChevronLeft,
   Calendar,
   CheckCircle2,
-  Info
+  Info,
+  Sparkles
 } from 'lucide-react';
 import { RunbookStep } from '../components/RunbookStep';
 import { EvidencePanel } from '../components/EvidencePanel';
@@ -24,6 +25,37 @@ export const Guide: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [copiedShare, setCopiedShare] = useState(false);
   const [activeClaimId, setActiveClaimId] = useState<string | null>(null);
+
+  const [completedSteps, setCompletedSteps] = useState<string[]>(() => {
+    if (!slug) return [];
+    try {
+      const raw = localStorage.getItem(`oauth_progress_${slug}`);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const toggleStep = (stepId: string) => {
+    setCompletedSteps((prev) => {
+      const next = prev.includes(stepId) ? prev.filter((id) => id !== stepId) : [...prev, stepId];
+      if (slug) {
+        try {
+          localStorage.setItem(`oauth_progress_${slug}`, JSON.stringify(next));
+        } catch {}
+      }
+      return next;
+    });
+  };
+
+  const handleResetProgress = () => {
+    setCompletedSteps([]);
+    if (slug) {
+      try {
+        localStorage.removeItem(`oauth_progress_${slug}`);
+      } catch {}
+    }
+  };
 
   useEffect(() => {
     if (slug) {
@@ -105,6 +137,13 @@ ${guide.sources.map((src) => `- [${src.id}] ${src.url} (Hash: ${src.contentHash}
 
   const qualityScore = guide.evidenceQuality?.score ?? 90;
   const isCurated = guide.status === 'published';
+
+  const totalSteps = guide?.steps?.length || 1;
+  const completedCount = completedSteps.length;
+  const progressPercent = Math.min(100, Math.round((completedCount / totalSteps) * 100));
+  const isComplete = completedCount >= totalSteps && totalSteps > 0;
+  const avgMinutes = (guide?.effort?.highMinutes || 45) / totalSteps;
+  const remainingMinutes = Math.max(0, Math.round((totalSteps - completedCount) * avgMinutes));
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
@@ -219,6 +258,47 @@ ${guide.sources.map((src) => `- [${src.id}] ${src.url} (Hash: ${src.contentHash}
             </span>
           </div>
         </div>
+
+        {/* Interactive Step Progress & Checklist Bar */}
+        <div className="mt-6 pt-5 border-t border-sand-100">
+          <div className="flex items-center justify-between text-xs mb-2">
+            <span className="font-semibold text-sand-900 flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              Onboarding Checklist: {completedCount} of {totalSteps} steps completed ({progressPercent}%)
+            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-sand-700 font-mono text-[11px]">
+                {isComplete ? 'All Steps Completed' : `Est. remaining: ~${remainingMinutes} min`}
+              </span>
+              {completedCount > 0 && (
+                <button
+                  onClick={handleResetProgress}
+                  className="text-[11px] text-sand-700 hover:text-sand-900 underline transition-colors"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="w-full bg-sand-100 h-2 rounded-full overflow-hidden">
+            <div
+              className={`h-full transition-all duration-300 rounded-full ${
+                isComplete ? 'bg-emerald-600' : 'bg-amber-600'
+              }`}
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+
+          {isComplete && (
+            <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2.5 text-xs text-emerald-900 font-medium">
+              <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>
+                <strong>Integration Ready!</strong> You have verified all {totalSteps} setup steps for {guide.providerName}. You can now test live token exchanges in your application.
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Main Content Layout */}
@@ -269,6 +349,8 @@ ${guide.sources.map((src) => `- [${src.id}] ${src.url} (Hash: ${src.contentHash}
                   key={step.id}
                   step={step}
                   index={idx}
+                  isCompleted={completedSteps.includes(step.id)}
+                  onToggle={() => toggleStep(step.id)}
                   onClaimClick={(cid) => setActiveClaimId(cid)}
                 />
               ))}

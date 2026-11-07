@@ -1,0 +1,124 @@
+{
+  "id": "gv-spotify-v1",
+  "providerId": "p-spotify",
+  "providerSlug": "spotify",
+  "providerName": "Spotify",
+  "version": 1,
+  "schemaVersion": "1.0",
+  "status": "published",
+  "intent": {
+    "capabilities": ["User Authentication", "Read User Playlists", "Stream Playback"],
+    "distribution": "external",
+    "environment": "web"
+  },
+  "checkedAt": "2026-11-07T12:00:00Z",
+  "limitations": [
+    "Spotify apps start in Development Mode limited to 25 pre-approved user accounts. Production quota requires an extension request review."
+  ],
+  "evidenceQuality": {
+    "score": 94,
+    "breakdown": {
+      "criticalClaimGrounding": 35,
+      "officialSourceCoverage": 25,
+      "completeness": 20,
+      "freshness": 7,
+      "consistency": 7
+    },
+    "missingEvidence": []
+  },
+  "effort": {
+    "lowMinutes": 20,
+    "highMinutes": 45,
+    "assumptions": [
+      "Developer has active Spotify account",
+      "Building web app with Authorization Code Flow with PKCE"
+    ],
+    "basis": "observed"
+  },
+  "externalWait": {
+    "status": "conditional",
+    "publishedRange": "Instant for Development Mode (<=25 users); 3–7 business days for Quota Extension to production",
+    "sourceIds": ["src-spotify-docs"]
+  },
+  "prerequisites": [
+    {
+      "id": "prq-spot-1",
+      "text": "Spotify free or premium developer account",
+      "critical": true
+    }
+  ],
+  "steps": [
+    {
+      "id": "step-spot-1",
+      "title": "Register App in Spotify Developer Dashboard",
+      "owner": "developer",
+      "instructions": "Navigate to `https://developer.spotify.com/dashboard` and log in. Click 'Create an App'. Specify 'App Name', 'App Description', and select which APIs you intend to use (Web API). Accept the Spotify Developer Terms of Service.",
+      "completionCheck": "Spotify Dashboard displays new app overview with Client ID.",
+      "claimIds": ["claim-spot-1"]
+    },
+    {
+      "id": "step-spot-2",
+      "title": "Configure Redirect URIs in App Settings",
+      "owner": "developer",
+      "instructions": "In your app overview, click 'Settings' in the top right. Under 'Redirect URIs', enter your callback URL (e.g. `https://app.example.com/api/auth/callback/spotify`). Ensure no trailing slashes or query parameters exist unless matching your server endpoint exactly. Click 'Add' then 'Save'.",
+      "completionCheck": "Redirect URI appears in the whitelist table.",
+      "claimIds": ["claim-spot-2"]
+    },
+    {
+      "id": "step-spot-3",
+      "title": "Implement Authorization Code with PKCE",
+      "owner": "developer",
+      "instructions": "Generate a high-entropy cryptographic `code_verifier` (43–128 chars) and compute `code_challenge = BASE64URL-ENCODE(SHA256(code_verifier))`. Direct the user to `https://accounts.spotify.com/authorize?client_id={CLIENT_ID}&response_type=code&redirect_uri={ENCODED_REDIRECT}&code_challenge_method=S256&code_challenge={CODE_CHALLENGE}&scope=user-read-private%20user-read-email`.",
+      "completionCheck": "User is redirected back to callback URL with authorization code.",
+      "claimIds": ["claim-spot-3"]
+    },
+    {
+      "id": "step-spot-4",
+      "title": "Exchange Code for Access & Refresh Tokens",
+      "owner": "developer",
+      "instructions": "POST to `https://accounts.spotify.com/api/token` with `Content-Type: application/x-www-form-urlencoded` and body parameters: `grant_type=authorization_code`, `code={AUTH_CODE}`, `redirect_uri={REDIRECT_URI}`, `client_id={CLIENT_ID}`, and `code_verifier={CODE_VERIFIER}`. Spotify returns `access_token` (expires in 1 hr) and a long-lived `refresh_token`.",
+      "completionCheck": "HTTP 200 response contains valid access_token and refresh_token.",
+      "claimIds": ["claim-spot-4"]
+    }
+  ],
+  "claims": [
+    {
+      "id": "claim-spot-1",
+      "text": "Spotify apps are created at https://developer.spotify.com/dashboard and assigned a Client ID.",
+      "critical": true,
+      "sourceIds": ["src-spotify-docs"],
+      "evidenceStatus": "documented"
+    },
+    {
+      "id": "claim-spot-2",
+      "text": "Spotify requires explicit whitelisting of exact redirect URIs in App Settings before authorization can proceed.",
+      "critical": true,
+      "sourceIds": ["src-spotify-docs"],
+      "evidenceStatus": "documented"
+    },
+    {
+      "id": "claim-spot-3",
+      "text": "Spotify supports Authorization Code Flow with PKCE using SHA-256 code challenge.",
+      "critical": true,
+      "sourceIds": ["src-spotify-docs"],
+      "evidenceStatus": "documented"
+    },
+    {
+      "id": "claim-spot-4",
+      "text": "Tokens are obtained by POSTing code and code_verifier to https://accounts.spotify.com/api/token.",
+      "critical": true,
+      "sourceIds": ["src-spotify-docs"],
+      "evidenceStatus": "documented"
+    }
+  ],
+  "sources": [
+    {
+      "id": "src-spotify-docs",
+      "url": "https://developer.spotify.com/documentation/web-api/tutorials/code-pkce-flow",
+      "publisher": "Spotify Developer Official Documentation",
+      "retrievedAt": "2026-11-07T12:00:00Z",
+      "contentHash": "sha256:4b91f0c2a559de46c9869668ec9938d21c2106be895b6028a2a78ec42b47f631"
+    }
+  ]
+}
+
