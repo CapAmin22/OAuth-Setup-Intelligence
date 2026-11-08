@@ -3,7 +3,7 @@ import { GuideVersion } from '../types';
 export interface CopilotQA {
   id: string;
   question: string;
-  category: 'problems' | 'tokens' | 'redirects' | 'scopes' | 'security' | 'general' | 'steps' | 'errors';
+  category: 'problems' | 'tokens' | 'redirects' | 'scopes' | 'security' | 'general' | 'steps' | 'errors' | 'endpoints';
   answer: string;
   codeSnippet?: string;
   sourceUrl: string;
@@ -263,6 +263,138 @@ export const PROVIDER_TOP_PROBLEMS: Record<
     ],
     sourceUrl: 'https://developer.spotify.com/documentation/web-api/tutorials/code-flow',
     sourceTitle: 'Spotify Developer Documentation',
+  },
+
+  microsoft: {
+    title: 'Top 3 Integration Pitfalls for Microsoft Entra ID (Azure AD)',
+    points: [
+      {
+        heading: 'Multi-Tenant (/common) vs Single-Tenant (/{tenant-id}) Mismatch',
+        detail:
+          'Using https://login.microsoftonline.com/common with an app registered as "Accounts in this organizational directory only" triggers AADSTS50194 or AADSTS700016. If your app only serves your company, replace /common with your specific Tenant ID or domain.',
+        fix: 'Use /common for multi-tenant SaaS apps with personal/work accounts; use /{tenant-id} or /organizations for single-tenant or business-only apps.',
+      },
+      {
+        heading: 'Admin Consent Blocking (AADSTS65001)',
+        detail:
+          'Sensitive Microsoft Graph permissions (e.g. Directory.ReadWrite.All, Mail.ReadWrite) require an Entra ID Tenant Administrator to grant tenant-wide consent before non-admin users can sign in.',
+        fix: 'Have a Tenant Administrator click "Grant admin consent for {Tenant}" in Microsoft Entra Admin Center > App registrations > API permissions.',
+      },
+      {
+        heading: 'Missing offline_access Scope for Refresh Tokens',
+        detail:
+          'Microsoft Identity Platform v2.0 does NOT issue refresh tokens unless the "offline_access" scope is explicitly requested in the authorization URL.',
+        fix: 'Include "offline_access" alongside "User.Read" and "openid" in your space-delimited scope string.',
+      },
+    ],
+    proTip:
+      'Microsoft access tokens expire in 60 to 90 minutes. Always request offline_access and store the refresh token securely.',
+    followUps: [
+      'What is the difference between /common and /{tenant-id} endpoints?',
+      'How do I fix AADSTS65001 admin consent required error?',
+      'Show Microsoft Entra ID token exchange code',
+    ],
+    sourceUrl: 'https://learn.microsoft.com/en-us/entra/identity-platform/v2-overview',
+    sourceTitle: 'Microsoft Identity Platform Documentation',
+  },
+
+  x: {
+    title: 'Top 3 Integration Pitfalls for X (Twitter) API v2 OAuth 2.0',
+    points: [
+      {
+        heading: 'Mandatory PKCE (RFC 7636) Enforcement',
+        detail:
+          'X API v2 strictly mandates PKCE for all authorization code flows. Omitting code_challenge and code_challenge_method=S256 in the authorization URL immediately results in an invalid_request error.',
+        fix: 'Generate a random code_verifier (43-128 chars), compute its SHA-256 base64url code_challenge, and pass code_challenge_method=S256.',
+      },
+      {
+        heading: 'HTTP Basic Auth Header Required for Confidential Clients',
+        detail:
+          'When exchanging authorization codes at https://api.twitter.com/2/oauth2/token, confidential clients must pass client credentials in the HTTP Basic Authorization header (Authorization: Basic base64(client_id:client_secret)). Putting them in the body results in 401 Unauthorized.',
+        fix: 'Set Authorization: Basic Buffer.from(`${clientId}:${clientSecret}`).toString("base64") in request headers.',
+      },
+      {
+        heading: 'Automatic Refresh Token Rotation',
+        detail:
+          'Every time you refresh an access token with grant_type=refresh_token, X issues a NEW refresh token and invalidates the previous one immediately.',
+        fix: 'Always update your database with the new refresh_token returned in the response payload upon every refresh request.',
+      },
+    ],
+    proTip:
+      'X user-context access tokens expire in 7,200 seconds (2 hours). Always request offline.access scope to get a refresh token.',
+    followUps: [
+      'Does X (Twitter) OAuth 2.0 require PKCE?',
+      'How does X refresh token rotation work?',
+      'Show X OAuth 2.0 token exchange code',
+    ],
+    sourceUrl: 'https://developer.x.com/en/docs/authentication/oauth-2-0',
+    sourceTitle: 'X Developer Platform: OAuth 2.0',
+  },
+
+  zoho: {
+    title: 'Top 3 Integration Gotchas for Zoho Accounts OAuth 2.0',
+    points: [
+      {
+        heading: 'Multi-Datacenter Domain Routing Requirement',
+        detail:
+          'Zoho operates in strict isolated regional data centers (.com for US, .eu for Europe, .in for India, .com.au for Australia, .jp for Japan). If an Indian user tries to authenticate against accounts.zoho.com, authentication fails with "invalid_client".',
+        fix: 'Use the domain matching the user\'s Zoho account data center (e.g. accounts.zoho.eu for European users, accounts.zoho.in for Indian users).',
+      },
+      {
+        heading: 'Mandatory access_type=offline and prompt=consent',
+        detail:
+          'Zoho only returns a refresh_token if BOTH access_type=offline AND prompt=consent are present in the authorization URL query parameters.',
+        fix: 'Append access_type=offline&prompt=consent to https://accounts.zoho.com/oauth/v2/auth.',
+      },
+      {
+        heading: 'Strict 10-Minute Authorization Code Expiration',
+        detail:
+          'Zoho authorization codes expire exactly 10 minutes after issuance and are single-use. Any delay or replay fails with "invalid_code".',
+        fix: 'Exchange the code immediately upon receiving the redirect callback in your backend handler.',
+      },
+    ],
+    proTip:
+      'Zoho access tokens expire in 3,600 seconds (1 hour). Use the refresh token to silently obtain fresh access tokens.',
+    followUps: [
+      'How do I handle Zoho multi-datacenter domains (.com, .eu, .in)?',
+      'How do I force Zoho to return a refresh token?',
+      'Show Zoho token exchange code',
+    ],
+    sourceUrl: 'https://www.zoho.com/accounts/protocol/oauth.html',
+    sourceTitle: 'Zoho Accounts OAuth 2.0 Documentation',
+  },
+
+  loom: {
+    title: 'Top 3 Integration Pitfalls for Loom OAuth & Developer SDK',
+    points: [
+      {
+        heading: 'RecordSDK vs Standard REST API OAuth',
+        detail:
+          'Loom provides both the RecordSDK (for client-side screen recording in your app) and REST APIs (for managing videos). Client-side RecordSDK uses public application keys with verified origins, whereas REST API integrations use server-side OAuth 2.0.',
+        fix: 'For in-app screen recording, configure domain origins in Loom Developer Settings. For video data sync, use OAuth 2.0 authorization code flow.',
+      },
+      {
+        heading: 'Domain Whitelisting for Web Recording',
+        detail:
+          'Loom blocks recording SDK initialization on unwhitelisted domains or local development origins.',
+        fix: 'Whitelisted localhost:3000 and your production URL in Loom Developer Portal settings.',
+      },
+      {
+        heading: 'Atlassian Cloud Centralized Identity',
+        detail:
+          'Following Loom\'s acquisition by Atlassian, new enterprise integrations manage credentials via Atlassian Cloud Developer Console.',
+        fix: 'Ensure your app callback URL is authorized in your Atlassian / Loom developer workspace.',
+      },
+    ],
+    proTip:
+      'Always verify your redirect URI and allowed origins in the Loom developer console before initiating user flows.',
+    followUps: [
+      'Where do I configure allowed domains in Loom?',
+      'How do I embed the Loom RecordSDK with OAuth?',
+      'Show Loom token exchange code',
+    ],
+    sourceUrl: 'https://docs.loom.com',
+    sourceTitle: 'Loom Developer Documentation',
   },
 };
 
@@ -704,6 +836,122 @@ authUrl.searchParams.set('prompt', 'consent');`,
       sourceUrl: 'https://developers.google.com/calendar/api/quickstart/nodejs',
       sourceTitle: 'Google Calendar API Quickstart',
       followUps: ['Are Google Calendar scopes sensitive or restricted?', 'How do I force Google to return a refresh token?'],
+    },
+  ],
+
+  microsoft: [
+    {
+      id: 'msft-endpoint',
+      question: 'What is the difference between /common and /{tenant-id} in Microsoft OAuth?',
+      category: 'endpoints',
+      answer:
+        'The /common endpoint allows both personal Microsoft accounts (Outlook, Xbox) and organizational Entra ID accounts to authenticate (multi-tenant). If your app is registered as "Single tenant", you MUST replace /common with your Azure Tenant ID (e.g. https://login.microsoftonline.com/YOUR_TENANT_ID/oauth2/v2.0/authorize). Using /common on a single-tenant app throws error AADSTS50194.',
+      codeSnippet: `// Single-tenant:
+const authUrl = \`https://login.microsoftonline.com/\${process.env.AZURE_TENANT_ID}/oauth2/v2.0/authorize\`;
+
+// Multi-tenant (Work & Personal):
+const authUrl = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize';`,
+      sourceUrl: 'https://learn.microsoft.com/en-us/entra/identity-platform/v2-overview',
+      sourceTitle: 'Microsoft Entra ID Endpoint Specs',
+      followUps: ['How do I fix AADSTS65001 admin consent required error?', 'How do I force Microsoft to return a refresh token?'],
+    },
+    {
+      id: 'msft-refresh',
+      question: 'How do I force Microsoft to return a refresh token?',
+      category: 'tokens',
+      answer:
+        'Microsoft Identity Platform (v2.0) only returns a refresh token if you explicitly include the offline_access scope in your scope parameter. Without offline_access, the token endpoint returns only an access_token with no refresh_token.',
+      codeSnippet: `// Required scopes for Microsoft Graph + Refresh Token
+const scopes = ['openid', 'profile', 'email', 'offline_access', 'User.Read'].join(' ');
+authUrl.searchParams.set('scope', scopes);`,
+      sourceUrl: 'https://learn.microsoft.com/en-us/entra/identity-platform/v2-permissions-and-consent#offline_access',
+      sourceTitle: 'Microsoft Identity offline_access Documentation',
+      followUps: ['What is the difference between /common and /{tenant-id} in Microsoft OAuth?', 'How do I fix AADSTS65001 admin consent required error?'],
+    },
+    {
+      id: 'msft-admin-consent',
+      question: 'How do I fix AADSTS65001 admin consent required error in Microsoft?',
+      category: 'errors',
+      answer:
+        'Error AADSTS65001 occurs when requested Microsoft Graph scopes require organization administrator approval. A global or cloud application administrator must sign into Microsoft Entra Admin Center > App registrations > API permissions and click "Grant admin consent for {Organization}". Alternatively, pass prompt=admin_consent to send an admin through the consent screen.',
+      sourceUrl: 'https://learn.microsoft.com/en-us/entra/identity-platform/v2-permissions-and-consent#admin-consent',
+      sourceTitle: 'Microsoft Entra Admin Consent Docs',
+      followUps: ['What is the difference between /common and /{tenant-id} in Microsoft OAuth?'],
+    },
+  ],
+
+  x: [
+    {
+      id: 'x-pkce-required',
+      question: 'Does X (Twitter) OAuth 2.0 require PKCE?',
+      category: 'security',
+      answer:
+        'Yes. X (Twitter) API v2 strictly mandates PKCE (RFC 7636) for all OAuth 2.0 authorization code flows. You must generate a cryptographic code_verifier, hash it with SHA-256 to create code_challenge, and pass code_challenge_method=S256 in the authorization URL. Plain code grant without PKCE is rejected with invalid_request.',
+      codeSnippet: `// X (Twitter) OAuth 2.0 Auth URL with PKCE
+const authUrl = new URL('https://twitter.com/i/oauth2/authorize');
+authUrl.searchParams.set('response_type', 'code');
+authUrl.searchParams.set('client_id', process.env.X_CLIENT_ID!);
+authUrl.searchParams.set('redirect_uri', process.env.X_REDIRECT_URI!);
+authUrl.searchParams.set('scope', 'tweet.read tweet.write users.read offline.access');
+authUrl.searchParams.set('state', state);
+authUrl.searchParams.set('code_challenge', codeChallenge);
+authUrl.searchParams.set('code_challenge_method', 'S256');`,
+      sourceUrl: 'https://developer.x.com/en/docs/authentication/oauth-2-0/authorization-code-with-pkce',
+      sourceTitle: 'X Developer Platform: PKCE Authorization Code',
+      followUps: ['How does X refresh token rotation work?', 'Does X require Basic Auth for token exchange?'],
+    },
+    {
+      id: 'x-token-rotation',
+      question: 'How does X refresh token rotation work?',
+      category: 'tokens',
+      answer:
+        'X API v2 issues a brand new refresh_token on every refresh exchange request and revokes the old refresh_token immediately. If an old refresh token is reused, X revokes the entire authorization grant. Always save the new refresh_token returned in the JSON response payload.',
+      sourceUrl: 'https://developer.x.com/en/docs/authentication/oauth-2-0/refresh-tokens',
+      sourceTitle: 'X Refresh Token Documentation',
+      followUps: ['Does X (Twitter) OAuth 2.0 require PKCE?', 'Does X require Basic Auth for token exchange?'],
+    },
+  ],
+
+  zoho: [
+    {
+      id: 'zoho-multi-dc',
+      question: 'How do I handle Zoho multi-datacenter domains (.com, .eu, .in)?',
+      category: 'endpoints',
+      answer:
+        'Zoho partitions users across geographical data centers. Authorization, token exchange, and API requests must use the domain matching the user\'s Zoho account (.com for United States, .eu for Europe, .in for India, .com.au for Australia, .jp for Japan). If an Indian user attempts to authenticate against accounts.zoho.com, authentication fails with invalid_client.',
+      codeSnippet: `// Dynamic Zoho accounts domain based on tenant DC
+const dcDomain = userAccountLocation === 'EU' ? 'accounts.zoho.eu' : 'accounts.zoho.com';
+const authUrl = \`https://\${dcDomain}/oauth/v2/auth\`;
+const tokenUrl = \`https://\${dcDomain}/oauth/v2/token\`;`,
+      sourceUrl: 'https://www.zoho.com/accounts/protocol/oauth/multi-dc.html',
+      sourceTitle: 'Zoho Multi-DC Architecture Specs',
+      followUps: ['How do I force Zoho to return a refresh token?', 'What is Zoho authorization code expiration time?'],
+    },
+    {
+      id: 'zoho-refresh',
+      question: 'How do I force Zoho to return a refresh token?',
+      category: 'tokens',
+      answer:
+        'Zoho only issues a refresh_token if you pass access_type=offline AND prompt=consent in your authorization URL query string. If prompt=consent is missing, Zoho assumes subsequent logins do not require a fresh consent screen and omits the refresh_token.',
+      codeSnippet: `// Force Zoho refresh token
+authUrl.searchParams.set('access_type', 'offline');
+authUrl.searchParams.set('prompt', 'consent');`,
+      sourceUrl: 'https://www.zoho.com/accounts/protocol/oauth/web-apps/authorization.html',
+      sourceTitle: 'Zoho Web Apps OAuth Guide',
+      followUps: ['How do I handle Zoho multi-datacenter domains (.com, .eu, .in)?'],
+    },
+  ],
+
+  loom: [
+    {
+      id: 'loom-sdk-oauth',
+      question: 'How do I configure Loom RecordSDK with OAuth?',
+      category: 'general',
+      answer:
+        'Loom provides two integration modes: client-side RecordSDK (for embedded web video recording) and REST API (for video data management). In the Loom Developer Portal, create a developer application, whitelist your web origins (e.g. http://localhost:3000 and your production domain), and use your public App ID for client-side recording.',
+      sourceUrl: 'https://docs.loom.com',
+      sourceTitle: 'Loom Developer Portal & RecordSDK Specs',
+      followUps: ['What scopes are supported by Loom?'],
     },
   ],
 };

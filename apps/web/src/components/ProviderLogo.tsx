@@ -237,13 +237,83 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    case 'loom':
+      return (
+        <svg viewBox="0 0 40 40" className={`${sizeClasses} ${className}`} fill="none">
+          <rect width="40" height="40" rx="8" fill="#625DF5" />
+          <path
+            fillRule="evenodd"
+            clipRule="evenodd"
+            d="M20 10c1.1 0 2 .9 2 2v6.6l4.6-4.6c.8-.8 2-.8 2.8 0s.8 2 0 2.8L24.8 21.4H30c1.1 0 2 .9 2 2s-.9 2-2 2h-5.2l4.6 4.6c.8.8.8 2 0 2.8-.8.8-2 .8-2.8 0L22 28.2V30c0 1.1-.9 2-2 2s-2-.9-2-2v-1.8l-4.6 4.6c-.8.8-2 .8-2.8 0-.8-.8-.8-2 0-2.8l4.6-4.6H10c-1.1 0-2-.9-2-2s.9-2 2-2h5.2l-4.6-4.6c-.8-.8-.8-2 0-2.8.8-.8 2-.8 2.8 0l4.6 4.6V12c0-1.1.9-2 2-2z"
+            fill="#FFFFFF"
+          />
+        </svg>
+      );
+
+    case 'microsoft':
+    case 'azure':
+    case 'entra':
+    case 'msft':
+      return (
+        <svg viewBox="0 0 23 23" className={`${sizeClasses} ${className}`}>
+          <path fill="#F25022" d="M1 1h10v10H1z" />
+          <path fill="#7FBA00" d="M12 1h10v10H12z" />
+          <path fill="#00A4EF" d="M1 12h10v10H1z" />
+          <path fill="#FFB900" d="M12 12h10v10H12z" />
+        </svg>
+      );
+
+    case 'x':
+    case 'twitter':
+      return (
+        <svg viewBox="0 0 24 24" className={`${sizeClasses} ${className}`} fill="#000000">
+          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+        </svg>
+      );
+
+    case 'zoho':
+      return (
+        <svg viewBox="0 0 32 32" className={`${sizeClasses} ${className}`}>
+          <rect width="13" height="13" x="2" y="2" rx="2.5" fill="#E42528" />
+          <rect width="13" height="13" x="17" y="2" rx="2.5" fill="#148943" />
+          <rect width="13" height="13" x="2" y="17" rx="2.5" fill="#0070BA" />
+          <rect width="13" height="13" x="17" y="17" rx="2.5" fill="#F4AB20" />
+        </svg>
+      );
+
+    case 'miro':
+      return (
+        <svg viewBox="0 0 24 24" className={`${sizeClasses} ${className}`}>
+          <rect width="24" height="24" rx="4" fill="#FFD02F" />
+          <path
+            d="M5.5 16.5l3.2-9h2.8l-3.2 9H5.5zm4.8 0l3.2-9h2.8l-3.2 9h-2.8zm4.8 0l3.2-9h2.8l-3.2 9h-2.8z"
+            fill="#050038"
+          />
+        </svg>
+      );
+
+    case 'canva':
+      return (
+        <svg viewBox="0 0 32 32" className={`${sizeClasses} ${className}`}>
+          <circle cx="16" cy="16" r="16" fill="#00C4CC" />
+          <path
+            d="M17.8 22.4c-4.2 0-7.3-3.2-7.3-7.5s3.3-7.5 7.6-7.5c2.5 0 4.6 1.1 5.7 2.8l-2.4 1.7c-.8-1.2-2-1.9-3.3-1.9-2.5 0-4.5 1.9-4.5 4.9s1.9 4.9 4.4 4.9c1.6 0 2.8-.7 3.5-1.9l2.4 1.7c-1.3 1.8-3.5 2.8-6.1 2.8z"
+            fill="#FFFFFF"
+          />
+        </svg>
+      );
+
     default: {
       // Dynamic fallback for any arbitrary new or uncurated provider:
       // 1. Try Google's high-reliability Favicon CDN (handles SVG, redirects, subdomains)
       // 2. If blocked or offline, fall back to a styled monogram avatar with rich gradient
-      const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, '');
-      const domain = cleanSlug.includes('.') ? cleanSlug : `${cleanSlug}.com`;
-      const resolvedLogo = logoUrl || `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+      const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9-.]/g, '');
+      const domain = cleanSlug.includes('.')
+        ? cleanSlug
+        : cleanSlug.replace(/-oauth|-api|-app/g, '') + '.com';
+      const resolvedLogo =
+        logoUrl ||
+        `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
 
       if (!hasError && resolvedLogo) {
         return (

@@ -3,6 +3,12 @@ from urllib.parse import urlparse
 from typing import Dict, Any, Tuple
 
 KNOWN_DOMAINS = {
+    "microsoft": "microsoft.com",
+    "azure": "microsoft.com",
+    "entra": "microsoft.com",
+    "x": "x.com",
+    "twitter": "x.com",
+    "zoho": "zoho.com",
     "loom": "loom.com",
     "figma": "figma.com",
     "miro": "miro.com",

@@ -145,6 +145,41 @@ export const PROVIDER_ENDPOINTS: Record<string, ProviderEndpointConfig> = {
     scopeDelimiter: ' ',
     authMethod: 'body',
   },
+  microsoft: {
+    authUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
+    tokenUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
+    userUrl: 'https://graph.microsoft.com/v1.0/me',
+    scopeDelimiter: ' ',
+    authMethod: 'body',
+  },
+  azure: {
+    authUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
+    tokenUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
+    userUrl: 'https://graph.microsoft.com/v1.0/me',
+    scopeDelimiter: ' ',
+    authMethod: 'body',
+  },
+  x: {
+    authUrl: 'https://twitter.com/i/oauth2/authorize',
+    tokenUrl: 'https://api.twitter.com/2/oauth2/token',
+    userUrl: 'https://api.twitter.com/2/users/me',
+    scopeDelimiter: ' ',
+    authMethod: 'basic',
+  },
+  twitter: {
+    authUrl: 'https://twitter.com/i/oauth2/authorize',
+    tokenUrl: 'https://api.twitter.com/2/oauth2/token',
+    userUrl: 'https://api.twitter.com/2/users/me',
+    scopeDelimiter: ' ',
+    authMethod: 'basic',
+  },
+  zoho: {
+    authUrl: 'https://accounts.zoho.com/oauth/v2/auth',
+    tokenUrl: 'https://accounts.zoho.com/oauth/v2/token',
+    userUrl: 'https://accounts.zoho.com/oauth/user/info',
+    scopeDelimiter: ' ',
+    authMethod: 'body',
+  },
 };
 
 function getEndpointConfig(slug: string): ProviderEndpointConfig {

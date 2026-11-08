@@ -28,6 +28,11 @@ const DEVELOPER_PORTALS: Record<string, { name: string; url: string }> = {
   'google-calendar': { name: 'Google Cloud Credentials', url: 'https://console.cloud.google.com/apis/credentials' },
   gcal: { name: 'Google Cloud Credentials', url: 'https://console.cloud.google.com/apis/credentials' },
   loom: { name: 'Loom Developer Portal', url: 'https://www.loom.com/developers' },
+  microsoft: { name: 'Microsoft Entra Admin Center', url: 'https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade' },
+  azure: { name: 'Azure Portal App Registrations', url: 'https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade' },
+  x: { name: 'X Developer Portal Dashboard', url: 'https://developer.x.com/en/portal/dashboard' },
+  twitter: { name: 'X / Twitter Developer Portal', url: 'https://developer.x.com/en/portal/dashboard' },
+  zoho: { name: 'Zoho API Console', url: 'https://api-console.zoho.com' },
 };
 
 export const QuickEndpointsCard: React.FC<QuickEndpointsCardProps> = ({

@@ -26,16 +26,17 @@ import {
   resolveProviderFromCatalog,
   CatalogProvider,
 } from '../lib/providerCatalog';
+import { ProviderLogo } from '../components/ProviderLogo';
 
 const POPULAR_SUGGESTIONS = [
   { name: 'Loom', website: 'https://docs.loom.com' },
-  { name: 'Figma', website: 'https://www.figma.com/developers/api' },
+  { name: 'Microsoft', website: 'https://learn.microsoft.com/en-us/entra/identity-platform/v2-overview' },
+  { name: 'X', website: 'https://developer.x.com/en/docs/authentication/oauth-2-0' },
+  { name: 'Zoho', website: 'https://www.zoho.com/accounts/protocol/oauth.html' },
   { name: 'Supabase', website: 'https://supabase.com/docs/guides/platform/oauth-apps' },
+  { name: 'Figma', website: 'https://www.figma.com/developers/api' },
   { name: 'Google Calendar', website: 'https://developers.google.com/calendar/api' },
   { name: 'Shopify', website: 'https://shopify.dev/docs/apps/auth/oauth' },
-  { name: 'Asana', website: 'https://developers.asana.com/docs/oauth' },
-  { name: 'Box', website: 'https://developer.box.com/guides/authentication/oauth2/' },
-  { name: 'Airtable', website: 'https://airtable.com/developers/web/api/oauth-reference' },
 ];
 
 function isWebsiteCompatibleWithQuery(url: string, currentQuery: string): boolean {
@@ -267,7 +268,7 @@ export const Intake: React.FC = () => {
                 )}
               </div>
 
-              {/* Autocomplete Dropdown */}
+              {/* Autocomplete Dropdown with Live Vector Logos */}
               {isDropdownOpen && matchedCatalog.length > 0 && (
                 <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-sand-200 rounded-xl shadow-lg overflow-hidden py-1 divide-y divide-sand-100 max-h-72 overflow-y-auto">
                   <div className="px-3 py-1.5 bg-sand-50/80 text-[10px] font-bold uppercase tracking-wider text-sand-500 flex items-center justify-between">
@@ -281,21 +282,26 @@ export const Intake: React.FC = () => {
                       onClick={() => applyCatalogProvider(prov)}
                       className="w-full px-3.5 py-2.5 text-left hover:bg-amber-500/10 flex items-center justify-between gap-3 transition-colors group cursor-pointer"
                     >
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-xs text-sand-900 group-hover:text-amber-900">
-                            {prov.displayName}
-                          </span>
-                          <span className="text-[10px] font-mono text-sand-400 bg-sand-100 px-1.5 py-0.5 rounded">
-                            {prov.canonicalDomain}
-                          </span>
-                          <span className="text-[10px] text-amber-800 bg-amber-50 border border-amber-200/60 px-1.5 py-0.5 rounded font-medium">
-                            {prov.category}
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-7 h-7 rounded-lg bg-sand-50 border border-sand-200 flex items-center justify-center p-1 shrink-0 group-hover:scale-105 transition-transform">
+                          <ProviderLogo slug={prov.slug} name={prov.displayName} size="sm" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-xs text-sand-900 group-hover:text-amber-900">
+                              {prov.displayName}
+                            </span>
+                            <span className="text-[10px] font-mono text-sand-400 bg-sand-100 px-1.5 py-0.5 rounded">
+                              {prov.canonicalDomain}
+                            </span>
+                            <span className="text-[10px] text-amber-800 bg-amber-50 border border-amber-200/60 px-1.5 py-0.5 rounded font-medium">
+                              {prov.category}
+                            </span>
+                          </div>
+                          <span className="text-[11px] text-sand-500 truncate block mt-0.5 font-mono">
+                            {prov.docUrl}
                           </span>
                         </div>
-                        <span className="text-[11px] text-sand-500 truncate block mt-0.5 font-mono">
-                          {prov.docUrl}
-                        </span>
                       </div>
                       <span className="text-[10px] font-semibold text-amber-700 bg-amber-100 group-hover:bg-amber-200 px-2 py-1 rounded shrink-0 transition-colors">
                         Auto-link ↗
@@ -320,30 +326,40 @@ export const Intake: React.FC = () => {
                 ))}
               </div>
 
-              {/* Recognized App Banner */}
+              {/* Initial Research: Recognized Platform Visual Verification Card */}
               {recognizedProvider && (
-                <div className="mt-3 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-950 transition-all shadow-2xs">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span className="font-bold text-xs text-emerald-900">
-                        Recognized Platform: {recognizedProvider.displayName}
-                      </span>
-                      <span className="text-[10px] font-mono text-emerald-700 bg-white/80 px-2 py-0.5 rounded border border-emerald-300">
-                        {recognizedProvider.canonicalDomain}
-                      </span>
+                <div className="mt-3.5 p-4 rounded-xl bg-gradient-to-r from-emerald-500/10 via-emerald-50 to-teal-500/10 border border-emerald-300/80 text-xs text-emerald-950 transition-all shadow-xs">
+                  <div className="flex items-start justify-between gap-3 mb-2.5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-xl bg-white border border-emerald-200 flex items-center justify-center p-1.5 shrink-0 shadow-2xs">
+                        <ProviderLogo slug={recognizedProvider.slug} name={recognizedProvider.displayName} size="md" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-extrabold text-sm text-sand-900">
+                            {recognizedProvider.displayName}
+                          </span>
+                          <span className="text-[10px] font-mono text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded border border-emerald-300">
+                            {recognizedProvider.canonicalDomain}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-emerald-800 font-medium block mt-0.5">
+                          {recognizedProvider.category} · Initial Research Verified
+                        </span>
+                      </div>
                     </div>
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded">
-                      {recognizedProvider.category}
-                    </span>
+                    <div className="flex items-center gap-1.5 bg-emerald-600 text-white px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-2xs shrink-0">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Verified Vendor App</span>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-emerald-800 leading-relaxed">
+                  <p className="text-[11px] text-emerald-800 leading-relaxed mb-2.5">
                     {recognizedProvider.description ||
-                      'Official OAuth 2.0 specifications indexed. Endpoints and callback rules will be synthesized with zero hallucination.'}
+                      'Official OAuth 2.0 specifications indexed. Endpoints, token refresh rules, and callback validations are pre-grounded.'}
                   </p>
-                  <div className="mt-2.5 pt-2 border-t border-emerald-200/80 flex items-center justify-between text-[11px]">
+                  <div className="pt-2.5 border-t border-emerald-200/80 flex items-center justify-between text-[11px]">
                     <span className="text-emerald-900 font-medium flex items-center gap-1.5">
-                      <span>Verified Official Docs:</span>
+                      <span>Official Doc Endpoint:</span>
                       <code className="bg-white px-2 py-0.5 rounded text-[10px] font-mono text-emerald-800 border border-emerald-200">
                         {recognizedProvider.docUrl}
                       </code>
@@ -361,22 +377,41 @@ export const Intake: React.FC = () => {
                 </div>
               )}
 
-              {/* Fallback for uncataloged providers */}
+              {/* Initial Research: Uncataloged App Visual Verification Card */}
               {!recognizedProvider && query.trim().length >= 2 && (
-                <div className="mt-3 p-3 rounded-xl bg-sand-50 border border-sand-200 text-xs text-sand-800 transition-all">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-sand-900 flex items-center gap-1.5">
+                <div className="mt-3.5 p-4 rounded-xl bg-sand-50 border border-sand-200 text-xs text-sand-800 transition-all shadow-xs">
+                  <div className="flex items-start justify-between gap-3 mb-2.5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-xl bg-white border border-sand-200 flex items-center justify-center p-1.5 shrink-0 shadow-2xs">
+                        <ProviderLogo
+                          slug={query.trim().toLowerCase().replace(/[^a-z0-9]/g, '')}
+                          name={query.trim()}
+                          size="md"
+                        />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-extrabold text-sm text-sand-900">
+                            {query.trim()}
+                          </span>
+                          <span className="text-[10px] font-mono text-sand-600 bg-sand-100 px-2 py-0.5 rounded border border-sand-200">
+                            {query.trim().toLowerCase().replace(/[^a-z0-9]/g, '')}.com
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-sand-600 font-medium block mt-0.5">
+                          Autonomous Discovery · Initial Research in Progress
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-900 border border-amber-500/30 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-2xs shrink-0">
                       <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Uncataloged Service: &quot;{query.trim()}&quot;</span>
-                    </span>
-                    <span className="text-[10px] font-mono text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                      Autonomous Discovery
-                    </span>
+                      <span>Live Crawler Active</span>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-sand-600 leading-relaxed mb-2">
+                  <p className="text-[11px] text-sand-600 leading-relaxed mb-2.5">
                     Our autonomous crawler will identify RFC 6749 OAuth endpoints and parse authorization flows for &quot;{query.trim()}&quot;.
                   </p>
-                  <div className="flex items-center gap-3 text-[11px] flex-wrap">
+                  <div className="pt-2 border-t border-sand-200/80 flex items-center justify-between text-[11px] flex-wrap gap-2">
                     <button
                       type="button"
                       onClick={() => {
@@ -387,7 +422,6 @@ export const Intake: React.FC = () => {
                     >
                       <span>Auto-target docs.{query.trim().toLowerCase().replace(/[^a-z0-9]/g, '')}.com</span>
                     </button>
-                    <span className="text-sand-300">·</span>
                     <a
                       href={`https://www.google.com/search?q=${encodeURIComponent(query.trim() + ' oauth 2.0 developer api documentation')}`}
                       target="_blank"

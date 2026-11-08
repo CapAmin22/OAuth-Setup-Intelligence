@@ -15,7 +15,54 @@ export interface CatalogProvider {
 }
 
 export const POPULAR_PROVIDER_CATALOG: CatalogProvider[] = [
-  // 1. Video, Media & Design
+  // 1. Enterprise Identity & Cloud Platforms
+  {
+    slug: 'microsoft',
+    displayName: 'Microsoft',
+    canonicalDomain: 'microsoft.com',
+    developerPortalUrl: 'https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade',
+    docUrl: 'https://learn.microsoft.com/en-us/entra/identity-platform/v2-overview',
+    category: 'Enterprise Identity & Cloud',
+    aliases: ['azure', 'azure ad', 'entra', 'microsoft entra', 'microsoft graph', 'office 365', 'msft'],
+    defaultScopes: ['openid', 'profile', 'email', 'offline_access', 'User.Read'],
+    scopeDelimiter: ' ',
+    authMethod: 'body',
+    authUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
+    tokenUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
+    description: 'Microsoft Entra ID (Azure AD) and Microsoft Graph API OAuth 2.0 authentication for work, school, and personal accounts.',
+  },
+  {
+    slug: 'x',
+    displayName: 'X',
+    canonicalDomain: 'x.com',
+    developerPortalUrl: 'https://developer.x.com/en/portal/dashboard',
+    docUrl: 'https://developer.x.com/en/docs/authentication/oauth-2-0',
+    category: 'Social & Developer API',
+    aliases: ['twitter', 'twitter api', 'x api', 'x oauth', 'twitter oauth'],
+    defaultScopes: ['tweet.read', 'tweet.write', 'users.read', 'offline.access'],
+    scopeDelimiter: ' ',
+    authMethod: 'basic',
+    authUrl: 'https://twitter.com/i/oauth2/authorize',
+    tokenUrl: 'https://api.twitter.com/2/oauth2/token',
+    description: 'X (formerly Twitter) API v2 OAuth 2.0 with mandatory PKCE authorization code grant and token rotation.',
+  },
+  {
+    slug: 'zoho',
+    displayName: 'Zoho',
+    canonicalDomain: 'zoho.com',
+    developerPortalUrl: 'https://api-console.zoho.com',
+    docUrl: 'https://www.zoho.com/accounts/protocol/oauth.html',
+    category: 'CRM & Business Apps',
+    aliases: ['zoho crm', 'zoho api', 'zoho accounts', 'zoho oauth'],
+    defaultScopes: ['ZohoCRM.modules.ALL', 'ZohoCRM.users.READ', 'AaaServer.profile.READ'],
+    scopeDelimiter: ' ',
+    authMethod: 'body',
+    authUrl: 'https://accounts.zoho.com/oauth/v2/auth',
+    tokenUrl: 'https://accounts.zoho.com/oauth/v2/token',
+    description: 'Zoho Accounts OAuth 2.0 for accessing Zoho CRM, Desk, Creator, and Analytics APIs across multi-region datacenters.',
+  },
+
+  // 2. Video, Media & Design
   {
     slug: 'loom',
     displayName: 'Loom',
