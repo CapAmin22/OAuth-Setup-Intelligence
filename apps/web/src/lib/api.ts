@@ -193,6 +193,9 @@ export async function fetchProviders(): Promise<Provider[]> {
 export async function fetchGuide(slug: string): Promise<GuideVersion | null> {
   const normalizedSlug = slug.toLowerCase().trim();
   const rootSlug = normalizedSlug.replace(/\.[a-z0-9]+$/, '');
+  const baseSlug = normalizedSlug
+    .replace(/^(docs|api|app|developer|developers|login|console|accounts|auth|web|www)\./, '')
+    .replace(/\.[a-z0-9]+$/, '');
 
   // 1. Check localStorage custom guides first
   const localGuides = getLocalGuides();
@@ -202,12 +205,21 @@ export async function fetchGuide(slug: string): Promise<GuideVersion | null> {
   if (localGuides[rootSlug]) {
     return calibrateGuideMetrics(localGuides[rootSlug]);
   }
+  if (baseSlug && localGuides[baseSlug]) {
+    return calibrateGuideMetrics(localGuides[baseSlug]);
+  }
   for (const g of Object.values(localGuides)) {
+    const gBase = g.providerSlug
+      .toLowerCase()
+      .replace(/^(docs|api|app|developer|developers|login|console|accounts|auth|web|www)\./, '')
+      .replace(/\.[a-z0-9]+$/, '');
     if (
       g.providerSlug.toLowerCase() === normalizedSlug ||
       g.providerSlug.toLowerCase() === rootSlug ||
+      (baseSlug && gBase && baseSlug === gBase) ||
       g.providerName.toLowerCase() === normalizedSlug ||
-      g.providerName.toLowerCase() === rootSlug
+      g.providerName.toLowerCase() === rootSlug ||
+      (baseSlug && g.providerName.toLowerCase().includes(baseSlug))
     ) {
       return calibrateGuideMetrics(g);
     }
@@ -219,7 +231,7 @@ export async function fetchGuide(slug: string): Promise<GuideVersion | null> {
       const { data: prov } = await supabase
         .from('providers')
         .select('id')
-        .or(`slug.eq.${normalizedSlug},slug.eq.${rootSlug}`)
+        .or(`slug.eq.${normalizedSlug},slug.eq.${rootSlug}${baseSlug ? `,slug.eq.${baseSlug}` : ''}`)
         .maybeSingle();
 
       if (prov) {
@@ -242,7 +254,11 @@ export async function fetchGuide(slug: string): Promise<GuideVersion | null> {
   }
 
   // 3. Check fallback fixtures
-  const fallback = FALLBACK_GUIDES[normalizedSlug] || FALLBACK_GUIDES[rootSlug] || null;
+  const fallback =
+    FALLBACK_GUIDES[normalizedSlug] ||
+    FALLBACK_GUIDES[rootSlug] ||
+    (baseSlug ? FALLBACK_GUIDES[baseSlug] : null) ||
+    null;
   return fallback ? calibrateGuideMetrics(fallback) : null;
 }
 

@@ -97,9 +97,16 @@ export const Library: React.FC = () => {
       {/* Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredProviders.map((p) => {
-          const matchedGuide = guides.find(
-            (g) => g.providerSlug === p.slug || g.providerSlug === p.slug.replace(/\.[a-z0-9]+$/, '')
-          );
+          const pBase = p.slug.toLowerCase().replace(/^(docs|api|app|developer|developers|login|auth|www)\./, '').replace(/\.[a-z0-9]+$/, '');
+          const matchedGuide = guides.find((g) => {
+            const gBase = g.providerSlug.toLowerCase().replace(/^(docs|api|app|developer|developers|login|auth|www)\./, '').replace(/\.[a-z0-9]+$/, '');
+            return (
+              g.providerSlug.toLowerCase() === p.slug.toLowerCase() ||
+              g.providerSlug.toLowerCase() === p.canonicalDomain?.toLowerCase() ||
+              (Boolean(pBase) && Boolean(gBase) && pBase === gBase) ||
+              g.providerName.toLowerCase() === p.displayName.toLowerCase()
+            );
+          });
           return <ProviderCard key={p.slug} provider={p} guide={matchedGuide} />;
         })}
       </div>
