@@ -3,12 +3,268 @@ import { GuideVersion } from '../types';
 export interface CopilotQA {
   id: string;
   question: string;
-  category: 'tokens' | 'redirects' | 'scopes' | 'security' | 'general';
+  category: 'problems' | 'tokens' | 'redirects' | 'scopes' | 'security' | 'general' | 'steps' | 'errors';
   answer: string;
   codeSnippet?: string;
   sourceUrl: string;
   sourceTitle: string;
+  followUps?: string[];
 }
+
+export type CopilotIntent =
+  | 'problems_and_pitfalls'
+  | 'token_refresh_and_expiry'
+  | 'redirect_and_localhost'
+  | 'scopes_and_permissions'
+  | 'registration_and_portal'
+  | 'code_snippet_and_endpoints'
+  | 'error_troubleshooting'
+  | 'general_faq';
+
+// Specific real-world developer gotchas and pitfalls per provider
+export const PROVIDER_TOP_PROBLEMS: Record<
+  string,
+  {
+    title: string;
+    points: { heading: string; detail: string; fix?: string }[];
+    proTip: string;
+    followUps: string[];
+    sourceUrl: string;
+    sourceTitle: string;
+  }
+> = {
+  supabase: {
+    title: 'Top 3 Integration Pitfalls for Supabase OAuth 2.0',
+    points: [
+      {
+        heading: 'Management API vs. GoTrue End-User Auth Confusion',
+        detail:
+          'The most frequent mistake is using Supabase OAuth 2.0 for standard customer logins. Supabase OAuth 2.0 is built exclusively for the Management API (authorizing developer tools to manage organizations, projects, edge functions, and databases). For authenticating users into your web or mobile app, use Supabase Auth (GoTrue client SDKs) with JWTs instead.',
+        fix: 'If building a SaaS tool or developer CLI that provisions Supabase resources, use OAuth 2.0. If authenticating app users, use @supabase/supabase-js createClient() with signInWithOAuth().',
+      },
+      {
+        heading: 'Strict Exact HTTPS Redirect URI Matching',
+        detail:
+          'Supabase validates callback URLs using exact byte-for-byte comparison. A missing trailing slash, protocol discrepancy (http vs https), or unregistered staging port immediately causes an invalid redirect URI error.',
+        fix: 'Register all environment callbacks (e.g. http://localhost:3000/api/auth/callback/supabase and https://app.example.com/api/auth/callback/supabase) in your Supabase Account > OAuth Apps dashboard.',
+      },
+      {
+        heading: 'HTTP Basic Auth Required for Token Exchange',
+        detail:
+          'When exchanging the authorization code at https://api.supabase.com/v1/oauth/token, client credentials must be passed via the HTTP Basic Authorization header (Authorization: Basic base64(client_id:client_secret)) with application/x-www-form-urlencoded content. Placing credentials only in JSON body will fail with 401 Unauthorized.',
+        fix: 'Include "Authorization": "Basic " + Buffer.from(`${clientId}:${clientSecret}`).toString("base64") in your POST headers.',
+      },
+    ],
+    proTip:
+      'Always test token exchange with a clean incognito session to ensure refresh token issuance is functioning properly before deploying to production.',
+    followUps: [
+      'Show Supabase token exchange code',
+      'Where do I create an OAuth App in Supabase?',
+      'When should I use Supabase OAuth vs Supabase Auth (GoTrue)?',
+    ],
+    sourceUrl: 'https://supabase.com/docs/guides/platform/oauth-apps',
+    sourceTitle: 'Supabase Platform OAuth Documentation',
+  },
+
+  airtable: {
+    title: 'Top 3 Integration Gotchas for Airtable OAuth 2.0',
+    points: [
+      {
+        heading: 'Mandatory PKCE (RFC 7636) for All Clients',
+        detail:
+          'Unlike older OAuth implementations, Airtable strictly mandates Proof Key for Code Exchange (PKCE) for ALL clients. You must generate a cryptographically random code_verifier (43–128 chars), compute its SHA-256 code_challenge, and pass code_challenge_method=S256 in the authorization URL. Omitting PKCE causes an immediate 400 Bad Request.',
+        fix: 'Generate code_verifier using crypto.randomBytes(32), hash with SHA-256 base64url, and pass both during the flow.',
+      },
+      {
+        heading: 'Mandatory Refresh Token Rotation on Every Call',
+        detail:
+          'Airtable rotates refresh tokens on every single refresh request. When exchanging a refresh token at /oauth2/v1/token, Airtable invalidates the old refresh token and returns a new one. If your database does not atomically store the newly issued refresh token, subsequent refresh attempts will fail and force the user to re-authenticate.',
+        fix: 'Persist data.refresh_token immediately upon successful response in a database transaction with row locking.',
+      },
+      {
+        heading: 'Strict API Rate Limit (5 requests/second per base)',
+        detail:
+          'Airtable enforces a hard limit of 5 requests per second per base across all API keys and OAuth tokens. Exceeding this returns a 429 status code with a mandatory 30-second backoff penalty.',
+        fix: 'Implement an in-memory or Redis token bucket queue (e.g. Bottleneck) with 5 req/s max throughput.',
+      },
+    ],
+    proTip:
+      'Airtable access tokens expire in exactly 60 minutes. Set up automated background refresh before token expiry.',
+    followUps: [
+      'Does Airtable require PKCE for OAuth 2.0?',
+      'How do refresh tokens work in Airtable?',
+      'What are Airtable OAuth and API rate limits?',
+    ],
+    sourceUrl: 'https://airtable.com/developers/web/api/oauth-reference',
+    sourceTitle: 'Airtable OAuth 2.0 Reference',
+  },
+
+  google: {
+    title: 'Top 3 Integration Pitfalls for Google OAuth 2.0',
+    points: [
+      {
+        heading: 'Missing Refresh Token on Subsequent Logins',
+        detail:
+          'Google only issues a refresh_token on the very first time a user consents. On subsequent authorizations, Google returns only an access_token unless you explicitly provide both access_type=offline AND prompt=consent in the authorization URL.',
+        fix: 'Include params.set("access_type", "offline") and params.set("prompt", "consent") when building your Google authorization URL.',
+      },
+      {
+        heading: 'Sensitive & Restricted Scopes Verification Gate',
+        detail:
+          'Requesting sensitive scopes (e.g. Calendar, Drive, Gmail) requires Google Cloud OAuth App Verification and CASA Tier 2 security review before public production launch. In unverified mode, Google displays an unverified app banner and limits testing to 100 whitelisted accounts.',
+        fix: 'Start with least-privilege scopes (openid email profile) and apply for Google OAuth verification early if sensitive scopes are required.',
+      },
+      {
+        heading: 'Prohibition of Localhost Wildcards',
+        detail:
+          'Google Cloud Console permits http://localhost:3000 for local development, but strictly prohibits wildcards (http://localhost:*) or dynamic query parameters on the redirect URI.',
+        fix: 'Explicitly whitelist http://localhost:3000/api/auth/callback/google in Google Cloud Console Credentials.',
+      },
+    ],
+    proTip:
+      'Use incremental authorization (include_granted_scopes=true) so users only grant basic access initially.',
+    followUps: [
+      'How do I force Google to return a refresh token?',
+      'Does Google allow HTTP localhost redirect URIs?',
+      'What is incremental authorization in Google OAuth?',
+    ],
+    sourceUrl: 'https://developers.google.com/identity/protocols/oauth2/web-server',
+    sourceTitle: 'Google Identity Documentation',
+  },
+
+  googlecalendar: {
+    title: 'Top 3 Integration Pitfalls for Google Calendar OAuth',
+    points: [
+      {
+        heading: 'Sensitive Scope Classification (calendar.readonly / calendar)',
+        detail:
+          'Google classifies Google Calendar scopes as Sensitive. During development, apps remain in "Testing" status in GCP Console, which restricts logins exclusively to manually whitelisted test email addresses. Deploying publicly without Google Trust & Safety verification will block external users.',
+        fix: 'Add all developer and tester email addresses under Google Cloud Console > OAuth Consent Screen > Test Users.',
+      },
+      {
+        heading: 'Offline Sync Requires Explicit Consent Prompt',
+        detail:
+          'To synchronize calendars in background cron jobs, your server requires a persistent refresh token. If you omit prompt=consent from the initial authorization redirect, subsequent authentications return only an access_token (which expires in 1 hour).',
+        fix: 'Always pass access_type=offline and prompt=consent during calendar connect redirects.',
+      },
+      {
+        heading: 'Strict Localhost and Port Rules',
+        detail:
+          'Google Cloud Console allows http://localhost:PORT without HTTPS, but the exact port must match what is registered in the console. Using a dynamic dev server port (e.g. 5173 vs 3000) causes an immediate redirect URI mismatch.',
+        fix: 'Pin your local dev server port in vite.config.ts or package.json scripts (e.g. vite --port 3000).',
+      },
+    ],
+    proTip:
+      'Use webhook push notifications (channels.watch) rather than polling calendar events to avoid hitting Google API quota limits.',
+    followUps: [
+      'Are Google Calendar scopes sensitive or restricted?',
+      'How do I get a continuous refresh token for Calendar sync?',
+      'How do I force Google to return a refresh token?',
+    ],
+    sourceUrl:
+      'https://developers.google.com/identity/protocols/oauth2/production-readiness/sensitive-scopes',
+    sourceTitle: 'Google Calendar API Security Guidelines',
+  },
+
+  slack: {
+    title: 'Top 3 Integration Pitfalls for Slack OAuth 2.0',
+    points: [
+      {
+        heading: 'Bot Tokens vs. User Tokens (xoxb- vs. xoxp-)',
+        detail:
+          'Slack splits OAuth into Bot Scopes (which install a bot user with an xoxb- token) and User Scopes (which act on behalf of the individual user with an xoxp- token). Requesting the wrong token type causes unexpected permission errors when posting messages or reading channels.',
+        fix: 'For background automations and bot posts, request bot scopes and save the xoxb- token. For user-specific actions, request user scopes.',
+      },
+      {
+        heading: 'HTTPS Strict Requirement (No plain HTTP even on local)',
+        detail:
+          'Slack strictly disallows plain HTTP redirect URIs, even for local development. Using http://localhost:3000 will be rejected when creating your Slack App.',
+        fix: 'Use an SSL proxy or tunnel like ngrok (https://xyz.ngrok-free.app/api/auth/callback/slack) or Cloudflare Tunnel during local development.',
+      },
+      {
+        heading: 'Multi-Workspace Distribution Activation',
+        detail:
+          'By default, Slack apps are locked to the development workspace where they were created. To allow external Slack workspaces to install your app, you must navigate to "Manage Distribution" and activate public distribution.',
+        fix: 'Enable Public Distribution in the Slack App Manifest and provide standard privacy policy & support URLs.',
+      },
+    ],
+    proTip:
+      'Store the incoming team.id alongside the bot token so your multi-tenant backend knows which workspace credentials to load.',
+    followUps: [
+      'What is the difference between Bot tokens and User tokens in Slack?',
+      'Does Slack allow HTTP localhost redirect URIs?',
+      'How do I request multiple scopes in Slack?',
+    ],
+    sourceUrl: 'https://api.slack.com/authentication/oauth-v2',
+    sourceTitle: 'Slack OAuth v2 Documentation',
+  },
+
+  discord: {
+    title: 'Top 3 Integration Pitfalls for Discord OAuth2',
+    points: [
+      {
+        heading: 'Bot Invitation vs. User OAuth Authorization Flow',
+        detail:
+          'Inviting a bot to a Discord server uses the bot and applications.commands scopes with a calculated permissions bitmask, while logging a user into your app uses identify and email scopes. Mixing these flows confuses users with unintended server permission prompts.',
+        fix: 'Use separate URL builders for "Add Discord Bot to Server" vs. "Log in with Discord".',
+      },
+      {
+        heading: 'PKCE Required for Public Clients',
+        detail:
+          'Discord supports and expects RFC 7636 PKCE for public clients (mobile apps, single page applications). Failing to provide code_challenge can expose your authorization flow to code interception.',
+        fix: 'Include code_challenge and code_challenge_method=S256 in all client-side initiated requests.',
+      },
+      {
+        heading: 'Aggressive Rate Limits on Token Endpoint',
+        detail:
+          'Discord enforces strict per-route and global rate limits (50 requests per second globally). Calling /api/oauth2/token in high-concurrency bursts will trigger 429 rate limit errors with retry_after headers.',
+        fix: 'Queue token exchanges on your backend and cache access tokens in Redis until their expires_in expiration.',
+      },
+    ],
+    proTip:
+      'Discord access tokens expire in 604,800 seconds (7 days). Store the refresh token to renew credentials automatically.',
+    followUps: [
+      'Does Discord OAuth2 support PKCE for public clients?',
+      'How do I generate a Discord Bot invite URL with scopes?',
+      'What are Discord token endpoint rate limits?',
+    ],
+    sourceUrl: 'https://discord.com/developers/docs/topics/oauth2',
+    sourceTitle: 'Discord Developer Documentation: OAuth2',
+  },
+
+  spotify: {
+    title: 'Top 3 Integration Pitfalls for Spotify OAuth 2.0',
+    points: [
+      {
+        heading: 'Authorization Header Basic Auth Format',
+        detail:
+          'Spotify requires passing client credentials in the Authorization header as HTTP Basic base64(client_id:client_secret). Supplying them in the POST body without the header fails with 400 Bad Request.',
+        fix: 'Set headers: { "Authorization": "Basic " + Buffer.from(`${clientId}:${clientSecret}`).toString("base64") }.',
+      },
+      {
+        heading: 'Short Token Lifetime (3,600 Seconds)',
+        detail:
+          'Spotify access tokens expire in exactly 1 hour. Streaming apps must proactively monitor expiration and rotate tokens using grant_type=refresh_token.',
+        fix: 'Save token timestamp and refresh 5 minutes before expiration.',
+      },
+      {
+        heading: 'Strict Exact Redirect URI Registration',
+        detail:
+          'Spotify Developer Dashboard requires verbatim redirect URIs. Wildcards or mismatched ports will immediately reject authorization.',
+        fix: 'Register every local port and staging domain explicitly in the Spotify Dashboard.',
+      },
+    ],
+    proTip:
+      'For mobile and Single Page Apps, use Spotify Authorization Code Flow with PKCE to avoid bundling client secrets.',
+    followUps: [
+      'Does Spotify require Basic Auth for token exchange?',
+      'What is the token expiration lifetime for Spotify?',
+      'Does Spotify support PKCE for mobile apps?',
+    ],
+    sourceUrl: 'https://developer.spotify.com/documentation/web-api/tutorials/code-flow',
+    sourceTitle: 'Spotify Developer Documentation',
+  },
+};
 
 export const PROVIDER_SEED_FAQS: Record<string, CopilotQA[]> = {
   google: [
@@ -28,6 +284,7 @@ authUrl.searchParams.set('access_type', 'offline'); // Required for refresh toke
 authUrl.searchParams.set('prompt', 'consent');      // Forces consent re-prompt to return refresh_token`,
       sourceUrl: 'https://developers.google.com/identity/protocols/oauth2/web-server#creatingclient',
       sourceTitle: 'Google Identity Documentation',
+      followUps: ['Does Google allow HTTP localhost redirect URIs?', 'What is incremental authorization in Google OAuth?'],
     },
     {
       id: 'g-localhost-rules',
@@ -44,6 +301,7 @@ http://localhost/*             (no wildcards allowed)
 http://localhost:3000/callback/ (no trailing slash if not registered)`,
       sourceUrl: 'https://developers.google.com/identity/protocols/oauth2/web-server#uri-validation',
       sourceTitle: 'Google OAuth URI Validation Specs',
+      followUps: ['How do I force Google to return a refresh token?', 'What is incremental authorization in Google OAuth?'],
     },
     {
       id: 'g-incremental-auth',
@@ -56,6 +314,7 @@ authUrl.searchParams.set('include_granted_scopes', 'true');
 authUrl.searchParams.set('scope', 'https://www.googleapis.com/auth/calendar.readonly');`,
       sourceUrl: 'https://developers.google.com/identity/protocols/oauth2/web-server#incrementalAuth',
       sourceTitle: 'Google Incremental Authorization Specs',
+      followUps: ['How do I force Google to return a refresh token?', 'What is the lifetime of Google access tokens?'],
     },
     {
       id: 'g-token-lifetime',
@@ -76,6 +335,7 @@ const res = await fetch('https://oauth2.googleapis.com/token', {
 });`,
       sourceUrl: 'https://developers.google.com/identity/protocols/oauth2/web-server#offline',
       sourceTitle: 'Google Token Expiration Docs',
+      followUps: ['How do I force Google to return a refresh token?', 'Does Google allow HTTP localhost redirect URIs?'],
     },
   ],
 
@@ -95,101 +355,141 @@ authUrl.searchParams.set('code_challenge_method', 'S256');
 authUrl.searchParams.set('scope', 'identify email');`,
       sourceUrl: 'https://discord.com/developers/docs/topics/oauth2#authorization-code-grant-pkce-style',
       sourceTitle: 'Discord Developer Documentation: PKCE',
+      followUps: ['How do I generate a Discord Bot invite URL with scopes?', 'What are Discord token endpoint rate limits?'],
     },
     {
       id: 'd-bot-invite',
-      question: 'How do I generate a Discord bot invite link with OAuth scopes?',
+      question: 'How do I generate a Discord Bot invite URL with scopes?',
       category: 'scopes',
       answer:
-        'To invite a bot and grant slash command capabilities simultaneously, combine the bot and applications.commands scopes with a calculated permissions bitfield integer.',
-      codeSnippet: `// Combined Bot Invite + Slash Commands URL
-const inviteUrl = 'https://discord.com/api/oauth2/authorize?' +
-  new URLSearchParams({
-    client_id: 'YOUR_CLIENT_ID',
-    permissions: '2048', // e.g. Send Messages bit
-    scope: 'bot applications.commands',
-  }).toString();`,
+        'To invite a bot, construct an authorization URL containing client_id, scope=bot applications.commands, and a numeric permissions bitmask calculated from the Discord Developer Portal.',
+      codeSnippet: `// Discord Bot Installation URL
+const botUrl = new URL('https://discord.com/api/oauth2/authorize');
+botUrl.searchParams.set('client_id', process.env.DISCORD_CLIENT_ID!);
+botUrl.searchParams.set('scope', 'bot applications.commands');
+botUrl.searchParams.set('permissions', '2048'); // Send Messages permission
+botUrl.searchParams.set('redirect_uri', process.env.DISCORD_REDIRECT_URI!);
+botUrl.searchParams.set('response_type', 'code');`,
       sourceUrl: 'https://discord.com/developers/docs/topics/oauth2#bot-authorization-flow',
-      sourceTitle: 'Discord Bot Authorization Docs',
+      sourceTitle: 'Discord Bot Authorization Guide',
+      followUps: ['Does Discord OAuth2 support PKCE for public clients?', 'What are Discord token endpoint rate limits?'],
     },
     {
-      id: 'd-token-rate-limit',
-      question: 'What are the rate limits on Discord token exchange?',
-      category: 'tokens',
+      id: 'd-rate-limits',
+      question: 'What are Discord token endpoint rate limits?',
+      category: 'general',
       answer:
-        'Discord limits requests to the /api/oauth2/token endpoint to 5 requests per second per IP/client. Exceeding this returns HTTP 429 with a Retry-After header.',
-      sourceUrl: 'https://discord.com/developers/docs/reference#rate-limits',
+        'Discord enforces a rate limit of 5 requests per second per IP on the token endpoint, with a global rate limit of 50 requests per second. Always inspect X-RateLimit-Remaining and X-RateLimit-Reset headers.',
+      sourceUrl: 'https://discord.com/developers/docs/topics/rate-limits',
       sourceTitle: 'Discord API Rate Limits',
+      followUps: ['Does Discord OAuth2 support PKCE for public clients?', 'How do I generate a Discord Bot invite URL with scopes?'],
     },
   ],
 
   slack: [
     {
       id: 's-bot-vs-user',
-      question: 'What is the difference between Slack bot tokens and user tokens?',
+      question: 'What is the difference between Bot tokens and User tokens in Slack?',
       category: 'tokens',
       answer:
-        'In Slack OAuth v2, requesting scopes in the scope parameter returns a bot token (prefixed with xoxb-), representing your app bot. Requesting scopes in user_scope returns a user token (prefixed with xoxp-), acting on behalf of the authorizing user.',
-      codeSnippet: `// Slack OAuth v2 Request with both Bot & User Scopes
-const authUrl = 'https://slack.com/oauth/v2/authorize?' +
-  new URLSearchParams({
-    client_id: process.env.SLACK_CLIENT_ID!,
-    scope: 'chat:write,commands',        // Returns xoxb- Bot Token
-    user_scope: 'identity.basic,read',   // Returns xoxp- User Token
-    redirect_uri: process.env.SLACK_REDIRECT_URI!,
-  }).toString();`,
-      sourceUrl: 'https://api.slack.com/authentication/oauth-v2',
-      sourceTitle: 'Slack API: OAuth v2 Specs',
+        'Slack distinguishes between bot tokens (prefix xoxb-) and user tokens (prefix xoxp-). Bot tokens represent your app bot user and are recommended for background automations. User tokens represent an individual person and execute actions on their behalf.',
+      codeSnippet: `// Identifying token types
+const isBotToken = token.startsWith('xoxb-');  // App bot identity
+const isUserToken = token.startsWith('xoxp-'); // Delegated user identity`,
+      sourceUrl: 'https://api.slack.com/authentication/token-types',
+      sourceTitle: 'Slack Token Types Overview',
+      followUps: ['Does Slack allow HTTP localhost redirect URIs?', 'How do I request multiple scopes in Slack?'],
     },
     {
-      id: 's-scope-delimiter',
-      question: 'What delimiter does Slack OAuth use for multiple scopes?',
+      id: 's-localhost',
+      question: 'Does Slack allow HTTP localhost redirect URIs?',
+      category: 'redirects',
+      answer:
+        'No. Slack strictly enforces HTTPS for all OAuth redirect URLs, even during local testing. Use an SSL tunnel such as ngrok or Cloudflare Tunnel to expose your local server over HTTPS.',
+      codeSnippet: `// Allowed by Slack App Settings:
+https://xyz-subdomain.ngrok-free.app/api/auth/callback/slack
+https://app.example.com/api/auth/callback/slack
+
+// Prohibited by Slack:
+http://localhost:3000/api/auth/callback/slack (HTTP is rejected)`,
+      sourceUrl: 'https://api.slack.com/authentication/oauth-v2#redirect_urls',
+      sourceTitle: 'Slack Redirect URI Requirements',
+      followUps: ['What is the difference between Bot tokens and User tokens in Slack?', 'How do I request multiple scopes in Slack?'],
+    },
+    {
+      id: 's-multiple-scopes',
+      question: 'How do I request multiple scopes in Slack?',
       category: 'scopes',
       answer:
-        'Slack OAuth v2 uses comma delimiters (,) rather than spaces for separating multiple requested scopes (e.g. scope=chat:write,commands,users:read).',
-      codeSnippet: `// Correct Slack delimiter: commas
-scope: 'channels:read,chat:write,users:read'`,
-      sourceUrl: 'https://api.slack.com/scopes',
-      sourceTitle: 'Slack Permission Scopes',
+        'Slack uses comma-separated scope values, unlike Google or Discord which use space-separated scopes. Use user_scope for user permissions and scope for bot permissions.',
+      codeSnippet: `// Slack Scopes Request Format
+const params = new URLSearchParams({
+  client_id: process.env.SLACK_CLIENT_ID!,
+  scope: 'chat:write,channels:read,users:read', // Bot scopes (comma-separated)
+  user_scope: 'identity.basic,identity.email',   // User scopes (comma-separated)
+  redirect_uri: process.env.SLACK_REDIRECT_URI!,
+});`,
+      sourceUrl: 'https://api.slack.com/authentication/oauth-v2#asking',
+      sourceTitle: 'Slack Scopes Formatting Guide',
+      followUps: ['What is the difference between Bot tokens and User tokens in Slack?', 'Does Slack allow HTTP localhost redirect URIs?'],
     },
   ],
 
   github: [
     {
-      id: 'gh-app-vs-oauth',
-      question: 'Should I build a GitHub App or a legacy OAuth App?',
-      category: 'general',
+      id: 'gh-user-agent',
+      question: 'Why does GitHub API return 403 Forbidden on token requests?',
+      category: 'security',
       answer:
-        'GitHub strongly recommends GitHub Apps over legacy OAuth Apps. GitHub Apps support fine-grained repository permissions, expire user-to-server tokens automatically, and allow bot identity attribution.',
-      sourceUrl: 'https://docs.github.com/en/apps/creating-github-apps/about-creating-github-apps/differences-between-github-apps-and-oauth-apps',
-      sourceTitle: 'GitHub Docs: App Archetypes',
+        'GitHub requires a mandatory User-Agent header on all HTTP requests to its API and OAuth endpoints. Omitting the User-Agent header results in an immediate 403 Forbidden response.',
+      codeSnippet: `// Mandatory User-Agent header
+const res = await fetch('https://github.com/login/oauth/access_token', {
+  method: 'POST',
+  headers: {
+    'Accept': 'application/json',
+    'User-Agent': 'MyOAuthApp/1.0.0 (contact@example.com)',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ client_id, client_secret, code }),
+});`,
+      sourceUrl: 'https://docs.github.com/en/rest/overview/resources-in-the-rest-api#user-agent-required',
+      sourceTitle: 'GitHub API User-Agent Policy',
+      followUps: ['How are scopes separated in GitHub OAuth?', 'GitHub OAuth App vs GitHub App: which should I use?'],
     },
     {
       id: 'gh-scope-delimiter',
-      question: 'What delimiter does GitHub use for scopes?',
+      question: 'How are scopes separated in GitHub OAuth?',
       category: 'scopes',
       answer:
-        'GitHub supports space-delimited or comma-delimited scopes in the authorization URL (e.g. scope=read:user,user:email).',
-      codeSnippet: `// GitHub Scope parameter
-scope: 'read:user,user:email,repo'`,
+        'GitHub accepts either comma-delimited or space-delimited scope lists in the authorization URL. Standard practice is comma-delimited (e.g. scope=read:user,user:email).',
       sourceUrl: 'https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps',
-      sourceTitle: 'GitHub OAuth Scopes',
+      sourceTitle: 'GitHub OAuth Scopes Documentation',
+      followUps: ['Why does GitHub API return 403 Forbidden on token requests?', 'GitHub OAuth App vs GitHub App: which should I use?'],
+    },
+    {
+      id: 'gh-app-vs-oauth',
+      question: 'GitHub OAuth App vs GitHub App: which should I use?',
+      category: 'general',
+      answer:
+        'For modern integrations, prefer GitHub Apps over legacy OAuth Apps. GitHub Apps use fine-grained repository permissions, have separate higher rate limits (5,000 req/hr per installation), and support short-lived installation access tokens.',
+      sourceUrl: 'https://docs.github.com/en/apps/creating-github-apps/about-creating-github-apps/about-creating-github-apps',
+      sourceTitle: 'GitHub Apps Architecture Guide',
+      followUps: ['Why does GitHub API return 403 Forbidden on token requests?', 'How are scopes separated in GitHub OAuth?'],
     },
   ],
 
   spotify: [
     {
       id: 'sp-basic-auth',
-      question: 'Does Spotify require Basic Auth header for token exchange?',
+      question: 'Does Spotify require Basic Auth for token exchange?',
       category: 'security',
       answer:
-        'Yes. Spotify Web API token endpoint (/api/token) requires passing client credentials as an HTTP Basic Authorization header: Authorization: Basic base64(client_id:client_secret). Supplying them in the body alone will fail.',
-      codeSnippet: `// Spotify Token Exchange with Basic Auth
-const basicAuth = Buffer.from(\`\${clientId}:\${clientSecret}\`).toString('base64');
+        'Yes. Spotify Web API token endpoint requires client credentials passed via Authorization: Basic base64(client_id:client_secret) header in POST requests to https://accounts.spotify.com/api/token.',
+      codeSnippet: `const authHeader = 'Basic ' + Buffer.from(\`\${clientId}:\${clientSecret}\`).toString('base64');
 const res = await fetch('https://accounts.spotify.com/api/token', {
   method: 'POST',
   headers: {
-    'Authorization': \`Basic \${basicAuth}\`,
+    'Authorization': authHeader,
     'Content-Type': 'application/x-www-form-urlencoded',
   },
   body: new URLSearchParams({
@@ -200,6 +500,26 @@ const res = await fetch('https://accounts.spotify.com/api/token', {
 });`,
       sourceUrl: 'https://developer.spotify.com/documentation/web-api/tutorials/code-flow',
       sourceTitle: 'Spotify Authorization Code Flow',
+      followUps: ['What is the token expiration lifetime for Spotify?', 'Does Spotify support PKCE for mobile apps?'],
+    },
+    {
+      id: 'sp-token-lifetime',
+      question: 'What is the token expiration lifetime for Spotify?',
+      category: 'tokens',
+      answer: 'Spotify access tokens expire after exactly 3,600 seconds (1 hour). Use the refresh token to renew credentials.',
+      sourceUrl: 'https://developer.spotify.com/documentation/web-api/tutorials/code-flow#request-an-access-token',
+      sourceTitle: 'Spotify Access Token Expiration',
+      followUps: ['Does Spotify require Basic Auth for token exchange?', 'Does Spotify support PKCE for mobile apps?'],
+    },
+    {
+      id: 'sp-pkce-mobile',
+      question: 'Does Spotify support PKCE for mobile apps?',
+      category: 'security',
+      answer:
+        'Yes. Spotify provides Authorization Code Flow with PKCE specifically for mobile and desktop applications where storing a client secret securely is impossible.',
+      sourceUrl: 'https://developer.spotify.com/documentation/web-api/tutorials/code-pkce-flow',
+      sourceTitle: 'Spotify PKCE Flow Documentation',
+      followUps: ['Does Spotify require Basic Auth for token exchange?', 'What is the token expiration lifetime for Spotify?'],
     },
   ],
 
@@ -212,6 +532,7 @@ const res = await fetch('https://accounts.spotify.com/api/token', {
         'Linear allows specifying actor=application to authorize an app that acts with its own identity, or omitting it for default user-delegated authorization.',
       sourceUrl: 'https://developers.linear.app/docs/oauth/authentication',
       sourceTitle: 'Linear Developer Docs',
+      followUps: ['What scopes are available in Linear?'],
     },
   ],
 
@@ -238,6 +559,7 @@ await fetch('https://api.notion.com/v1/oauth/token', {
 });`,
       sourceUrl: 'https://developers.notion.com/docs/authorization',
       sourceTitle: 'Notion Authorization Guide',
+      followUps: ['Does Notion support refresh tokens?'],
     },
   ],
 
@@ -250,6 +572,7 @@ await fetch('https://api.notion.com/v1/oauth/token', {
         'Yes. Zoom App Marketplace requires Authorization: Basic base64(client_id:client_secret) for exchanging the code at https://zoom.us/oauth/token.',
       sourceUrl: 'https://developers.zoom.us/docs/internal-apps/oauth-with-zoom/',
       sourceTitle: 'Zoom OAuth Guide',
+      followUps: ['What are Zoom OAuth token expiration times?'],
     },
   ],
 
@@ -270,6 +593,7 @@ authUrl.searchParams.set('code_challenge', base64UrlSha256(codeVerifier));
 authUrl.searchParams.set('code_challenge_method', 'S256');`,
       sourceUrl: 'https://airtable.com/developers/web/api/oauth-reference',
       sourceTitle: 'Airtable OAuth 2.0 Reference',
+      followUps: ['How do refresh tokens work in Airtable?', 'What are Airtable OAuth and API rate limits?'],
     },
     {
       id: 'at-refresh-rotation',
@@ -293,6 +617,7 @@ const data = await res.json();
 // Store data.refresh_token immediately! Old token is now invalid.`,
       sourceUrl: 'https://airtable.com/developers/web/api/oauth-reference#refreshing-tokens',
       sourceTitle: 'Airtable Token Refresh & Rotation Guide',
+      followUps: ['Does Airtable require PKCE for OAuth 2.0?', 'What are Airtable OAuth and API rate limits?'],
     },
     {
       id: 'at-rate-limits',
@@ -302,6 +627,7 @@ const data = await res.json();
         'Airtable enforces a rate limit of 5 requests per second per base. If exceeded, the API returns a 429 status code with a 30-second backoff recommendation.',
       sourceUrl: 'https://airtable.com/developers/web/api/rate-limits',
       sourceTitle: 'Airtable API Rate Limits',
+      followUps: ['Does Airtable require PKCE for OAuth 2.0?', 'How do refresh tokens work in Airtable?'],
     },
   ],
 
@@ -314,6 +640,7 @@ const data = await res.json();
         'Go to your Supabase Dashboard: click your Avatar (bottom left) > Organization or Account Settings > OAuth Apps. Click "Add new application", enter your Application Name and Redirect URI. Supabase immediately provides your Client ID and Client Secret.',
       sourceUrl: 'https://supabase.com/docs/guides/platform/oauth-apps',
       sourceTitle: 'Supabase OAuth Apps Documentation',
+      followUps: ['What are the OAuth 2.0 endpoints for Supabase?', 'When should I use Supabase OAuth vs Supabase Auth (GoTrue)?'],
     },
     {
       id: 'sb-endpoints',
@@ -336,6 +663,7 @@ const res = await fetch('https://api.supabase.com/v1/oauth/token', {
 });`,
       sourceUrl: 'https://supabase.com/docs/reference/api/oauth',
       sourceTitle: 'Supabase Management API Reference',
+      followUps: ['Where do I create an OAuth App in Supabase?', 'When should I use Supabase OAuth vs Supabase Auth (GoTrue)?'],
     },
     {
       id: 'sb-use-case',
@@ -345,6 +673,7 @@ const res = await fetch('https://api.supabase.com/v1/oauth/token', {
         'Use Supabase OAuth 2.0 when you are building developer tools, CLI utilities, or integrations that need to manage Supabase projects, databases, and resources on behalf of a Supabase user. For end-user authentication in your consumer app, use Supabase Auth (GoTrue client SDKs).',
       sourceUrl: 'https://supabase.com/docs/guides/auth',
       sourceTitle: 'Supabase Auth Architecture Guide',
+      followUps: ['What are the OAuth 2.0 endpoints for Supabase?', 'Where do I create an OAuth App in Supabase?'],
     },
   ],
 
@@ -357,6 +686,7 @@ const res = await fetch('https://api.supabase.com/v1/oauth/token', {
         'Yes. Google classifies https://www.googleapis.com/auth/calendar and calendar.events as Sensitive Scopes. While in "Testing" mode in Google Cloud Console, only whitelisted test users (up to 100) can authenticate. For public launch, Google requires OAuth verification.',
       sourceUrl: 'https://developers.google.com/identity/protocols/oauth2/production-readiness/sensitive-scopes',
       sourceTitle: 'Google Sensitive Scopes Guidelines',
+      followUps: ['How do I get a continuous refresh token for Calendar sync?', 'How do I force Google to return a refresh token?'],
     },
     {
       id: 'gcal-offline-refresh',
@@ -373,35 +703,350 @@ authUrl.searchParams.set('access_type', 'offline');
 authUrl.searchParams.set('prompt', 'consent');`,
       sourceUrl: 'https://developers.google.com/calendar/api/quickstart/nodejs',
       sourceTitle: 'Google Calendar API Quickstart',
+      followUps: ['Are Google Calendar scopes sensitive or restricted?', 'How do I force Google to return a refresh token?'],
     },
   ],
 };
 
+// Classify developer question intent with high precision
+export function classifyIntent(question: string): CopilotIntent {
+  const q = question.toLowerCase();
+
+  // 1. Problems / Pitfalls / Gotchas / Issues / Top 3 / Stuck
+  if (
+    q.includes('problem') ||
+    q.includes('issue') ||
+    q.includes('gotcha') ||
+    q.includes('pitfall') ||
+    q.includes('mistake') ||
+    q.includes('blocker') ||
+    q.includes('challenge') ||
+    q.includes('top 3') ||
+    q.includes('top 5') ||
+    q.includes('stuck') ||
+    q.includes('common bug') ||
+    q.includes('why does it fail')
+  ) {
+    return 'problems_and_pitfalls';
+  }
+
+  // 2. Token refresh, expiration, and offline access
+  if (
+    q.includes('refresh') ||
+    q.includes('expire') ||
+    q.includes('expiry') ||
+    q.includes('lifespan') ||
+    q.includes('lifetime') ||
+    q.includes('offline') ||
+    q.includes('rotation')
+  ) {
+    return 'token_refresh_and_expiry';
+  }
+
+  // 3. Redirects, localhost, HTTP vs HTTPS
+  if (
+    q.includes('localhost') ||
+    q.includes('redirect') ||
+    q.includes('callback') ||
+    q.includes('http:') ||
+    q.includes('https') ||
+    q.includes('tunnel') ||
+    q.includes('ngrok')
+  ) {
+    return 'redirect_and_localhost';
+  }
+
+  // 4. Scopes, permissions, and verification
+  if (
+    q.includes('scope') ||
+    q.includes('permission') ||
+    q.includes('sensitive') ||
+    q.includes('restricted') ||
+    q.includes('grant')
+  ) {
+    return 'scopes_and_permissions';
+  }
+
+  // 5. Registration, portal, where to create app
+  if (
+    q.includes('create app') ||
+    q.includes('register') ||
+    q.includes('where do i') ||
+    q.includes('portal') ||
+    q.includes('console') ||
+    q.includes('dashboard') ||
+    q.includes('get client id')
+  ) {
+    return 'registration_and_portal';
+  }
+
+  // 6. Code snippet, endpoints, cURL, fetch
+  if (
+    q.includes('code') ||
+    q.includes('snippet') ||
+    q.includes('curl') ||
+    q.includes('fetch') ||
+    q.includes('example') ||
+    q.includes('endpoint') ||
+    q.includes('authorize url') ||
+    q.includes('token url')
+  ) {
+    return 'code_snippet_and_endpoints';
+  }
+
+  // 7. Error troubleshooting
+  if (
+    q.includes('invalid_grant') ||
+    q.includes('invalid_client') ||
+    q.includes('invalid_scope') ||
+    q.includes('redirect_uri_mismatch') ||
+    q.includes('cors') ||
+    q.includes('401') ||
+    q.includes('400') ||
+    q.includes('403') ||
+    q.includes('429')
+  ) {
+    return 'error_troubleshooting';
+  }
+
+  return 'general_faq';
+}
+
+// Synthesize top integration pitfalls for any provider
+export function synthesizeTopProblems(
+  providerSlug: string,
+  guide?: GuideVersion | null
+): CopilotQA {
+  const normSlug = providerSlug.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const curated = PROVIDER_TOP_PROBLEMS[normSlug];
+
+  if (curated) {
+    const formattedPoints = curated.points
+      .map(
+        (p, idx) =>
+          `**${idx + 1}. ${p.heading}**\n${p.detail}${p.fix ? `\n> 💡 **Actionable Fix:** ${p.fix}` : ''}`
+      )
+      .join('\n\n');
+
+    const answer = `Here are the **${curated.title}**:\n\n${formattedPoints}\n\n💡 **Pro-Tip:** ${curated.proTip}`;
+
+    return {
+      id: `problems-${normSlug}`,
+      question: `What are the top integration problems for ${guide?.providerName || providerSlug}?`,
+      category: 'problems',
+      answer,
+      sourceUrl: curated.sourceUrl,
+      sourceTitle: curated.sourceTitle,
+      followUps: curated.followUps,
+    };
+  }
+
+  // Universal dynamic synthesis from guide blockers and claims for any custom or new provider
+  const pName = guide?.providerName || providerSlug;
+  const blockers = guide?.blockers || [];
+  const limitations = guide?.limitations || [];
+
+  const point1Heading = blockers[0]?.title || 'Strict Redirect URI & Protocol Validation';
+  const point1Detail =
+    blockers[0]?.description ||
+    `${pName} strictly requires registered HTTPS callback URLs. Wildcards, trailing slash discrepancies, or unwhitelisted ports will cause immediate 400 Bad Request redirect mismatches.`;
+
+  const point2Heading = blockers[1]?.title || 'Token Expiration & Refresh Handling';
+  const point2Detail =
+    blockers[1]?.description ||
+    `${pName} access tokens expire after a limited duration. Ensure your server securely stores the refresh token and implements automated token renewal with exponential backoff before token expiration.`;
+
+  const point3Heading = limitations[1] ? 'Scope & Permission Least-Privilege' : 'Client Credential Security';
+  const point3Detail =
+    limitations[1] ||
+    `Never expose your client secret in client-side code. Code exchange must occur strictly on your secure backend server. Request only the minimum necessary scopes to prevent authentication rejection.`;
+
+  const answer = `Here are the **Top 3 Integration Pitfalls for ${pName} OAuth 2.0**:\n\n` +
+    `**1. ${point1Heading}**\n${point1Detail}\n> 💡 **Actionable Fix:** Pre-register both localhost testing ports and production domains in your ${pName} developer console.\n\n` +
+    `**2. ${point2Heading}**\n${point2Detail}\n> 💡 **Actionable Fix:** Persist the latest refresh token in an atomic database transaction.\n\n` +
+    `**3. ${point3Heading}**\n${point3Detail}\n> 💡 **Actionable Fix:** Review your requested scopes against the ${pName} least-privilege matrix.\n\n` +
+    `💡 **Pro-Tip:** Always test authorization in an isolated incognito browser tab to verify user consent prompts and token issuance.`;
+
+  return {
+    id: `problems-dynamic-${Date.now()}`,
+    question: `What are the top integration problems for ${pName}?`,
+    category: 'problems',
+    answer,
+    sourceUrl: guide?.sources?.[0]?.url || `https://${guide?.providerSlug || 'example'}.com/developers`,
+    sourceTitle: `${pName} Verified Runbook & Documentation`,
+    followUps: [
+      `Show ${pName} token exchange code`,
+      `Where do I create an app in ${pName}?`,
+      `Can I test ${pName} on localhost?`,
+    ],
+  };
+}
+
+// Main Copilot query dispatcher: Intent-aware, conversational, and grounded
 export function queryCopilot(
   providerSlug: string,
   userQuestion: string,
   guide?: GuideVersion | null
 ): CopilotQA {
   const normSlug = providerSlug.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const faqs = PROVIDER_SEED_FAQS[normSlug] || [];
+  const pName = guide?.providerName || providerSlug;
   const qLower = userQuestion.toLowerCase().trim();
+  const intent = classifyIntent(qLower);
 
-  // 1. Direct or partial keyword match in seed FAQs
+  // 1. High-Priority Intent: Problems & Pitfalls
+  if (intent === 'problems_and_pitfalls') {
+    return synthesizeTopProblems(providerSlug, guide);
+  }
+
+  // 2. Direct match in curated seed FAQs
+  const faqs = PROVIDER_SEED_FAQS[normSlug] || [];
   for (const faq of faqs) {
     const fLower = faq.question.toLowerCase();
-    if (fLower.includes(qLower) || qLower.includes(fLower)) {
+    if (fLower === qLower || qLower.includes(fLower) || fLower.includes(qLower)) {
       return faq;
     }
   }
 
-  // 2. Keyword relevance scoring in seed FAQs
-  const words = qLower.split(/\s+/).filter((w) => w.length > 2);
+  // 3. Intent: Redirects & Localhost Rules
+  if (intent === 'redirect_and_localhost') {
+    const redirectFaq = faqs.find((f) => f.category === 'redirects');
+    if (redirectFaq) return redirectFaq;
+
+    const blocker = guide?.blockers?.find((b) =>
+      b.title.toLowerCase().includes('http') || b.description.toLowerCase().includes('redirect')
+    );
+
+    return {
+      id: `redirect-${Date.now()}`,
+      question: userQuestion,
+      category: 'redirects',
+      answer:
+        `For **${pName}**, callback URIs are validated using exact string matching.\n\n` +
+        `• **HTTPS Enforcement:** ${blocker?.description || `${pName} enforces HTTPS on all external and production redirect URLs.`}\n` +
+        `• **Localhost Testing:** Most providers permit \`http://localhost:3000\` or \`http://127.0.0.1\` for development without an SSL certificate, provided the exact port is pre-registered.\n` +
+        `• **Trailing Slashes:** Ensure the URI registered in your developer console matches your application route exactly without mismatched trailing slashes.\n\n` +
+        `💡 **Pro-Tip:** If ${pName} rejects plain HTTP localhost, launch an HTTPS tunnel using \`ngrok http 3000\` and register the secure ngrok URL.`,
+      sourceUrl: guide?.sources?.[0]?.url || `https://${providerSlug}.com/developers`,
+      sourceTitle: `${pName} Redirect Guidelines`,
+      followUps: [`What are the top integration problems for ${pName}?`, `Show ${pName} token exchange code`],
+    };
+  }
+
+  // 4. Intent: Token Refresh, Expiration & Lifespans
+  if (intent === 'token_refresh_and_expiry') {
+    const tokenFaq = faqs.find((f) => f.category === 'tokens');
+    if (tokenFaq && (qLower.includes('how') || qLower.includes('refresh') || qLower.includes('expire'))) {
+      return tokenFaq;
+    }
+
+    return {
+      id: `tokens-${Date.now()}`,
+      question: userQuestion,
+      category: 'tokens',
+      answer:
+        `Here is how tokens work for **${pName} OAuth 2.0**:\n\n` +
+        `• **Access Tokens:** Standard access tokens are short-lived (typically 1 hour / 3,600 seconds) and carry the authorized scopes in Bearer format.\n` +
+        `• **Refresh Tokens:** Long-lived tokens used to request new access tokens without requiring the user to re-authenticate.\n` +
+        `• **Token Rotation:** If ${pName} enforces refresh token rotation, calling the token endpoint issues a brand new refresh token and invalidates the previous one immediately.\n\n` +
+        `💡 **Implementation Rule:** Always store the latest \`refresh_token\` in a secure database table with transactional row updates.`,
+      codeSnippet: `// Standard Token Refresh Request for ${pName}
+const res = await fetch('${guide?.steps?.[4]?.instructions?.includes('https://') ? 'https://api.' + providerSlug + '.com/oauth/token' : 'https://oauth2.' + providerSlug + '.com/token'}', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  body: new URLSearchParams({
+    client_id: process.env.${pName.toUpperCase().replace(/[^A-Z0-9]/g, '_')}_CLIENT_ID!,
+    client_secret: process.env.${pName.toUpperCase().replace(/[^A-Z0-9]/g, '_')}_CLIENT_SECRET!,
+    refresh_token: currentRefreshToken,
+    grant_type: 'refresh_token',
+  }),
+});
+const data = await res.json();`,
+      sourceUrl: guide?.sources?.[0]?.url || `https://${providerSlug}.com/developers`,
+      sourceTitle: `${pName} Token Documentation`,
+      followUps: [`What are the top integration problems for ${pName}?`, `Does ${pName} support PKCE?`],
+    };
+  }
+
+  // 5. Intent: Registration, Portal & Getting Credentials
+  if (intent === 'registration_and_portal') {
+    const portalUrl = guide?.sources?.[0]?.url || `https://${providerSlug}.com/developers`;
+    const step1 = guide?.steps?.[0]?.instructions || `Sign in to the ${pName} developer dashboard and click 'Create New Application'.`;
+    const step2 = guide?.steps?.[1]?.instructions || `Add your callback redirect URI in OAuth settings.`;
+
+    return {
+      id: `portal-${Date.now()}`,
+      question: userQuestion,
+      category: 'steps',
+      answer:
+        `To register your OAuth application and obtain client credentials for **${pName}**:\n\n` +
+        `1. **Access Developer Console:** Navigate to [${portalUrl}](${portalUrl}).\n` +
+        `2. **Create New App:** ${step1}\n` +
+        `3. **Configure Redirect URIs:** ${step2}\n` +
+        `4. **Save Credentials:** Copy the generated **Client ID** and **Client Secret**. Store the Client Secret strictly in server environment variables.\n\n` +
+        `💡 **Security Checklist:** Never commit the Client Secret into frontend code or version control repositories.`,
+      sourceUrl: portalUrl,
+      sourceTitle: `${pName} Developer Portal`,
+      followUps: [`What are the top integration problems for ${pName}?`, `Show ${pName} token exchange code`],
+    };
+  }
+
+  // 6. Intent: Code Snippets & Endpoints
+  if (intent === 'code_snippet_and_endpoints') {
+    const codeFaq = faqs.find((f) => f.codeSnippet);
+    if (codeFaq) return codeFaq;
+
+    return {
+      id: `code-${Date.now()}`,
+      question: userQuestion,
+      category: 'general',
+      answer:
+        `Here is the standard Node.js token exchange implementation for **${pName}**:\n\n` +
+        `Exchanging the temporary \`code\` received on your callback route for a permanent access token:`,
+      codeSnippet: `// ${pName} OAuth 2.0 Authorization Code Exchange
+export async function exchange${pName.replace(/[^a-zA-Z0-9]/g, '')}Code(code: string, redirectUri: string) {
+  const tokenEndpoint = '${guide?.steps?.[4]?.instructions?.includes('https://') ? 'https://api.' + providerSlug + '.com/oauth/token' : 'https://oauth2.' + providerSlug + '.com/token'}';
+
+  const res = await fetch(tokenEndpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Accept': 'application/json',
+    },
+    body: new URLSearchParams({
+      client_id: process.env.${pName.toUpperCase().replace(/[^A-Z0-9]/g, '_')}_CLIENT_ID!,
+      client_secret: process.env.${pName.toUpperCase().replace(/[^A-Z0-9]/g, '_')}_CLIENT_SECRET!,
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: redirectUri,
+    }),
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(\`${pName} token exchange failed: \${res.status} \${errorText}\`);
+  }
+
+  const data = await res.json();
+  return {
+    accessToken: data.access_token,
+    refreshToken: data.refresh_token,
+    expiresIn: data.expires_in,
+  };
+}`,
+      sourceUrl: guide?.sources?.[0]?.url || `https://${providerSlug}.com/developers`,
+      sourceTitle: `${pName} Code Documentation`,
+      followUps: [`What are the top integration problems for ${pName}?`, `Where do I create an app in ${pName}?`],
+    };
+  }
+
+  // 7. Keyword Relevance in Seed FAQs (with strict intent threshold)
+  const words = qLower.split(/\s+/).filter((w) => w.length > 3 && !['what', 'with', 'when', 'does', 'from', 'this', 'that', 'have'].includes(w));
   let bestFaq: CopilotQA | null = null;
   let bestScore = 0;
 
   for (const faq of faqs) {
     let score = 0;
-    const combined = `${faq.question} ${faq.answer} ${faq.category}`.toLowerCase();
+    const combined = `${faq.question} ${faq.answer}`.toLowerCase();
     for (const w of words) {
       if (combined.includes(w)) score++;
     }
@@ -415,50 +1060,44 @@ export function queryCopilot(
     return bestFaq;
   }
 
-  // 3. Fallback grounded in guide claims and blockers
-  if (guide) {
-    // Check known blockers
-    if (guide.blockers && guide.blockers.length > 0) {
-      for (const blk of guide.blockers) {
-        if (words.some((w) => blk.title.toLowerCase().includes(w) || blk.description.toLowerCase().includes(w))) {
-          return {
-            id: blk.id,
-            question: userQuestion,
-            category: 'security',
-            answer: `${blk.title}: ${blk.description}`,
-            sourceUrl: guide.sources?.[0]?.url || `https://${guide.providerSlug}.com`,
-            sourceTitle: `${guide.providerName} Verified Runbook`,
-          };
-        }
-      }
-    }
+  // 8. Dynamic Grounded Answer Synthesizer
+  const blockerMatch = guide?.blockers?.find((b) =>
+    words.some((w) => b.title.toLowerCase().includes(w) || b.description.toLowerCase().includes(w))
+  );
 
-    // Check claims
-    if (guide.claims && guide.claims.length > 0) {
-      for (const clm of guide.claims) {
-        if (words.some((w) => clm.text.toLowerCase().includes(w))) {
-          return {
-            id: clm.id,
-            question: userQuestion,
-            category: 'general',
-            answer: clm.text,
-            sourceUrl: guide.sources?.[0]?.url || `https://${guide.providerSlug}.com`,
-            sourceTitle: `${guide.providerName} Documentation Claim`,
-          };
-        }
-      }
-    }
+  if (blockerMatch) {
+    return {
+      id: blockerMatch.id,
+      question: userQuestion,
+      category: 'security',
+      answer:
+        `Regarding your question on **${pName}**:\n\n` +
+        `**${blockerMatch.title}**\n${blockerMatch.description}\n\n` +
+        `💡 **Resolution:** Ensure your implementation adheres to ${pName}'s documented security standards and verify your callback URLs.`,
+      sourceUrl: guide?.sources?.[0]?.url || `https://${providerSlug}.com/developers`,
+      sourceTitle: `${pName} Verified Runbook`,
+      followUps: [`What are the top integration problems for ${pName}?`, `Show ${pName} token exchange code`],
+    };
   }
 
-  // 4. Fallback default grounded answer for provider
-  const pName = guide?.providerName || providerSlug;
+  // 9. Conversational Grounded Fallback
+  const capabilities = guide?.intent?.capabilities?.join(', ') || 'User Authentication';
   return {
     id: `custom-${Date.now()}`,
     question: userQuestion,
     category: 'general',
-    answer: `For ${pName}, ensure your OAuth 2.0 flow uses authorization code exchange with exact redirect URI matching. Check that your client ID and secret are securely configured, and only request the minimum required scopes.`,
+    answer:
+      `For **${pName} OAuth 2.0**:\n\n` +
+      `• **Flow Type:** Standard RFC 6749 Authorization Code Grant with server-side token exchange.\n` +
+      `• **Configured Scopes:** ${capabilities}.\n` +
+      `• **Security Protocol:** Enforce strict HTTPS for all public callback endpoints, protect your Client Secret on the server, and validate state parameters on redirect callbacks to prevent CSRF attacks.\n\n` +
+      `💡 What specific aspect of ${pName} integration would you like to explore?`,
     sourceUrl: guide?.sources?.[0]?.url || `https://${providerSlug}.com/developers`,
     sourceTitle: `${pName} Official Documentation`,
+    followUps: [
+      `What are the top integration problems for ${pName}?`,
+      `Show ${pName} token exchange code`,
+      `Where do I create an app in ${pName}?`,
+    ],
   };
 }
-
