@@ -10,7 +10,7 @@
 
 ---
 
-## 🎯 The Developer Problem & The Path Forward
+## The Developer Problem & The Path Forward
 
 OAuth 2.0 was standardized over a decade ago in RFC 6749, yet integrating it remains one of the most frustrating time sinks for software engineers. While the core protocol is standard, vendor implementations are deeply fragmented:
 * Portals bury app registration under disparate names (*Connected Apps*, *OAuth Providers*, *Integrations*, *Bot vs User Scopes*).
@@ -25,7 +25,7 @@ OAuth 2.0 was standardized over a decade ago in RFC 6749, yet integrating it rem
 
 ---
 
-## ⚡ Show Us That It Works
+## Show Us That It Works
 
 ### 1. Real Apps Across Different Setup Challenges
 
@@ -63,7 +63,7 @@ By validating against real developer portals, official documentation, and live t
 
 ---
 
-## 🛠️ Setup Instructions
+## Setup Instructions
 
 ### 1. Web Application (React + Vite + Tailwind)
 ```bash
@@ -83,7 +83,7 @@ python -m worker.main
 
 ---
 
-## 🧠 Key Decisions (PM Rationale)
+## Key Decisions 
 
 1. **Curated + Autonomous Hybrid Model:** Top platforms (Google, Slack, GitHub, Salesforce, etc.) load instantly ($< 15\text{ms}$) via verified reference fixtures, while unfamiliar apps are dynamically researched in parallel by autonomous agents in under 69 seconds.
 2. **Contamination Firewall:** If a user researches an app but pastes a URL from a different service (e.g., passing a Supabase doc link with a Loom query), the engine detects host mismatch and firewalls the input, preventing cross-provider hallucination.
@@ -93,7 +93,7 @@ python -m worker.main
 
 ---
 
-## ⚠️ Limitations
+## Limitations
 
 1. **Third-Party Credential Generation:** The agent does not programmatically log into vendor consoles to generate Client Secrets on behalf of users. Doing so would violate vendor Terms of Service, compromise enterprise credentials, and break security boundaries. Instead, it guides the developer directly to the exact credential creation form.
 2. **Vendor Console UI Redesigns:** While vendor OAuth API endpoints remain stable, developer console navigation occasionally changes. We mitigate this using automated weekly SHA-256 documentation drift monitors to alert maintainers.
