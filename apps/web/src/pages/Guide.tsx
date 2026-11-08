@@ -20,6 +20,7 @@ import { BlockerWizard } from '../components/BlockerWizard';
 import { CodePlayground } from '../components/CodePlayground';
 import { ProviderLogo } from '../components/ProviderLogo';
 import { QuickEndpointsCard } from '../components/QuickEndpointsCard';
+import { ProviderCopilotDrawer } from '../components/ProviderCopilotDrawer';
 import { fetchGuide } from '../lib/api';
 import { GuideVersion } from '../types';
 
@@ -31,6 +32,22 @@ export const Guide: React.FC = () => {
   const [activeClaimId, setActiveClaimId] = useState<string | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardQuery, setWizardQuery] = useState('redirect_uri_mismatch');
+  const [copilotOpen, setCopilotOpen] = useState(false);
+
+  // Global Cmd+J / Ctrl+J shortcut to toggle Copilot Drawer
+  useEffect(() => {
+    const handleGlobalKey = (e: KeyboardEvent) => {
+      const activeTag = document.activeElement?.tagName?.toLowerCase();
+      if (activeTag === 'input' || activeTag === 'textarea') return;
+
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'j') {
+        e.preventDefault();
+        setCopilotOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKey);
+    return () => window.removeEventListener('keydown', handleGlobalKey);
+  }, []);
 
   const openTroubleshooter = (initialText: string = 'redirect_uri_mismatch') => {
     setWizardQuery(initialText);
@@ -168,7 +185,18 @@ ${guide.sources.map((src) => `- [${src.id}] ${src.url} (Hash: ${src.contentHash}
           <span>Back to Library</span>
         </Link>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          <button
+            onClick={() => setCopilotOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/40 bg-gradient-to-r from-amber-500/10 to-amber-600/15 hover:from-amber-500/20 hover:to-amber-600/25 text-amber-950 text-xs font-bold transition-all shadow-xs group"
+            title="Ask grounded questions about this OAuth provider (Cmd+J)"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-600 group-hover:scale-110 transition-transform" />
+            <span>Ask {guide.providerName} Copilot</span>
+            <kbd className="hidden sm:inline-block px-1.5 py-0.2 text-[9px] font-mono text-amber-800 bg-amber-100/80 rounded border border-amber-300/60 ml-0.5">
+              ⌘J
+            </kbd>
+          </button>
           <button
             onClick={() => openTroubleshooter('redirect_uri_mismatch')}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-semibold transition-colors shadow-xs"
@@ -467,6 +495,13 @@ ${guide.sources.map((src) => `- [${src.id}] ${src.url} (Hash: ${src.contentHash}
         initialQuery={wizardQuery}
         providerSlug={guide.providerSlug}
         providerName={guide.providerName}
+      />
+
+      {/* Grounded Slide-Over Copilot Drawer */}
+      <ProviderCopilotDrawer
+        isOpen={copilotOpen}
+        onClose={() => setCopilotOpen(false)}
+        guide={guide}
       />
     </div>
   );

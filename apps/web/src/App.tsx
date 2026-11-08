@@ -37,6 +37,8 @@ export const App: React.FC = () => {
             <Route path="/library" element={<Library />} />
             <Route path="/guides/:slug/v/:version" element={<Guide />} />
             <Route path="/guides/:slug" element={<Guide />} />
+            <Route path="/guide/:slug/v/:version" element={<Guide />} />
+            <Route path="/guide/:slug" element={<Guide />} />
             <Route path="/generate" element={<Intake />} />
             <Route path="/jobs/:id" element={<Job />} />
             <Route path="/states" element={<States />} />
