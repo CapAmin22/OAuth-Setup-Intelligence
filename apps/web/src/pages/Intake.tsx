@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
   Sparkles,
@@ -16,19 +16,41 @@ import {
   CheckCircle2,
   AlertCircle,
   HelpCircle,
+  Search,
+  BookOpen,
 } from 'lucide-react';
 import { enqueueJob } from '../lib/api';
 import { getCurrentDeveloper, promptDeveloperAuth } from '../lib/auth';
+import {
+  searchProviderCatalog,
+  resolveProviderFromCatalog,
+  CatalogProvider,
+} from '../lib/providerCatalog';
 
 const POPULAR_SUGGESTIONS = [
+  { name: 'Loom', website: 'https://docs.loom.com' },
+  { name: 'Figma', website: 'https://www.figma.com/developers/api' },
+  { name: 'Supabase', website: 'https://supabase.com/docs/guides/platform/oauth-apps' },
   { name: 'Google Calendar', website: 'https://developers.google.com/calendar/api' },
   { name: 'Shopify', website: 'https://shopify.dev/docs/apps/auth/oauth' },
-  { name: 'Supabase', website: 'https://supabase.com/docs/guides/auth/social-login' },
   { name: 'Asana', website: 'https://developers.asana.com/docs/oauth' },
   { name: 'Box', website: 'https://developer.box.com/guides/authentication/oauth2/' },
-  { name: 'Twilio', website: 'https://www.twilio.com/docs/usage/api' },
   { name: 'Airtable', website: 'https://airtable.com/developers/web/api/oauth-reference' },
 ];
+
+function isWebsiteCompatibleWithQuery(url: string, currentQuery: string): boolean {
+  if (!url || !currentQuery) return true;
+  const cleanQ = currentQuery.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (!cleanQ || cleanQ.length < 2) return true;
+
+  try {
+    const host = (url.startsWith('http') ? new URL(url).hostname : url.split('/')[0]).toLowerCase();
+    const hostRoot = host.replace(/^www\./, '').split('.')[0];
+    return host.includes(cleanQ) || cleanQ.includes(hostRoot);
+  } catch {
+    return true;
+  }
+}
 
 const CAPABILITY_PRESETS = [
   { id: 'sso', label: 'User Authentication (SSO)', desc: 'Identity verification & profile' },
@@ -54,10 +76,35 @@ export const Intake: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
+  // App recognition and auto-link states
+  const [matchedCatalog, setMatchedCatalog] = useState<CatalogProvider[]>([]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [recognizedProvider, setRecognizedProvider] = useState<CatalogProvider | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    if (initialQuery && !query) setQuery(initialQuery);
-    if (initialWebsite && !website) setWebsite(initialWebsite);
+    if (initialQuery) {
+      setQuery(initialQuery);
+      const rec = resolveProviderFromCatalog(initialQuery);
+      setRecognizedProvider(rec);
+      if (initialWebsite) {
+        setWebsite(initialWebsite);
+      } else if (rec) {
+        setWebsite(rec.docUrl);
+      }
+    }
   }, [initialQuery, initialWebsite]);
+
+  // Click outside listener to dismiss autocomplete dropdown
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Keyboard shortcut: Cmd+Enter or Ctrl+Enter to submit
   useEffect(() => {
@@ -80,9 +127,55 @@ export const Intake: React.FC = () => {
     }
   };
 
+  const handleQueryChange = (newVal: string) => {
+    setQuery(newVal);
+
+    if (!newVal.trim()) {
+      setMatchedCatalog([]);
+      setIsDropdownOpen(false);
+      setRecognizedProvider(null);
+      return;
+    }
+
+    // 1. Search catalog for live autocomplete
+    const matches = searchProviderCatalog(newVal);
+    setMatchedCatalog(matches.slice(0, 5));
+    setIsDropdownOpen(matches.length > 0);
+
+    // 2. Direct recognized provider
+    const rec = resolveProviderFromCatalog(newVal);
+    setRecognizedProvider(rec);
+
+    // 3. Contamination firewall & auto-link
+    if (rec) {
+      // If recognized and website is empty or contaminated by another provider, auto-link verified doc URL
+      if (!website.trim() || !isWebsiteCompatibleWithQuery(website, newVal)) {
+        setWebsite(rec.docUrl);
+      }
+    } else {
+      // If user typed an unknown or different query, clear stale website if it was from a different known provider
+      if (website.trim() && !isWebsiteCompatibleWithQuery(website, newVal)) {
+        setWebsite('');
+      }
+    }
+  };
+
+  const applyCatalogProvider = (prov: CatalogProvider) => {
+    setQuery(prov.displayName);
+    setWebsite(prov.docUrl);
+    setRecognizedProvider(prov);
+    setIsDropdownOpen(false);
+    if (prov.defaultScopes && prov.defaultScopes.length > 0 && !customScopes) {
+      setCustomScopes(prov.defaultScopes.join(prov.scopeDelimiter || ' '));
+    }
+  };
+
   const applySuggestion = (sug: { name: string; website: string }) => {
     setQuery(sug.name);
     setWebsite(sug.website);
+    const rec = resolveProviderFromCatalog(sug.name);
+    setRecognizedProvider(rec);
+    setIsDropdownOpen(false);
   };
 
   const executeSubmit = async () => {
@@ -144,24 +237,73 @@ export const Intake: React.FC = () => {
         {/* Left Column: Intake Form Console (7 of 12 cols) */}
         <div className="lg:col-span-7 bg-white border border-sand-200 rounded-2xl p-6 sm:p-8 shadow-sm">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Field 1: Provider Name with Smart Suggestions */}
-            <div>
+            {/* Field 1: Provider Name with Smart Suggestions & Intelligent Recognition */}
+            <div className="relative" ref={dropdownRef}>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-xs font-bold uppercase tracking-wider text-sand-900 flex items-center gap-1">
                   <span>Provider or API Name</span>
                   <span className="text-amber-600">*</span>
                 </label>
-                <span className="text-[11px] text-sand-400 font-mono">e.g. Google Calendar, Shopify</span>
+                <span className="text-[11px] text-sand-400 font-mono">e.g. Loom, Figma, Supabase, Stripe</span>
               </div>
-              <input
-                type="text"
-                required
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Enter service or API (e.g. Google Calendar, Supabase, Box)..."
-                className="w-full bg-sand-50/60 border border-sand-300 rounded-xl px-4 py-3 text-sm text-sand-900 outline-none focus:ring-2 focus:ring-amber-600/30 focus:border-amber-600 font-medium transition-all"
-                autoFocus
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  required
+                  value={query}
+                  onChange={(e) => handleQueryChange(e.target.value)}
+                  onFocus={() => {
+                    if (matchedCatalog.length > 0) setIsDropdownOpen(true);
+                  }}
+                  placeholder="Enter service or API (e.g. Loom, Supabase, Stripe, Box)..."
+                  className="w-full bg-sand-50/60 border border-sand-300 rounded-xl px-4 py-3 text-sm text-sand-900 outline-none focus:ring-2 focus:ring-amber-600/30 focus:border-amber-600 font-medium transition-all"
+                  autoFocus
+                />
+                {recognizedProvider && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200/80 px-2 py-0.5 rounded-md text-[11px] font-medium shadow-2xs">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Catalog Verified</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Autocomplete Dropdown */}
+              {isDropdownOpen && matchedCatalog.length > 0 && (
+                <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-sand-200 rounded-xl shadow-lg overflow-hidden py-1 divide-y divide-sand-100 max-h-72 overflow-y-auto">
+                  <div className="px-3 py-1.5 bg-sand-50/80 text-[10px] font-bold uppercase tracking-wider text-sand-500 flex items-center justify-between">
+                    <span>Verified Developer Platforms ({matchedCatalog.length})</span>
+                    <span>Click to auto-fill doc specs</span>
+                  </div>
+                  {matchedCatalog.map((prov) => (
+                    <button
+                      key={prov.slug}
+                      type="button"
+                      onClick={() => applyCatalogProvider(prov)}
+                      className="w-full px-3.5 py-2.5 text-left hover:bg-amber-500/10 flex items-center justify-between gap-3 transition-colors group cursor-pointer"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-xs text-sand-900 group-hover:text-amber-900">
+                            {prov.displayName}
+                          </span>
+                          <span className="text-[10px] font-mono text-sand-400 bg-sand-100 px-1.5 py-0.5 rounded">
+                            {prov.canonicalDomain}
+                          </span>
+                          <span className="text-[10px] text-amber-800 bg-amber-50 border border-amber-200/60 px-1.5 py-0.5 rounded font-medium">
+                            {prov.category}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-sand-500 truncate block mt-0.5 font-mono">
+                          {prov.docUrl}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-semibold text-amber-700 bg-amber-100 group-hover:bg-amber-200 px-2 py-1 rounded shrink-0 transition-colors">
+                        Auto-link ↗
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {/* Quick suggestion pills */}
               <div className="flex items-center gap-1.5 mt-2.5 flex-wrap text-xs">
@@ -171,12 +313,93 @@ export const Intake: React.FC = () => {
                     key={sug.name}
                     type="button"
                     onClick={() => applySuggestion(sug)}
-                    className="px-2 py-0.5 rounded-md bg-sand-100/70 hover:bg-amber-100 text-sand-700 hover:text-amber-900 text-[11px] transition-colors border border-sand-200/60 font-medium"
+                    className="px-2 py-0.5 rounded-md bg-sand-100/70 hover:bg-amber-100 text-sand-700 hover:text-amber-900 text-[11px] transition-colors border border-sand-200/60 font-medium cursor-pointer"
                   >
                     {sug.name}
                   </button>
                 ))}
               </div>
+
+              {/* Recognized App Banner */}
+              {recognizedProvider && (
+                <div className="mt-3 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-950 transition-all shadow-2xs">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span className="font-bold text-xs text-emerald-900">
+                        Recognized Platform: {recognizedProvider.displayName}
+                      </span>
+                      <span className="text-[10px] font-mono text-emerald-700 bg-white/80 px-2 py-0.5 rounded border border-emerald-300">
+                        {recognizedProvider.canonicalDomain}
+                      </span>
+                    </div>
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded">
+                      {recognizedProvider.category}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-emerald-800 leading-relaxed">
+                    {recognizedProvider.description ||
+                      'Official OAuth 2.0 specifications indexed. Endpoints and callback rules will be synthesized with zero hallucination.'}
+                  </p>
+                  <div className="mt-2.5 pt-2 border-t border-emerald-200/80 flex items-center justify-between text-[11px]">
+                    <span className="text-emerald-900 font-medium flex items-center gap-1.5">
+                      <span>Verified Official Docs:</span>
+                      <code className="bg-white px-2 py-0.5 rounded text-[10px] font-mono text-emerald-800 border border-emerald-200">
+                        {recognizedProvider.docUrl}
+                      </code>
+                    </span>
+                    <a
+                      href={recognizedProvider.docUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-emerald-800 hover:text-emerald-950 font-bold underline inline-flex items-center gap-1"
+                    >
+                      <span>Test Official Doc</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {/* Fallback for uncataloged providers */}
+              {!recognizedProvider && query.trim().length >= 2 && (
+                <div className="mt-3 p-3 rounded-xl bg-sand-50 border border-sand-200 text-xs text-sand-800 transition-all">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-bold text-sand-900 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Uncataloged Service: &quot;{query.trim()}&quot;</span>
+                    </span>
+                    <span className="text-[10px] font-mono text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                      Autonomous Discovery
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-sand-600 leading-relaxed mb-2">
+                    Our autonomous crawler will identify RFC 6749 OAuth endpoints and parse authorization flows for &quot;{query.trim()}&quot;.
+                  </p>
+                  <div className="flex items-center gap-3 text-[11px] flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const autoDomain = query.trim().toLowerCase().replace(/[^a-z0-9]/g, '') + '.com';
+                        setWebsite(`https://docs.${autoDomain}/oauth`);
+                      }}
+                      className="text-amber-800 hover:text-amber-950 font-semibold underline inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>Auto-target docs.{query.trim().toLowerCase().replace(/[^a-z0-9]/g, '')}.com</span>
+                    </button>
+                    <span className="text-sand-300">·</span>
+                    <a
+                      href={`https://www.google.com/search?q=${encodeURIComponent(query.trim() + ' oauth 2.0 developer api documentation')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sand-600 hover:text-sand-900 inline-flex items-center gap-1"
+                    >
+                      <span>Search Official Docs on Google</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Field 2: Developer Website or Documentation URL */}
@@ -185,9 +408,28 @@ export const Intake: React.FC = () => {
                 <label className="text-xs font-bold uppercase tracking-wider text-sand-900">
                   Documentation or Developer Portal URL <span className="text-sand-400 font-normal font-sans">(Optional)</span>
                 </label>
-                <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-mono border border-emerald-200">
-                  SSRF Guard Active
-                </span>
+                <div className="flex items-center gap-2">
+                  {recognizedProvider && website === recognizedProvider.docUrl && (
+                    <span className="text-[10px] text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded font-mono border border-emerald-200 flex items-center gap-1">
+                      <Check className="w-3 h-3 text-emerald-600" />
+                      Auto-Linked
+                    </span>
+                  )}
+                  {website.trim() && (
+                    <a
+                      href={website.startsWith('http') ? website : `https://${website}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] text-amber-800 hover:text-amber-950 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded font-medium border border-amber-200 inline-flex items-center gap-1 transition-colors"
+                    >
+                      <span>Test URL</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                  <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-mono border border-emerald-200">
+                    SSRF Guard Active
+                  </span>
+                </div>
               </div>
               <div className="relative">
                 <Globe className="w-4 h-4 text-sand-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -200,7 +442,9 @@ export const Intake: React.FC = () => {
                 />
               </div>
               <p className="text-[11px] text-sand-500 mt-1.5">
-                Leave blank to let our agent autonomously locate official OAuth 2.0 specifications.
+                {recognizedProvider
+                  ? `Automatically loaded official documentation for ${recognizedProvider.displayName}. You can modify this URL if you have custom endpoints.`
+                  : 'Leave blank to let our agent autonomously locate official OAuth 2.0 specifications.'}
               </p>
             </div>
 

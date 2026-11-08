@@ -1,4 +1,5 @@
 import { GuideVersion, Provider } from '../types';
+import { resolveProviderFromCatalog } from './providerCatalog';
 
 interface GenerateOptions {
   query: string;
@@ -353,6 +354,34 @@ export const PROVIDER_PROFILES: Record<string, ProviderProfile> = {
       'Refresh tokens expire if unused for 90 days.',
     ],
   },
+
+  loom: {
+    slug: 'loom',
+    displayName: 'Loom',
+    domain: 'loom.com',
+    portal: 'https://www.loom.com/developers',
+    lowMinutes: 20,
+    highMinutes: 35,
+    evidenceScore: 89,
+    criticalClaimGrounding: 33,
+    officialSourceCoverage: 23,
+    completeness: 19,
+    freshness: 8,
+    consistency: 6,
+    externalWait: {
+      status: 'none',
+      publishedRange: 'Instant activation for Loom RecordSDK & Developer App',
+    },
+    assumptions: [
+      'Active Loom workspace or Atlassian Cloud account',
+      'Using Loom RecordSDK or Atlassian Cloud Developer Console',
+      'Authorized callback URIs and whitelisted domains configured in app settings',
+    ],
+    limitations: [
+      'Loom is an Atlassian company; enterprise integrations authenticate via Atlassian Developer Console.',
+      'Client-side web recording requires domain verification in Loom Developer Settings.',
+    ],
+  },
 };
 
 // Calibrate an existing or retrieved guide with researched metrics
@@ -410,6 +439,7 @@ export function normalizeProviderName(
   displayName: string;
   canonicalDomain: string;
   developerPortalUrl: string;
+  docUrl: string;
 } {
   let cleaned = rawQuery.trim();
   // Strip http:// or https:// if user pasted URL
@@ -417,58 +447,19 @@ export function normalizeProviderName(
 
   const rawLower = cleaned.toLowerCase();
 
-  // Smart alias recognition for common variations, typos, and abbreviations
-  if (
-    rawLower === 'gcal' ||
-    rawLower.includes('google cal') ||
-    rawLower.includes('google-cal') ||
-    rawLower.includes('calendar') ||
-    rawLower.includes('calender')
-  ) {
+  // 1. Check verified provider catalog first (covers Loom, Figma, Miro, Stripe, Shopify, Supabase, etc.)
+  const catalogMatch = resolveProviderFromCatalog(rawLower, rawWebsite);
+  if (catalogMatch) {
     return {
-      slug: 'google-calendar',
-      displayName: 'Google Calendar',
-      canonicalDomain: 'google.com',
-      developerPortalUrl: 'https://console.cloud.google.com/apis/credentials',
+      slug: catalogMatch.slug,
+      displayName: catalogMatch.displayName,
+      canonicalDomain: catalogMatch.canonicalDomain,
+      developerPortalUrl: catalogMatch.developerPortalUrl,
+      docUrl: catalogMatch.docUrl,
     };
   }
 
-  if (rawLower.includes('supabase')) {
-    return {
-      slug: 'supabase',
-      displayName: 'Supabase',
-      canonicalDomain: 'supabase.com',
-      developerPortalUrl: 'https://supabase.com/dashboard/account/me',
-    };
-  }
-
-  if (rawLower.includes('airtable')) {
-    return {
-      slug: 'airtable',
-      displayName: 'Airtable',
-      canonicalDomain: 'airtable.com',
-      developerPortalUrl: 'https://airtable.com/create/oauth',
-    };
-  }
-
-  if (rawLower.includes('shopify')) {
-    return {
-      slug: 'shopify',
-      displayName: 'Shopify',
-      canonicalDomain: 'shopify.com',
-      developerPortalUrl: 'https://partners.shopify.com',
-    };
-  }
-
-  if (rawLower.includes('stripe')) {
-    return {
-      slug: 'stripe',
-      displayName: 'Stripe',
-      canonicalDomain: 'stripe.com',
-      developerPortalUrl: 'https://dashboard.stripe.com/settings/connect',
-    };
-  }
-
+  // 2. Fallback normalization for uncataloged providers
   let domain = '';
   let name = '';
 
@@ -487,22 +478,38 @@ export function normalizeProviderName(
   const key = slug.toLowerCase();
   const matchedProfile = PROVIDER_PROFILES[key];
 
+  // Contamination Firewall: Discard rawWebsite if it belongs to a completely different provider!
+  // (Prevents stale URLs like 'supabase.com/docs' from polluting a 'Loom' or unknown guide)
+  let safeWebsite = rawWebsite?.trim();
+  if (safeWebsite) {
+    const webHost = safeWebsite.replace(/^https?:\/\//i, '').split('/')[0].toLowerCase();
+    const isDomainMatch =
+      webHost.includes(slug) ||
+      slug.includes(webHost.split('.')[0]) ||
+      (name.length > 2 && webHost.includes(name.toLowerCase()));
+    if (!isDomainMatch) {
+      safeWebsite = undefined; // Contamination detected! Discard stale website from previous provider!
+    }
+  }
+
   const canonicalDomain =
-    rawWebsite?.replace(/^https?:\/\//i, '').replace(/\/.*$/, '') ||
+    safeWebsite?.replace(/^https?:\/\//i, '').replace(/\/.*$/, '') ||
     (matchedProfile ? matchedProfile.domain : domain);
 
   const developerPortalUrl = matchedProfile
     ? matchedProfile.portal
     : `https://${canonicalDomain}/developers`;
 
-  return { slug, displayName, canonicalDomain, developerPortalUrl };
+  const docUrl = safeWebsite || `https://docs.${canonicalDomain}`;
+
+  return { slug, displayName, canonicalDomain, developerPortalUrl, docUrl };
 }
 
 export function generateRunbookForProvider({ query, website, intent }: GenerateOptions): {
   guide: GuideVersion;
   provider: Provider;
 } {
-  const { slug, displayName, canonicalDomain, developerPortalUrl } = normalizeProviderName(query, website);
+  const { slug, displayName, canonicalDomain, developerPortalUrl, docUrl } = normalizeProviderName(query, website);
   const now = new Date().toISOString();
   const caps = intent?.capabilities || ['User Authentication (SSO)', 'Read User Profile'];
 
@@ -727,8 +734,8 @@ export function generateRunbookForProvider({ query, website, intent }: GenerateO
     sources: [
       {
         id: `src-${slug}-1`,
-        url: developerPortalUrl,
-        publisher: `${displayName} Developer Documentation`,
+        url: docUrl || developerPortalUrl,
+        publisher: `${displayName} Official Documentation`,
         retrievedAt: now,
         contentHash: `sha256:${slug}-oauth-ref-${Date.now().toString(16)}`,
         selectedPassages: [

@@ -138,6 +138,13 @@ export const PROVIDER_ENDPOINTS: Record<string, ProviderEndpointConfig> = {
     scopeDelimiter: ' ',
     authMethod: 'body',
   },
+  loom: {
+    authUrl: 'https://www.loom.com/oauth/authorize',
+    tokenUrl: 'https://www.loom.com/oauth/token',
+    userUrl: 'https://api.loom.com/v1/user',
+    scopeDelimiter: ' ',
+    authMethod: 'body',
+  },
 };
 
 function getEndpointConfig(slug: string): ProviderEndpointConfig {

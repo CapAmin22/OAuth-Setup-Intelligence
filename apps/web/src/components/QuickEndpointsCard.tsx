@@ -27,6 +27,7 @@ const DEVELOPER_PORTALS: Record<string, { name: string; url: string }> = {
   asana: { name: 'Asana Developer App Console', url: 'https://app.asana.com/0/my-apps' },
   'google-calendar': { name: 'Google Cloud Credentials', url: 'https://console.cloud.google.com/apis/credentials' },
   gcal: { name: 'Google Cloud Credentials', url: 'https://console.cloud.google.com/apis/credentials' },
+  loom: { name: 'Loom Developer Portal', url: 'https://www.loom.com/developers' },
 };
 
 export const QuickEndpointsCard: React.FC<QuickEndpointsCardProps> = ({

@@ -2,24 +2,76 @@ import re
 from urllib.parse import urlparse
 from typing import Dict, Any, Tuple
 
+KNOWN_DOMAINS = {
+    "loom": "loom.com",
+    "figma": "figma.com",
+    "miro": "miro.com",
+    "canva": "canva.com",
+    "supabase": "supabase.com",
+    "airtable": "airtable.com",
+    "shopify": "shopify.com",
+    "stripe": "stripe.com",
+    "google-calendar": "google.com",
+    "gcal": "google.com",
+    "slack": "slack.com",
+    "discord": "discord.com",
+    "github": "github.com",
+    "gitlab": "gitlab.com",
+    "notion": "notion.so",
+    "asana": "asana.com",
+    "box": "box.com",
+    "dropbox": "dropbox.com",
+    "zoom": "zoom.us",
+    "twilio": "twilio.com",
+    "hubspot": "hubspot.com",
+    "salesforce": "salesforce.com",
+    "linear": "linear.app",
+    "zendesk": "zendesk.com",
+    "intercom": "intercom.com",
+    "mailchimp": "mailchimp.com",
+    "sentry": "sentry.io",
+}
+
 def resolve_provider(query: str, website: str = "") -> Tuple[Dict[str, Any], bool]:
     clean_query = query.strip()
-    
-    # Extract domain if website provided
+
+    # Strip web protocol and trailing slash if user entered a full URL as query
+    clean_query = re.sub(r"^https?://", "", clean_query, flags=re.IGNORECASE).rstrip("/")
+
+    # Strip common TLDs from slug base (e.g. "airtable.com" -> "airtable")
+    query_no_tld = re.sub(r"\.(com|org|net|io|app|dev|co|ai|us|me)$", "", clean_query, flags=re.IGNORECASE)
+
+    # Generate slug and display name strictly from the query
+    slug = re.sub(r"[^a-z0-9]+", "-", query_no_tld.lower()).strip("-")
+    if not slug:
+        slug = "provider"
+    display_name = query_no_tld.title() if query_no_tld else slug.title()
+
+    # Extract domain if website provided, with cross-provider contamination firewall
     canonical_domain = None
     if website and website.strip():
         parsed = urlparse(website.strip() if "://" in website else f"https://{website.strip()}")
-        canonical_domain = parsed.netloc.lower()
-        if canonical_domain.startswith("www."):
-            canonical_domain = canonical_domain[4:]
+        netloc = parsed.netloc.lower()
+        if netloc.startswith("www."):
+            netloc = netloc[4:]
+        
+        # Verify compatibility: host must match query or slug to avoid cross-contamination
+        clean_slug_root = slug.replace("-", "")
+        slug_parts = [p for p in slug.split("-") if len(p) >= 3]
+        is_compatible = False
+        if clean_slug_root in netloc or netloc.split(".")[0] in clean_slug_root:
+            is_compatible = True
+        elif any(part in netloc for part in slug_parts):
+            is_compatible = True
 
-    # Generate slug from query or domain
-    slug_base = clean_query if not canonical_domain else canonical_domain.split(".")[0]
-    slug = re.sub(r"[^a-z0-9]+", "-", slug_base.lower()).strip("-")
-    display_name = clean_query.title() if clean_query else slug_base.title()
+        if is_compatible:
+            canonical_domain = netloc
+        else:
+            # Incompatible website URL detected (e.g. Supabase doc passed with Loom query)
+            canonical_domain = None
 
     if not canonical_domain:
-        canonical_domain = f"{slug}.com"
+        canonical_domain = KNOWN_DOMAINS.get(slug, f"{slug}.com")
 
     return {
         "slug": slug,
@@ -28,4 +80,3 @@ def resolve_provider(query: str, website: str = "") -> Tuple[Dict[str, Any], boo
         "official_domains": [canonical_domain],
         "aliases": [clean_query.lower(), f"{slug} oauth", f"{slug} api"]
     }, True
-
