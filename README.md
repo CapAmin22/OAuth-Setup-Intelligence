@@ -11,9 +11,7 @@
 
 ---
 
----
-
-## 🌐 Live Production URL
+## Live Production URL
 
 **[https://oauth-setup-intelligence.vercel.app/](https://oauth-setup-intelligence.vercel.app/)**
 
@@ -23,3 +21,5 @@
 - **Community Feedback & Drift Reporter:** [oauth-setup-intelligence.vercel.app/feedback](https://oauth-setup-intelligence.vercel.app/feedback)
 - **Admin Review Gate & Triage Queue:** [oauth-setup-intelligence.vercel.app/admin/reviewer](https://oauth-setup-intelligence.vercel.app/admin/reviewer)
 - **API Reference:** [oauth-setup-intelligence.vercel.app/api-reference](https://oauth-setup-intelligence.vercel.app/api-reference)
+
+---
