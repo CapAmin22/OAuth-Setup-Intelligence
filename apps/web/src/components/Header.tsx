@@ -19,7 +19,13 @@ import {
   CheckCircle2,
   Users,
 } from 'lucide-react';
-import { getCurrentDeveloper, logoutDeveloper, promptDeveloperAuth, DeveloperProfile } from '../lib/auth';
+import {
+  getCurrentDeveloper,
+  logoutDeveloper,
+  promptDeveloperAuth,
+  isAdminDeveloper,
+  DeveloperProfile,
+} from '../lib/auth';
 
 interface HeaderProps {
   onOpenTour?: () => void;
@@ -35,6 +41,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTour }) => {
 
   const menuRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
+  const isAdmin = isAdminDeveloper(developer);
 
   useEffect(() => {
     const handleAuthChange = () => {
@@ -157,13 +164,20 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTour }) => {
                     <ShieldCheck className="w-4 h-4 text-emerald-600" />
                     <span>Reviewer & Drift Queue</span>
                   </Link>
-                  <Link
-                    to="/admin/reviewer?tab=developers"
-                    className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-sand-800 hover:text-sand-900 hover:bg-sand-50 transition-colors"
-                  >
-                    <Users className="w-4 h-4 text-indigo-600" />
-                    <span>Developer Leads & Outreach</span>
-                  </Link>
+                  {isAdmin && (
+                    <Link
+                      to="/admin/reviewer?tab=developers"
+                      className="flex items-center justify-between px-3.5 py-2 text-xs font-medium text-sand-800 hover:text-sand-900 hover:bg-sand-50 transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Users className="w-4 h-4 text-indigo-600" />
+                        <span>Developer Leads (Admin)</span>
+                      </div>
+                      <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded">
+                        Amin
+                      </span>
+                    </Link>
+                  )}
                   <Link
                     to="/feedback"
                     className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-sand-800 hover:text-sand-900 hover:bg-sand-50 transition-colors"

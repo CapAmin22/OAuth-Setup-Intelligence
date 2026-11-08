@@ -127,6 +127,29 @@ class TestAuthAndVerification(unittest.TestCase):
         self.assertIn("Message on LinkedIn", content)
         self.assertIn("listRegisteredDevelopers", content)
 
+    def test_admin_amin_authorization_gate(self):
+        """Verify Developer Leads & Outreach Hub is strictly restricted to Admin User Amin."""
+        with open(self.auth_path, "r", encoding="utf-8") as f:
+            auth_content = f.read()
+
+        self.assertIn("isAdminDeveloper", auth_content)
+        self.assertIn("amin", auth_content.lower())
+
+        with open(self.reviewer_path, "r", encoding="utf-8") as f:
+            reviewer_content = f.read()
+
+        self.assertIn("isAdminDeveloper", reviewer_content)
+        self.assertIn("Administrator Access Required", reviewer_content)
+        self.assertIn("strictly restricted to administrator <strong>Amin</strong>", reviewer_content)
+        self.assertIn("Sign In as Admin (Amin)", reviewer_content)
+
+        with open(self.header_path, "r", encoding="utf-8") as f:
+            header_content = f.read()
+
+        self.assertIn("isAdminDeveloper", header_content)
+        self.assertIn("Developer Leads (Admin)", header_content)
+
+
 
 if __name__ == "__main__":
     unittest.main()

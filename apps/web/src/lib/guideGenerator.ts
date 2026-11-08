@@ -615,7 +615,13 @@ export function normalizeProviderName(
 
   if (cleaned.includes('.')) {
     domain = cleaned.toLowerCase();
-    name = cleaned.split('.')[0];
+    const parts = cleaned.split('.').filter(Boolean);
+    const subdomains = ['docs', 'api', 'app', 'developer', 'developers', 'login', 'auth', 'web', 'www', 'console', 'accounts'];
+    if (parts.length >= 2 && subdomains.includes(parts[0].toLowerCase())) {
+      name = parts[1];
+    } else {
+      name = parts[0];
+    }
   } else {
     name = cleaned;
     domain = `${cleaned.toLowerCase()}.com`;
@@ -667,6 +673,7 @@ export function generateRunbookForProvider({ query, website, intent }: GenerateO
   const profile =
     PROVIDER_PROFILES[slug] ||
     PROVIDER_PROFILES[normKey] ||
+    (normKey.includes('odoo') ? PROVIDER_PROFILES['odoo'] : null) ||
     (normKey.includes('calendar') || normKey.includes('calender') ? PROVIDER_PROFILES['google-calendar'] : null) ||
     (normKey === 'twitter' ? PROVIDER_PROFILES['x'] : null) ||
     (normKey === 'azure' || normKey === 'entra' || normKey.includes('microsoft') ? PROVIDER_PROFILES['microsoft'] : null);

@@ -3,10 +3,16 @@ import { useLocation } from 'react-router-dom';
 import { 
   ShieldCheck, Check, X, AlertCircle, MessageSquare, 
   RefreshCw, CheckCircle2, Clock, Filter, Eye, ChevronRight,
-  Users, Linkedin, Building2, Copy, ExternalLink, Mail, Search, Sparkles, UserCheck
+  Users, Linkedin, Building2, Copy, ExternalLink, Mail, Search, Sparkles, UserCheck, Lock
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { listRegisteredDevelopers, DeveloperProfile } from '../lib/auth';
+import {
+  listRegisteredDevelopers,
+  getCurrentDeveloper,
+  isAdminDeveloper,
+  promptDeveloperAuth,
+  DeveloperProfile,
+} from '../lib/auth';
 
 interface FeedbackItem {
   id: string;
@@ -56,6 +62,21 @@ export const Reviewer: React.FC = () => {
     }
     return 'drift_queue';
   });
+
+  // Track active developer authentication state to enforce Admin Amin gate
+  const [currentDev, setCurrentDev] = useState<DeveloperProfile | null>(() => getCurrentDeveloper());
+
+  useEffect(() => {
+    const handleAuthChange = () => setCurrentDev(getCurrentDeveloper());
+    window.addEventListener('oauth_auth_state_change', handleAuthChange);
+    window.addEventListener('storage', handleAuthChange);
+    return () => {
+      window.removeEventListener('oauth_auth_state_change', handleAuthChange);
+      window.removeEventListener('storage', handleAuthChange);
+    };
+  }, []);
+
+  const isAdmin = isAdminDeveloper(currentDev);
 
   // Registered Developer Leads State (for LinkedIn Outreach)
   const [developers, setDevelopers] = useState<DeveloperProfile[]>([]);
@@ -230,12 +251,23 @@ export const Reviewer: React.FC = () => {
               ? 'text-amber-800 border-b-2 border-amber-600'
               : 'text-sand-600 hover:text-sand-900'
           }`}
+          title={isAdmin ? 'Verified Developer Leads & LinkedIn Outreach (Admin: Amin)' : 'Admin Access Required (Restricted to Amin)'}
         >
-          <Users className="w-4 h-4 text-indigo-600" />
+          {isAdmin ? (
+            <Users className="w-4 h-4 text-indigo-600" />
+          ) : (
+            <Lock className="w-4 h-4 text-amber-700" />
+          )}
           <span>Developer Leads & Outreach</span>
-          {developers.length > 0 && (
-            <span className="bg-emerald-600 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full">
-              {developers.length}
+          {isAdmin ? (
+            developers.length > 0 && (
+              <span className="bg-emerald-600 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+                {developers.length}
+              </span>
+            )
+          ) : (
+            <span className="bg-amber-100 text-amber-900 text-[10px] font-bold px-1.5 py-0.2 rounded">
+              Admin Amin
             </span>
           )}
         </button>
@@ -510,110 +542,149 @@ export const Reviewer: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 3: Developer Leads & Outreach Hub */}
+      {/* TAB 3: Developer Leads & Outreach Hub (Restricted strictly to Admin Amin) */}
       {activeTab === 'developer_roster' && (
-        <div className="space-y-6 animate-fadeIn">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-sand-50 p-5 rounded-2xl border border-sand-200">
-            <div>
-              <h2 className="text-sm font-bold text-sand-900 flex items-center gap-2">
-                <Users className="w-4 h-4 text-indigo-600" />
-                <span>Verified Developer Leads ({developers.length})</span>
-                <span className="text-[11px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
-                  100% Genuine Profiles
-                </span>
-              </h2>
-              <p className="text-xs text-sand-600 mt-1">
-                Reach out on LinkedIn to engineers actively implementing OAuth with your runbooks. Click to message directly or copy custom outreach notes.
-              </p>
+        !isAdmin ? (
+          <div className="bg-white border border-sand-200 rounded-2xl p-8 sm:p-12 text-center max-w-xl mx-auto my-8 shadow-sm animate-fadeIn">
+            <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-700 flex items-center justify-center mx-auto mb-5 shadow-inner">
+              <Lock className="w-8 h-8 text-amber-700" />
             </div>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search by name, company, email..."
-                value={searchLead}
-                onChange={(e) => setSearchLead(e.target.value)}
-                className="pl-8 pr-3 py-1.5 text-xs rounded-xl border border-sand-300 bg-white focus:outline-none focus:ring-1 focus:ring-amber-600 w-full sm:w-64"
-              />
-              <Search className="w-3.5 h-3.5 text-sand-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <span className="inline-block px-3 py-1 bg-amber-100 text-amber-900 text-[11px] font-bold rounded-full mb-3 uppercase tracking-wider">
+              Restricted Admin Area
+            </span>
+            <h2 className="text-xl sm:text-2xl font-bold text-sand-900 tracking-tight">
+              Administrator Access Required
+            </h2>
+            <p className="text-xs sm:text-sm text-sand-600 mt-2 max-w-md mx-auto leading-relaxed">
+              The Developer Leads & LinkedIn Outreach Hub is strictly restricted to administrator <strong>Amin</strong>.
+            </p>
+            <div className="mt-5 p-3.5 bg-sand-50 rounded-xl border border-sand-200 text-xs text-sand-700 max-w-sm mx-auto">
+              <span className="text-sand-500">Current Active Profile: </span>
+              <strong className="text-sand-900">{currentDev?.name || 'Guest / Not Signed In'}</strong>
+              {currentDev?.company && <span className="text-sand-500"> ({currentDev.company})</span>}
+            </div>
+            <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => promptDeveloperAuth()}
+                className="w-full sm:w-auto px-5 py-2.5 bg-sand-900 hover:bg-black text-white text-xs font-bold rounded-xl shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <UserCheck className="w-4 h-4" />
+                <span>Sign In as Admin (Amin)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('drift_queue')}
+                className="w-full sm:w-auto px-5 py-2.5 bg-sand-100 hover:bg-sand-200 text-sand-800 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+              >
+                Return to Community Queue
+              </button>
             </div>
           </div>
+        ) : (
+          <div className="space-y-6 animate-fadeIn">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-sand-50 p-5 rounded-2xl border border-sand-200">
+              <div>
+                <h2 className="text-sm font-bold text-sand-900 flex items-center gap-2">
+                  <Users className="w-4 h-4 text-indigo-600" />
+                  <span>Verified Developer Leads ({developers.length})</span>
+                  <span className="text-[11px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
+                    Admin Access: Amin
+                  </span>
+                </h2>
+                <p className="text-xs text-sand-600 mt-1">
+                  Reach out on LinkedIn to engineers actively implementing OAuth with your runbooks. Click to message directly or copy custom outreach notes.
+                </p>
+              </div>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search by name, company, email..."
+                  value={searchLead}
+                  onChange={(e) => setSearchLead(e.target.value)}
+                  className="pl-8 pr-3 py-1.5 text-xs rounded-xl border border-sand-300 bg-white focus:outline-none focus:ring-1 focus:ring-amber-600 w-full sm:w-64"
+                />
+                <Search className="w-3.5 h-3.5 text-sand-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              </div>
+            </div>
 
-          {/* List of Developers */}
-          <div className="space-y-3">
-            {developers
-              .filter(
-                (d) =>
-                  !searchLead ||
-                  d.name.toLowerCase().includes(searchLead.toLowerCase()) ||
-                  d.company.toLowerCase().includes(searchLead.toLowerCase()) ||
-                  d.email.toLowerCase().includes(searchLead.toLowerCase())
-              )
-              .map((dev) => (
-                <div
-                  key={dev.email}
-                  className="bg-white border border-sand-200 rounded-2xl p-4 sm:p-5 shadow-2xs hover:border-sand-300 transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
-                >
-                  <div className="flex items-start gap-3.5">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-800 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-inner">
-                      {dev.name[0]?.toUpperCase()}
+            {/* List of Developers */}
+            <div className="space-y-3">
+              {developers
+                .filter(
+                  (d) =>
+                    !searchLead ||
+                    d.name.toLowerCase().includes(searchLead.toLowerCase()) ||
+                    d.company.toLowerCase().includes(searchLead.toLowerCase()) ||
+                    d.email.toLowerCase().includes(searchLead.toLowerCase())
+                )
+                .map((dev) => (
+                  <div
+                    key={dev.email}
+                    className="bg-white border border-sand-200 rounded-2xl p-4 sm:p-5 shadow-2xs hover:border-sand-300 transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+                  >
+                    <div className="flex items-start gap-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-800 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-inner">
+                        {dev.name[0]?.toUpperCase()}
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-bold text-sm text-sand-900">{dev.name}</h3>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            Verified ({dev.verificationScore}%)
+                          </span>
+                          <span className="text-[11px] text-sand-400 font-mono">
+                            {new Date(dev.verifiedAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-sand-600 flex-wrap">
+                          <span className="flex items-center gap-1 font-medium text-sand-800">
+                            <Building2 className="w-3.5 h-3.5 text-sand-400" />
+                            {dev.company}
+                          </span>
+                          <span className="text-sand-300">•</span>
+                          <span>{dev.role}</span>
+                          <span className="text-sand-300">•</span>
+                          <a
+                            href={`mailto:${dev.email}`}
+                            className="flex items-center gap-1 text-sand-500 hover:text-sand-800 transition-colors"
+                          >
+                            <Mail className="w-3 h-3" />
+                            {dev.email}
+                          </a>
+                        </div>
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-bold text-sm text-sand-900">{dev.name}</h3>
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                          Verified ({dev.verificationScore}%)
-                        </span>
-                        <span className="text-[11px] text-sand-400 font-mono">
-                          {new Date(dev.verifiedAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-sand-600 flex-wrap">
-                        <span className="flex items-center gap-1 font-medium text-sand-800">
-                          <Building2 className="w-3.5 h-3.5 text-sand-400" />
-                          {dev.company}
-                        </span>
-                        <span className="text-sand-300">•</span>
-                        <span>{dev.role}</span>
-                        <span className="text-sand-300">•</span>
-                        <a
-                          href={`mailto:${dev.email}`}
-                          className="flex items-center gap-1 text-sand-500 hover:text-sand-800 transition-colors"
-                        >
-                          <Mail className="w-3 h-3" />
-                          {dev.email}
-                        </a>
-                      </div>
+
+                    {/* Outreach Actions */}
+                    <div className="flex items-center gap-2 self-end md:self-center w-full md:w-auto justify-end">
+                      <button
+                        type="button"
+                        onClick={() => copyOutreachTemplate(dev)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-sand-300 bg-white hover:bg-sand-50 text-xs font-semibold text-sand-700 transition-colors shadow-2xs cursor-pointer"
+                        title="Copy personalized LinkedIn message template"
+                      >
+                        <Copy className="w-3.5 h-3.5 text-sand-500" />
+                        <span>{copiedLeadId === dev.email ? 'Copied Note ✓' : 'Copy Intro Note'}</span>
+                      </button>
+
+                      <a
+                        href={dev.linkedinUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#0a66c2] hover:bg-[#004182] text-white text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                      >
+                        <Linkedin className="w-3.5 h-3.5" />
+                        <span>Message on LinkedIn</span>
+                        <ExternalLink className="w-3 h-3 text-white/80" />
+                      </a>
                     </div>
                   </div>
-
-                  {/* Outreach Actions */}
-                  <div className="flex items-center gap-2 self-end md:self-center w-full md:w-auto justify-end">
-                    <button
-                      type="button"
-                      onClick={() => copyOutreachTemplate(dev)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-sand-300 bg-white hover:bg-sand-50 text-xs font-semibold text-sand-700 transition-colors shadow-2xs cursor-pointer"
-                      title="Copy personalized LinkedIn message template"
-                    >
-                      <Copy className="w-3.5 h-3.5 text-sand-500" />
-                      <span>{copiedLeadId === dev.email ? 'Copied Note ✓' : 'Copy Intro Note'}</span>
-                    </button>
-
-                    <a
-                      href={dev.linkedinUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#0a66c2] hover:bg-[#004182] text-white text-xs font-semibold transition-all shadow-xs cursor-pointer"
-                    >
-                      <Linkedin className="w-3.5 h-3.5" />
-                      <span>Message on LinkedIn</span>
-                      <ExternalLink className="w-3 h-3 text-white/80" />
-                    </a>
-                  </div>
-                </div>
-              ))}
+                ))}
+            </div>
           </div>
-        </div>
+        )
       )}
     </div>
   );

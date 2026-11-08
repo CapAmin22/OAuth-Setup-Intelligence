@@ -44,8 +44,10 @@ function extractBaseSlug(raw: string): string {
   let clean = raw.toLowerCase().trim();
   clean = clean.replace(/^https?:\/\//, '');
   clean = clean.replace(/\/.*$/, '');
-  clean = clean.replace(/^(docs|api|app|developer|developers|login|console|accounts|auth|web|www)\./, '');
-  clean = clean.replace(/\.(com|org|net|io|dev|app|co|us|eu|in|ai|so|to)$/, '');
+  clean = clean.replace(/^(p-|custom-|oauth-|guid-)*/, '');
+  clean = clean.replace(/^(docs|api|app|developer|developers|login|console|accounts|auth|web|www)[.\-_]/, '');
+  clean = clean.replace(/[.\-_](com|org|net|io|dev|app|co|us|eu|in|ai|so|to)$/, '');
+  clean = clean.replace(/[.\-_](oauth|api|app|sdk|connect|login|auth)$/, '');
   clean = clean.replace(/[^a-z0-9]/g, '');
   return clean;
 }
@@ -61,7 +63,56 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
 
   const baseSlug = extractBaseSlug(slug) || extractBaseSlug(name) || '';
   const normSlug = (slug || name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-  const key = baseSlug || normSlug;
+  const rawTarget = `${slug} ${name} ${logoUrl || ''}`.toLowerCase();
+
+  // Direct authentic brand keyword resolution - bulletproof against any custom slug/URL variant
+  let effectiveKey = baseSlug || normSlug;
+  if (rawTarget.includes('odoo')) effectiveKey = 'odoo';
+  else if (rawTarget.includes('loom')) effectiveKey = 'loom';
+  else if (rawTarget.includes('airtable')) effectiveKey = 'airtable';
+  else if (rawTarget.includes('supabase')) effectiveKey = 'supabase';
+  else if (rawTarget.includes('slack')) effectiveKey = 'slack';
+  else if (rawTarget.includes('discord')) effectiveKey = 'discord';
+  else if (rawTarget.includes('github')) effectiveKey = 'github';
+  else if (rawTarget.includes('notion')) effectiveKey = 'notion';
+  else if (rawTarget.includes('linear')) effectiveKey = 'linear';
+  else if (rawTarget.includes('salesforce') || rawTarget.includes('sfdc')) effectiveKey = 'salesforce';
+  else if (rawTarget.includes('spotify')) effectiveKey = 'spotify';
+  else if (rawTarget.includes('zoom')) effectiveKey = 'zoom';
+  else if (rawTarget.includes('hubspot')) effectiveKey = 'hubspot';
+  else if (rawTarget.includes('zoho')) effectiveKey = 'zoho';
+  else if (rawTarget.includes('stripe')) effectiveKey = 'stripe';
+  else if (rawTarget.includes('shopify')) effectiveKey = 'shopify';
+  else if (rawTarget.includes('figma')) effectiveKey = 'figma';
+  else if (rawTarget.includes('miro')) effectiveKey = 'miro';
+  else if (rawTarget.includes('canva')) effectiveKey = 'canva';
+  else if (rawTarget.includes('atlassian') || rawTarget.includes('jira') || rawTarget.includes('confluence')) effectiveKey = 'atlassian';
+  else if (rawTarget.includes('okta')) effectiveKey = 'okta';
+  else if (rawTarget.includes('auth0')) effectiveKey = 'auth0';
+  else if (rawTarget.includes('posthog')) effectiveKey = 'posthog';
+  else if (rawTarget.includes('linkedin')) effectiveKey = 'linkedin';
+  else if (rawTarget.includes('paypal')) effectiveKey = 'paypal';
+  else if (rawTarget.includes('square')) effectiveKey = 'square';
+  else if (rawTarget.includes('quickbooks') || rawTarget.includes('intuit')) effectiveKey = 'quickbooks';
+  else if (rawTarget.includes('xero')) effectiveKey = 'xero';
+  else if (rawTarget.includes('calendly')) effectiveKey = 'calendly';
+  else if (rawTarget.includes('reddit')) effectiveKey = 'reddit';
+  else if (rawTarget.includes('docusign')) effectiveKey = 'docusign';
+  else if (rawTarget.includes('clickup')) effectiveKey = 'clickup';
+  else if (rawTarget.includes('monday')) effectiveKey = 'monday';
+  else if (rawTarget.includes('zendesk')) effectiveKey = 'zendesk';
+  else if (rawTarget.includes('intercom')) effectiveKey = 'intercom';
+  else if (rawTarget.includes('box')) effectiveKey = 'box';
+  else if (rawTarget.includes('twilio')) effectiveKey = 'twilio';
+  else if (rawTarget.includes('asana')) effectiveKey = 'asana';
+  else if (rawTarget.includes('dropbox')) effectiveKey = 'dropbox';
+  else if (rawTarget.includes('gitlab')) effectiveKey = 'gitlab';
+  else if (rawTarget.includes('twitter') || rawTarget.includes('x.com') || rawTarget.split(/[^a-z0-9]/).includes('x')) effectiveKey = 'x';
+  else if (rawTarget.includes('calendar') || rawTarget.includes('gcal')) effectiveKey = 'googlecalendar';
+  else if (rawTarget.includes('google')) effectiveKey = 'google';
+  else if (rawTarget.includes('microsoft') || rawTarget.includes('azure') || rawTarget.includes('entra') || rawTarget.includes('msft')) effectiveKey = 'microsoft';
+
+  const key = effectiveKey;
 
   const sizeClasses = {
     sm: 'w-5 h-5 text-xs',

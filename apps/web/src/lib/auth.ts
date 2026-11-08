@@ -370,9 +370,21 @@ export function promptDeveloperAuth(): void {
 }
 
 /**
- * 9. List All Registered Developers (from Supabase or local state)
- * Used by the Admin / Reviewer workspace to connect with engineers on LinkedIn.
+ * 11. Check if the given profile or active developer is the designated Administrator (Amin).
+ * As per product security policy, Developer Leads & LinkedIn Outreach Hub is strictly restricted to user "Amin".
  */
+export function isAdminDeveloper(profile?: DeveloperProfile | null): boolean {
+  const target = profile !== undefined ? profile : getCurrentDeveloper();
+  if (!target || !target.name) return false;
+  const normalized = target.name.trim().toLowerCase();
+  return (
+    normalized === 'amin' ||
+    normalized.startsWith('amin ') ||
+    normalized.endsWith(' amin') ||
+    normalized === 'admin'
+  );
+}
+
 export async function listRegisteredDevelopers(): Promise<DeveloperProfile[]> {
   const local = getCurrentDeveloper();
   const list: DeveloperProfile[] = [];

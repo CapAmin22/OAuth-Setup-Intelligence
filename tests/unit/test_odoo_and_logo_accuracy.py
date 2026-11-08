@@ -68,6 +68,14 @@ class TestOdooAndLogoAccuracy(unittest.TestCase):
         for platform in expected_platforms:
             self.assertIn(f"case '{platform}':", self.logo_content, f"Missing vector logo for {platform}")
 
+    def test_direct_brand_keyword_resolution(self):
+        """Ensure ProviderLogo resolves direct brand keywords (e.g. odoo, loom, airtable, etc.)."""
+        self.assertIn("rawTarget.includes('odoo')", self.logo_content)
+        self.assertIn("rawTarget.includes('loom')", self.logo_content)
+        self.assertIn("rawTarget.includes('airtable')", self.logo_content)
+        self.assertIn("rawTarget.includes('supabase')", self.logo_content)
+
+
     def test_multi_cdn_fallback_chain(self):
         """Verify fallback chain uses apex domain and DuckDuckGo Favicon CDN."""
         self.assertIn("google.com/s2/favicons", self.logo_content)
