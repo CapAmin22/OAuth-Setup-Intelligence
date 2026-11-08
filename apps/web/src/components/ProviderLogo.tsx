@@ -91,24 +91,6 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
-    // Autonoma (Autonomous AI Agentic E2E Testing Platform)
-    case 'autonoma':
-    case 'autonomaapp':
-    case 'autonomaai':
-      return (
-        <svg viewBox="0 0 100 100" className={`${sizeClasses} ${className}`} fill="none">
-          <rect width="100" height="100" rx="20" fill="#4F46E5" />
-          <path
-            d="M50 20L78 34V66L50 80L22 66V34L50 20Z"
-            stroke="#38BDF8"
-            strokeWidth="5"
-            strokeLinejoin="round"
-          />
-          <circle cx="50" cy="50" r="12" fill="#FFFFFF" />
-          <path d="M50 32V42M50 58V68M35 50H42M58 50H65" stroke="#FFFFFF" strokeWidth="4" strokeLinecap="round" />
-        </svg>
-      );
-
     // 2. Discord
     case 'discord':
       return (

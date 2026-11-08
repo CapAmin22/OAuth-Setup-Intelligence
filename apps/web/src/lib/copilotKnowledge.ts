@@ -429,39 +429,6 @@ export const PROVIDER_TOP_PROBLEMS: Record<
     sourceUrl: 'https://www.odoo.com/documentation/17.0/applications/general/auth/oauth.html',
     sourceTitle: 'Odoo OAuth 2.0 Documentation',
   },
-
-  autonoma: {
-    title: 'Top 3 Setup & Authentication Pitfalls for Autonoma AI',
-    points: [
-      {
-        heading: 'Better Auth Google OAuth & Secret Configuration',
-        detail:
-          'Autonoma uses Better Auth powered by Google OAuth. Omitting BETTER_AUTH_SECRET or mismatching the Google Cloud Console redirect URI (e.g. http://localhost:3000/api/auth/callback/google) immediately throws a session verification exception during login.',
-        fix: 'Configure GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and a strong BETTER_AUTH_SECRET in your .env file, and whitelist http://localhost:3000/api/auth/callback/google in Google Cloud Console.',
-      },
-      {
-        heading: 'Mandatory GEMINI_API_KEY for Agentic Test Execution',
-        detail:
-          'Autonoma\'s agent core (@autonoma-ai/planner and engine-web) leverages Google Gemini for autonomous screen navigation and multi-step reasoning. Without GEMINI_API_KEY, test plan generation and browser executions will fail.',
-        fix: 'Provide a valid Google AI Studio GEMINI_API_KEY in your server environment.',
-      },
-      {
-        heading: 'Postgres & Redis Infrastructure Prerequisites',
-        detail:
-          'Autonoma depends on PostgreSQL (with Prisma migrations) and Redis for Temporal workflow workers. Initiating auth sessions without running migrations leads to database connection errors.',
-        fix: 'Run docker compose up -d followed by pnpm db:migrate before starting the web UI or API.',
-      },
-    ],
-    proTip:
-      'For local E2E testing with Autonoma, run pnpm dev to launch both the Hono API and Vite UI in unified development mode.',
-    followUps: [
-      'What OAuth providers does Autonoma support?',
-      'How do I configure Google OAuth for Autonoma?',
-      'What environment variables are required for Autonoma?',
-    ],
-    sourceUrl: 'https://github.com/autonoma-ai/autonoma',
-    sourceTitle: 'Autonoma Architecture & Repository Documentation',
-  },
 };
 
 export const PROVIDER_SEED_FAQS: Record<string, CopilotQA[]> = {

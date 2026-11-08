@@ -43,7 +43,6 @@ KNOWN_DOMAINS = {
     "auth0": "auth0.com",
     "atlassian": "atlassian.com",
     "jira": "atlassian.com",
-    "autonoma": "autonoma.app",
 }
 
 def resolve_provider(query: str, website: str = "") -> Tuple[Dict[str, Any], bool]:
