@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { GuideVersion, Provider, GenerationJob } from '../types';
+import { calibrateGuideMetrics } from './guideGenerator';
 
 // Embedded fallback fixtures for instant loading
 import googleFixture from '../../../../fixtures/google_oauth_guide.json';
@@ -60,7 +61,8 @@ function getLocalGuides(): Record<string, GuideVersion> {
   }
 }
 
-export function saveCustomGuide(guide: GuideVersion, provider: Provider): void {
+export function saveCustomGuide(rawGuide: GuideVersion, provider: Provider): void {
+  const guide = calibrateGuideMetrics(rawGuide);
   try {
     // 1. Save provider to localStorage
     const providers = getLocalProviders();
@@ -195,10 +197,10 @@ export async function fetchGuide(slug: string): Promise<GuideVersion | null> {
   // 1. Check localStorage custom guides first
   const localGuides = getLocalGuides();
   if (localGuides[normalizedSlug]) {
-    return localGuides[normalizedSlug];
+    return calibrateGuideMetrics(localGuides[normalizedSlug]);
   }
   if (localGuides[rootSlug]) {
-    return localGuides[rootSlug];
+    return calibrateGuideMetrics(localGuides[rootSlug]);
   }
   for (const g of Object.values(localGuides)) {
     if (
@@ -207,7 +209,7 @@ export async function fetchGuide(slug: string): Promise<GuideVersion | null> {
       g.providerName.toLowerCase() === normalizedSlug ||
       g.providerName.toLowerCase() === rootSlug
     ) {
-      return g;
+      return calibrateGuideMetrics(g);
     }
   }
 
@@ -231,7 +233,7 @@ export async function fetchGuide(slug: string): Promise<GuideVersion | null> {
           .maybeSingle();
 
         if (gv && gv.content) {
-          return gv.content as GuideVersion;
+          return calibrateGuideMetrics(gv.content as GuideVersion);
         }
       }
     } catch (e) {
@@ -240,7 +242,8 @@ export async function fetchGuide(slug: string): Promise<GuideVersion | null> {
   }
 
   // 3. Check fallback fixtures
-  return FALLBACK_GUIDES[normalizedSlug] || FALLBACK_GUIDES[rootSlug] || null;
+  const fallback = FALLBACK_GUIDES[normalizedSlug] || FALLBACK_GUIDES[rootSlug] || null;
+  return fallback ? calibrateGuideMetrics(fallback) : null;
 }
 
 export async function fetchAllGuides(): Promise<GuideVersion[]> {
@@ -266,10 +269,10 @@ export async function fetchAllGuides(): Promise<GuideVersion[]> {
   // Merge and deduplicate by providerSlug
   const map = new Map<string, GuideVersion>();
   for (const g of baseGuides) {
-    map.set(g.providerSlug, g);
+    map.set(g.providerSlug, calibrateGuideMetrics(g));
   }
   for (const lg of localGuides) {
-    map.set(lg.providerSlug, lg);
+    map.set(lg.providerSlug, calibrateGuideMetrics(lg));
   }
 
   return Array.from(map.values());

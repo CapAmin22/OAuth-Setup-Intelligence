@@ -8,6 +8,32 @@ interface ProviderLogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
+function getInitials(text: string): string {
+  const parts = text.trim().split(/[\s-_.]+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return text.slice(0, 2).toUpperCase();
+}
+
+function getGradient(name: string): { bg: string; text: string } {
+  const gradients = [
+    { bg: 'from-blue-600 to-indigo-700', text: 'text-white' },
+    { bg: 'from-emerald-500 to-teal-700', text: 'text-white' },
+    { bg: 'from-violet-600 to-purple-800', text: 'text-white' },
+    { bg: 'from-amber-500 to-orange-600', text: 'text-white' },
+    { bg: 'from-rose-500 to-pink-700', text: 'text-white' },
+    { bg: 'from-cyan-500 to-blue-600', text: 'text-white' },
+    { bg: 'from-sky-500 to-indigo-600', text: 'text-white' },
+  ];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const idx = Math.abs(hash) % gradients.length;
+  return gradients[idx];
+}
+
 export const ProviderLogo: React.FC<ProviderLogoProps> = ({
   slug = '',
   name = '',
@@ -16,7 +42,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
   size = 'md',
 }) => {
   const [hasError, setHasError] = useState(false);
-  const normSlug = slug.toLowerCase();
+  const normSlug = (slug || name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
   const sizeClasses = {
     sm: 'w-5 h-5 text-xs',
@@ -25,7 +51,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
     xl: 'w-10 h-10 text-lg',
   }[size];
 
-  // Crisp, embedded official vector SVGs for curated providers (0 network dependency, 0 broken images)
+  // Embedded official vector SVGs for curated and top requested providers (0 network dependency, 0 broken images)
   switch (normSlug) {
     case 'discord':
       return (
@@ -48,6 +74,36 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
           <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
           <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
           <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+      );
+
+    case 'googlecalendar':
+    case 'gcal':
+    case 'calendar':
+      return (
+        <svg viewBox="0 0 48 48" className={`${sizeClasses} ${className}`}>
+          <path fill="#1976D2" d="M38 42H10a4 4 0 0 1-4-4V14a4 4 0 0 1 4-4h28a4 4 0 0 1 4 4v24a4 4 0 0 1-4 4z"/>
+          <path fill="#42A5F5" d="M38 10H10a4 4 0 0 0-4 4v2h36v-2a4 4 0 0 0-4-4z"/>
+          <rect width="4" height="8" x="12" y="4" fill="#0D47A1" rx="2"/>
+          <rect width="4" height="8" x="32" y="4" fill="#0D47A1" rx="2"/>
+          <text x="24" y="32" fill="#FFFFFF" fontSize="16" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">31</text>
+        </svg>
+      );
+
+    case 'supabase':
+      return (
+        <svg viewBox="0 0 106 107" className={`${sizeClasses} ${className}`} fill="none">
+          <path d="M58.455 106.12c-2.31 2.57-6.53.94-6.53-2.52V58.74h37.49c4.27 0 6.64 4.96 3.98 8.3L58.455 106.12z" fill="#3ECF8E"/>
+          <path d="M47.545.88c2.31-2.57 6.53-.94 6.53 2.52v44.86H16.585c-4.27 0-6.64-4.96-3.98-8.3L47.545.88z" fill="#3ECF8E" fillOpacity=".8"/>
+        </svg>
+      );
+
+    case 'airtable':
+      return (
+        <svg viewBox="0 0 40 33" className={`${sizeClasses} ${className}`} fill="none">
+          <path fillRule="evenodd" clipRule="evenodd" d="M18.59.35a2.5 2.5 0 0 1 2.82 0l16.88 11.25a2.5 2.5 0 0 1-1.41 4.56H3.12a2.5 2.5 0 0 1-1.41-4.56L18.59.35z" fill="#FCB400"/>
+          <path fillRule="evenodd" clipRule="evenodd" d="M17.82 17.65 1.5 24.36A2.5 2.5 0 0 0 0 26.68v4.45a2.5 2.5 0 0 0 3.39 2.35l14.43-5.22v-10.6z" fill="#18BFFF"/>
+          <path fillRule="evenodd" clipRule="evenodd" d="m22.18 17.65 16.32 6.71a2.5 2.5 0 0 1 1.5 2.32v4.45a2.5 2.5 0 0 1-3.39 2.35l-14.43-5.22v-10.6z" fill="#ED3C4A"/>
         </svg>
       );
 
@@ -89,6 +145,82 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    case 'shopify':
+      return (
+        <svg viewBox="0 0 109 123" className={`${sizeClasses} ${className}`}>
+          <path fill="#95BF47" d="M79.5 120.3L9.6 106.6C4.4 105.6 0 99.8 0 94.6L0 27.5C0 22.3 4.4 18.9 9.6 19.9L79.5 33.6C84.7 34.6 89.1 40.4 89.1 45.6L89.1 112.7C89.1 117.9 84.7 121.3 79.5 120.3Z"/>
+          <path fill="#5E8E3E" d="M79.5 33.6L67.5 7.7C65.5 3.3 61.1 0 56.4 0L32.7 0C28 0 23.6 3.3 21.6 7.7L9.6 33.6"/>
+          <path fill="#FFFFFF" d="M57.6 66.8C54.4 65.5 50.8 64.9 47.3 64.9C40.6 64.9 36.6 68.3 36.6 73.1C36.6 82.5 54.3 80.5 54.3 93.4C54.3 100.8 48.3 105.5 39.5 105.5C33.3 105.5 28.5 103.9 24.3 101.4L26.7 92.5C30.3 94.7 34.9 96.3 39.3 96.3C45.3 96.3 48.7 93.3 48.7 89.1C48.7 80.2 31.2 81.7 31.2 69.1C31.2 62.4 36.8 56.9 46.5 56.9C51.6 56.9 56.1 58.1 59.5 59.9L57.6 66.8Z"/>
+        </svg>
+      );
+
+    case 'stripe':
+      return (
+        <svg viewBox="0 0 40 40" className={`${sizeClasses} ${className}`}>
+          <rect width="40" height="40" rx="8" fill="#635BFF"/>
+          <path d="M19.4 15.6c0-1.7 1.4-2.3 3.6-2.3 3.2 0 7.3 1 10.4 2.7V8.5c-3.4-1.4-7.1-2-10.4-2-8.5 0-14.3 4.4-14.3 12 0 11.6 15.9 9.8 15.9 14.8 0 2-1.8 2.7-4.4 2.7-3.8 0-8.7-1.6-12.5-3.7v7.7c4 1.7 8.3 2.5 12.5 2.5 8.8 0 14.9-4.3 14.9-12.1-.1-12.2-15.7-10.3-15.7-14.9z" fill="#FFFFFF"/>
+        </svg>
+      );
+
+    case 'box':
+      return (
+        <svg viewBox="0 0 32 32" className={`${sizeClasses} ${className}`}>
+          <rect width="32" height="32" rx="6" fill="#0061D5"/>
+          <path fill="#FFFFFF" d="M10 9a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h3v-2h-3a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1h3V9h-3zm12 0h-3v2h3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-3v2h3a3 3 0 0 0 3-3v-8a3 3 0 0 0-3-3zM13 14h6v4h-6z"/>
+        </svg>
+      );
+
+    case 'twilio':
+      return (
+        <svg viewBox="0 0 32 32" className={`${sizeClasses} ${className}`}>
+          <circle cx="16" cy="16" r="16" fill="#F22F46"/>
+          <circle cx="12" cy="12" r="3" fill="#FFFFFF"/>
+          <circle cx="20" cy="12" r="3" fill="#FFFFFF"/>
+          <circle cx="12" cy="20" r="3" fill="#FFFFFF"/>
+          <circle cx="20" cy="20" r="3" fill="#FFFFFF"/>
+        </svg>
+      );
+
+    case 'asana':
+      return (
+        <svg viewBox="0 0 32 32" className={`${sizeClasses} ${className}`}>
+          <circle cx="16" cy="10" r="5" fill="#F06A6A"/>
+          <circle cx="9.5" cy="21" r="5" fill="#F06A6A"/>
+          <circle cx="22.5" cy="21" r="5" fill="#F06A6A"/>
+        </svg>
+      );
+
+    case 'dropbox':
+      return (
+        <svg viewBox="0 0 40 40" className={`${sizeClasses} ${className}`} fill="#0061FE">
+          <path d="M12.5 8 5 13l7.5 5 7.5-5-7.5-5zm15 0-7.5 5 7.5 5 7.5-5-7.5-5zM5 23l7.5 5 7.5-5-7.5-5L5 23zm27.5-5-7.5 5 7.5 5 7.5-5-7.5-5zM12.5 30.5l7.5 5 7.5-5-7.5-5-7.5 5z"/>
+        </svg>
+      );
+
+    case 'gitlab':
+      return (
+        <svg viewBox="0 0 36 36" className={`${sizeClasses} ${className}`}>
+          <path fill="#E24329" d="m18 33.2-6.5-20H24.5L18 33.2z"/>
+          <path fill="#FC6D26" d="m18 33.2-6.5-20h-7.9l14.4 20z"/>
+          <path fill="#FCA326" d="m3.6 13.2-1.9 5.8a1.5 1.5 0 0 0 .5 1.7L18 33.2 3.6 13.2z"/>
+          <path fill="#E24329" d="M3.6 13.2h7.9l-3.9-12a.8.8 0 0 0-1.5 0l-2.5 12z"/>
+          <path fill="#FC6D26" d="m18 33.2 6.5-20h7.9L18 33.2z"/>
+          <path fill="#FCA326" d="m32.4 13.2 1.9 5.8a1.5 1.5 0 0 1-.5 1.7L18 33.2 32.4 13.2z"/>
+          <path fill="#E24329" d="M32.4 13.2h-7.9l3.9-12a.8.8 0 0 1 1.5 0l2.5 12z"/>
+        </svg>
+      );
+
+    case 'figma':
+      return (
+        <svg viewBox="0 0 38 57" className={`${sizeClasses} ${className}`}>
+          <path fill="#1ABCFE" d="M19 28.5a9.5 9.5 0 1 1 19 0 9.5 9.5 0 0 1-19 0z"/>
+          <path fill="#0ACF83" d="M0 47.5A9.5 9.5 0 0 1 9.5 38H19v9.5a9.5 9.5 0 1 1-19 0z"/>
+          <path fill="#FF7262" d="M19 0v19h9.5a9.5 9.5 0 1 0 0-19H19z"/>
+          <path fill="#F24E1E" d="M0 9.5A9.5 9.5 0 0 0 9.5 19H19V0H9.5A9.5 9.5 0 0 0 0 9.5z"/>
+          <path fill="#A259FF" d="M0 28.5A9.5 9.5 0 0 0 9.5 38H19V19H9.5A9.5 9.5 0 0 0 0 28.5z"/>
+        </svg>
+      );
+
     case 'spotify':
       return (
         <svg viewBox="0 0 168 168" className={`${sizeClasses} ${className}`} fill="#1DB954">
@@ -105,23 +237,39 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
-    default:
-      // For any unlisted or custom AI-generated provider
-      if (logoUrl && !hasError) {
+    default: {
+      // Dynamic fallback for any arbitrary new or uncurated provider:
+      // 1. Try Google's high-reliability Favicon CDN (handles SVG, redirects, subdomains)
+      // 2. If blocked or offline, fall back to a styled monogram avatar with rich gradient
+      const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, '');
+      const domain = cleanSlug.includes('.') ? cleanSlug : `${cleanSlug}.com`;
+      const resolvedLogo = logoUrl || `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+
+      if (!hasError && resolvedLogo) {
         return (
           <img
-            src={logoUrl}
+            src={resolvedLogo}
             alt={name || slug}
             onError={() => setHasError(true)}
             className={`${sizeClasses} object-contain ${className}`}
+            loading="lazy"
           />
         );
       }
+
+      const initials = getInitials(name || slug || '?');
+      const gradient = getGradient(name || slug || '?');
+
       return (
-        <span className={`font-bold font-mono uppercase text-sand-800 ${sizeClasses} flex items-center justify-center ${className}`}>
-          {(name || slug || '?')[0]}
-        </span>
+        <div
+          className={`rounded-md bg-gradient-to-br ${gradient.bg} ${gradient.text} flex items-center justify-center font-bold font-mono tracking-wider shadow-inner select-none ${sizeClasses} ${className}`}
+          title={name || slug}
+        >
+          {initials}
+        </div>
       );
+    }
   }
 };
+
 

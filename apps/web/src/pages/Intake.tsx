@@ -100,11 +100,15 @@ export const Intake: React.FC = () => {
         customScopes: customScopes.trim(),
       });
       const webParam = website.trim() ? `&website=${encodeURIComponent(website.trim())}` : '';
-      navigate(`/jobs/${result.jobId}?query=${encodeURIComponent(query.trim())}${webParam}`);
+      const distParam = `&distribution=${encodeURIComponent(distribution)}`;
+      const capsParam = combinedCaps.length > 0 ? `&capabilities=${encodeURIComponent(combinedCaps.join(','))}` : '';
+      navigate(`/jobs/${result.jobId}?query=${encodeURIComponent(query.trim())}${webParam}${distParam}${capsParam}`);
     } catch (err) {
       console.error(err);
       const webParam = website.trim() ? `&website=${encodeURIComponent(website.trim())}` : '';
-      navigate(`/jobs/mock-${Date.now()}?query=${encodeURIComponent(query.trim())}${webParam}`);
+      const distParam = `&distribution=${encodeURIComponent(distribution)}`;
+      const capsParam = combinedCaps.length > 0 ? `&capabilities=${encodeURIComponent(combinedCaps.join(','))}` : '';
+      navigate(`/jobs/mock-${Date.now()}?query=${encodeURIComponent(query.trim())}${webParam}${distParam}${capsParam}`);
     }
   };
 

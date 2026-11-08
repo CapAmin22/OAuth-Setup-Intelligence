@@ -20,6 +20,9 @@ export const Job: React.FC = () => {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('query') || 'OAuth Provider';
   const website = searchParams.get('website') || '';
+  const distribution = (searchParams.get('distribution') as 'internal' | 'external' | 'both') || 'external';
+  const rawCaps = searchParams.get('capabilities');
+  const capabilities = rawCaps ? rawCaps.split(',').filter(Boolean) : ['User Authentication (SSO)', 'Read User Profile'];
 
   const { slug: normalizedSlug, displayName, canonicalDomain } = normalizeProviderName(query, website);
 
@@ -35,13 +38,13 @@ export const Job: React.FC = () => {
       query,
       website,
       intent: {
-        distribution: 'external',
-        capabilities: ['User Authentication (SSO)', 'Read User Profile'],
+        distribution,
+        capabilities,
       },
     });
     saveCustomGuide(guide, provider);
     setGeneratedSlug(provider.slug);
-  }, [query, website]);
+  }, [query, website, distribution]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -77,8 +80,8 @@ export const Job: React.FC = () => {
             query,
             website,
             intent: {
-              distribution: 'external',
-              capabilities: ['User Authentication (SSO)', 'Read User Profile'],
+              distribution,
+              capabilities,
             },
           });
 
