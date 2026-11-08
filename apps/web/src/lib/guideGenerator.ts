@@ -466,6 +466,34 @@ export const PROVIDER_PROFILES: Record<string, ProviderProfile> = {
       'Authorization codes expire in 10 minutes and can only be exchanged once.',
     ],
   },
+
+  odoo: {
+    slug: 'odoo',
+    displayName: 'Odoo',
+    domain: 'odoo.com',
+    portal: 'https://www.odoo.com/documentation/17.0/developer/reference/external_api.html',
+    lowMinutes: 20,
+    highMinutes: 40,
+    evidenceScore: 92,
+    criticalClaimGrounding: 34,
+    officialSourceCoverage: 24,
+    completeness: 19,
+    freshness: 9,
+    consistency: 6,
+    externalWait: {
+      status: 'none',
+      publishedRange: 'Instant self-serve activation in Odoo General Settings',
+    },
+    assumptions: [
+      'Active Odoo instance (Odoo Online SaaS, Odoo.sh cloud, or On-Premises)',
+      'OAuth Provider module installed (auth_oauth or web_oauth2)',
+      'Configuring Client ID and Client Secret in Settings > Technical > OAuth Providers',
+    ],
+    limitations: [
+      'Odoo authorization requests must specify the database name (db) when operating in multi-database environments.',
+      'Authorized redirect URIs must be explicitly whitelisted in the OAuth Provider settings in the Odoo admin backend.',
+    ],
+  },
 };
 
 // Calibrate an existing or retrieved guide with researched metrics
@@ -484,6 +512,8 @@ export function calibrateGuideMetrics(guide: GuideVersion): GuideVersion {
       ? PROVIDER_PROFILES['x']
       : normSlug === 'azure' || normSlug === 'entra' || normSlug.includes('microsoft')
       ? PROVIDER_PROFILES['microsoft']
+      : normSlug.includes('odoo')
+      ? PROVIDER_PROFILES['odoo']
       : null);
 
   if (profile) {

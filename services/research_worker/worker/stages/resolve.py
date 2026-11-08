@@ -36,6 +36,13 @@ KNOWN_DOMAINS = {
     "intercom": "intercom.com",
     "mailchimp": "mailchimp.com",
     "sentry": "sentry.io",
+    "odoo": "odoo.com",
+    "clickup": "clickup.com",
+    "monday": "monday.com",
+    "okta": "okta.com",
+    "auth0": "auth0.com",
+    "atlassian": "atlassian.com",
+    "jira": "atlassian.com",
 }
 
 def resolve_provider(query: str, website: str = "") -> Tuple[Dict[str, Any], bool]:

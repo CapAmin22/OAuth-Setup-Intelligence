@@ -180,6 +180,41 @@ export const PROVIDER_ENDPOINTS: Record<string, ProviderEndpointConfig> = {
     scopeDelimiter: ' ',
     authMethod: 'body',
   },
+  odoo: {
+    authUrl: 'https://www.odoo.com/web/oauth2/auth',
+    tokenUrl: 'https://www.odoo.com/web/oauth2/token',
+    userUrl: 'https://www.odoo.com/web/session/get_session_info',
+    scopeDelimiter: ' ',
+    authMethod: 'body',
+  },
+  clickup: {
+    authUrl: 'https://app.clickup.com/api/v2/oauth',
+    tokenUrl: 'https://api.clickup.com/api/v2/oauth/token',
+    userUrl: 'https://api.clickup.com/api/v2/user',
+    scopeDelimiter: ' ',
+    authMethod: 'body',
+  },
+  monday: {
+    authUrl: 'https://auth.monday.com/oauth2/authorize',
+    tokenUrl: 'https://auth.monday.com/oauth2/token',
+    userUrl: 'https://api.monday.com/v2',
+    scopeDelimiter: ' ',
+    authMethod: 'body',
+  },
+  zendesk: {
+    authUrl: 'https://{subdomain}.zendesk.com/oauth/authorizations/new',
+    tokenUrl: 'https://{subdomain}.zendesk.com/oauth/tokens',
+    userUrl: 'https://{subdomain}.zendesk.com/api/v2/users/me.json',
+    scopeDelimiter: ' ',
+    authMethod: 'body',
+  },
+  intercom: {
+    authUrl: 'https://app.intercom.com/oauth',
+    tokenUrl: 'https://api.intercom.io/auth/eagle/token',
+    userUrl: 'https://api.intercom.io/me',
+    scopeDelimiter: ' ',
+    authMethod: 'body',
+  },
 };
 
 function getEndpointConfig(slug: string): ProviderEndpointConfig {

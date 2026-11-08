@@ -396,6 +396,39 @@ export const PROVIDER_TOP_PROBLEMS: Record<
     sourceUrl: 'https://docs.loom.com',
     sourceTitle: 'Loom Developer Documentation',
   },
+
+  odoo: {
+    title: 'Top 3 Integration Pitfalls for Odoo OAuth 2.0',
+    points: [
+      {
+        heading: 'Multi-Database Routing (db Parameter Requirement)',
+        detail:
+          'Odoo instances commonly manage multiple databases on a single domain. If the database name is not explicitly passed as a query parameter (db={database_name}) during the authorization redirect, Odoo will redirect the user to a database selector or fail with an invalid session context.',
+        fix: 'Include db: process.env.ODOO_DATABASE in your authorization request parameters or provide an instance selector for end users.',
+      },
+      {
+        heading: 'OAuth Provider Module Activation in Technical Settings',
+        detail:
+          'Unlike consumer OAuth providers with standalone developer portals, Odoo requires enabling OAuth in the Odoo admin backend under Settings > General Settings > Integrations (or installing the auth_oauth / web_oauth2 module in Technical Settings).',
+        fix: 'Log into Odoo as an Administrator, activate Developer Mode, and verify the OAuth Providers configuration under Settings > Technical > OAuth Providers.',
+      },
+      {
+        heading: 'Strict Exact Redirect URI Whitelisting',
+        detail:
+          'Odoo validates callback URLs against the Allowed Redirect URIs entered in the OAuth Provider configuration. Any mismatch between http and https, trailing slashes, or staging domain port numbers causes an immediate access_denied redirect.',
+        fix: 'Ensure your app callback URL (e.g., http://localhost:3000/api/auth/callback/odoo and production URL) is explicitly added to the Odoo provider record.',
+      },
+    ],
+    proTip:
+      'When performing ORM operations (CRM leads, Sales, Accounting) after OAuth login, use the verified user session with Odoo\'s JSON-RPC / External API endpoints (/jsonrpc or /xmlrpc/2/object).',
+    followUps: [
+      'What are the OAuth 2.0 endpoints for Odoo?',
+      'How do I configure OAuth Providers in Odoo?',
+      'Why is the db parameter required in Odoo OAuth?',
+    ],
+    sourceUrl: 'https://www.odoo.com/documentation/17.0/applications/general/auth/oauth.html',
+    sourceTitle: 'Odoo OAuth 2.0 Documentation',
+  },
 };
 
 export const PROVIDER_SEED_FAQS: Record<string, CopilotQA[]> = {
@@ -954,7 +987,56 @@ authUrl.searchParams.set('prompt', 'consent');`,
       followUps: ['What scopes are supported by Loom?'],
     },
   ],
+
+  odoo: [
+    {
+      id: 'odoo-endpoints',
+      question: 'What are the OAuth 2.0 endpoints for Odoo?',
+      category: 'endpoints',
+      answer:
+        'Odoo OAuth 2.0 endpoints are served by your Odoo web controller:\n\n' +
+        '• Authorization Endpoint: `https://{your-odoo-domain}/web/oauth2/auth`\n' +
+        '• Token Exchange Endpoint: `https://{your-odoo-domain}/web/oauth2/token`\n' +
+        '• User Session Info Endpoint: `https://{your-odoo-domain}/web/session/get_session_info`\n\n' +
+        'Ensure that the active target database is supplied via the `db` parameter if running in a multi-database environment.',
+      codeSnippet: `// Odoo OAuth 2.0 URL construction
+const authUrl = new URL('https://your-company.odoo.com/web/oauth2/auth');
+authUrl.searchParams.set('client_id', process.env.ODOO_CLIENT_ID!);
+authUrl.searchParams.set('redirect_uri', process.env.ODOO_REDIRECT_URI!);
+authUrl.searchParams.set('response_type', 'code');
+authUrl.searchParams.set('scope', 'userinfo');
+authUrl.searchParams.set('db', process.env.ODOO_DATABASE!); // Multi-tenant database routing`,
+      sourceUrl: 'https://www.odoo.com/documentation/17.0/applications/general/auth/oauth.html',
+      sourceTitle: 'Odoo OAuth Documentation',
+      followUps: ['Why is the db parameter required in Odoo OAuth?', 'How do I configure OAuth Providers in Odoo?'],
+    },
+    {
+      id: 'odoo-db-param',
+      question: 'Why is the db parameter required in Odoo OAuth?',
+      category: 'problems',
+      answer:
+        'Odoo servers frequently host multiple isolated company databases on the same server instance. When a user is redirected for authorization without a `db` parameter, Odoo cannot determine which database to authenticate against and either prompts a manual database selector or throws an invalid session error.\n\nProviding `db={database_name}` guarantees deterministic routing directly to the intended database.',
+      sourceUrl: 'https://www.odoo.com/documentation/17.0/developer/reference/external_api.html',
+      sourceTitle: 'Odoo External API Reference',
+      followUps: ['What are the OAuth 2.0 endpoints for Odoo?', 'How do I configure OAuth Providers in Odoo?'],
+    },
+  ],
 };
+
+/**
+ * Normalizes provider slug by stripping subdomains and common TLDs
+ * so 'docs.odoo.com', 'odoo.com', and 'odoo' all resolve to 'odoo'.
+ */
+export function extractKnowledgeSlug(raw: string): string {
+  if (!raw) return '';
+  let clean = raw.toLowerCase().trim();
+  clean = clean.replace(/^https?:\/\//, '');
+  clean = clean.replace(/\/.*$/, '');
+  clean = clean.replace(/^(docs|api|app|developer|developers|login|console|accounts|auth|web|www)\./, '');
+  clean = clean.replace(/\.(com|org|net|io|dev|app|co|us|eu|in|ai|so|to)$/, '');
+  clean = clean.replace(/[^a-z0-9]/g, '');
+  return clean;
+}
 
 // Classify developer question intent with high precision
 export function classifyIntent(question: string): CopilotIntent {
@@ -1066,7 +1148,8 @@ export function synthesizeTopProblems(
   guide?: GuideVersion | null
 ): CopilotQA {
   const normSlug = providerSlug.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const curated = PROVIDER_TOP_PROBLEMS[normSlug];
+  const baseSlug = extractKnowledgeSlug(providerSlug);
+  const curated = PROVIDER_TOP_PROBLEMS[baseSlug] || PROVIDER_TOP_PROBLEMS[normSlug];
 
   if (curated) {
     const formattedPoints = curated.points
@@ -1137,6 +1220,7 @@ export function queryCopilot(
   guide?: GuideVersion | null
 ): CopilotQA {
   const normSlug = providerSlug.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const baseSlug = extractKnowledgeSlug(providerSlug);
   const pName = guide?.providerName || providerSlug;
   const qLower = userQuestion.toLowerCase().trim();
   const intent = classifyIntent(qLower);
@@ -1147,7 +1231,7 @@ export function queryCopilot(
   }
 
   // 2. Direct match in curated seed FAQs
-  const faqs = PROVIDER_SEED_FAQS[normSlug] || [];
+  const faqs = PROVIDER_SEED_FAQS[baseSlug] || PROVIDER_SEED_FAQS[normSlug] || [];
   for (const faq of faqs) {
     const fLower = faq.question.toLowerCase();
     if (fLower === qLower || qLower.includes(fLower) || fLower.includes(qLower)) {

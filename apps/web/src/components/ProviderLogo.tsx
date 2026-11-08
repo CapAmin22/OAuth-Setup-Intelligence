@@ -34,6 +34,22 @@ function getGradient(name: string): { bg: string; text: string } {
   return gradients[idx];
 }
 
+/**
+ * Extracts normalized provider key by stripping subdomains (docs., api., login., etc.)
+ * and TLD extensions (.com, .org, .io, etc.).
+ * Guarantees that 'docs.odoo.com', 'odoo.com', and 'odoo' all resolve to 'odoo'.
+ */
+function extractBaseSlug(raw: string): string {
+  if (!raw) return '';
+  let clean = raw.toLowerCase().trim();
+  clean = clean.replace(/^https?:\/\//, '');
+  clean = clean.replace(/\/.*$/, '');
+  clean = clean.replace(/^(docs|api|app|developer|developers|login|console|accounts|auth|web|www)\./, '');
+  clean = clean.replace(/\.(com|org|net|io|dev|app|co|us|eu|in|ai|so|to)$/, '');
+  clean = clean.replace(/[^a-z0-9]/g, '');
+  return clean;
+}
+
 export const ProviderLogo: React.FC<ProviderLogoProps> = ({
   slug = '',
   name = '',
@@ -41,8 +57,11 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
   className = '',
   size = 'md',
 }) => {
-  const [hasError, setHasError] = useState(false);
+  const [imgAttempt, setImgAttempt] = useState(0);
+
+  const baseSlug = extractBaseSlug(slug) || extractBaseSlug(name) || '';
   const normSlug = (slug || name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const key = baseSlug || normSlug;
 
   const sizeClasses = {
     sm: 'w-5 h-5 text-xs',
@@ -52,7 +71,27 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
   }[size];
 
   // Embedded official vector SVGs for curated and top requested providers (0 network dependency, 0 broken images)
-  switch (normSlug) {
+  switch (key) {
+    // 1. Odoo (Enterprise ERP, CRM & Business Suite)
+    case 'odoo':
+    case 'docsodoo':
+    case 'docsodoocom':
+      return (
+        <svg viewBox="0 0 100 100" className={`${sizeClasses} ${className}`} fill="none">
+          <rect width="100" height="100" rx="20" fill="#714B67" />
+          <path
+            d="M31 66c-9.4 0-17-7.6-17-17s7.6-17 17-17 17 7.6 17 17-7.6 17-17 17zm0-8c5 0 9-4 9-9s-4-9-9-9-9 4-9 9 4 9 9 9z"
+            fill="#FFFFFF"
+          />
+          <path
+            d="M52 32h8v10.5c2.5-3.5 6.5-5.5 11-5.5 8.3 0 15 6.7 15 15s-6.7 15-15 15c-4.5 0-8.5-2-11-5.5V66h-8V32zm19 26c4.4 0 8-3.6 8-8s-3.6-8-8-8-8 3.6-8 8 3.6 8 8 8z"
+            fill="#FFFFFF"
+          />
+          <circle cx="84" cy="51" r="5" fill="#017E84" />
+        </svg>
+      );
+
+    // 2. Discord
     case 'discord':
       return (
         <svg viewBox="0 0 127.14 96.36" className={`${sizeClasses} ${className}`} fill="#5865F2">
@@ -60,6 +99,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 3. GitHub
     case 'github':
       return (
         <svg viewBox="0 0 98 96" className={`${sizeClasses} ${className}`} fill="#24292F">
@@ -67,6 +107,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 4. Google
     case 'google':
       return (
         <svg viewBox="0 0 48 48" className={`${sizeClasses} ${className}`}>
@@ -77,6 +118,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 5. Google Calendar
     case 'googlecalendar':
     case 'gcal':
     case 'calendar':
@@ -90,6 +132,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 6. Supabase
     case 'supabase':
       return (
         <svg viewBox="0 0 106 107" className={`${sizeClasses} ${className}`} fill="none">
@@ -98,6 +141,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 7. Airtable
     case 'airtable':
       return (
         <svg viewBox="0 0 40 33" className={`${sizeClasses} ${className}`} fill="none">
@@ -107,6 +151,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 8. Slack
     case 'slack':
       return (
         <svg viewBox="0 0 127 127" className={`${sizeClasses} ${className}`}>
@@ -117,6 +162,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 9. Notion
     case 'notion':
       return (
         <svg viewBox="0 0 100 100" className={`${sizeClasses} ${className}`} fill="#000000">
@@ -124,6 +170,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 10. Salesforce
     case 'salesforce':
       return (
         <svg viewBox="0 0 24 24" className={`${sizeClasses} ${className}`} fill="#00A1E0">
@@ -131,6 +178,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 11. HubSpot
     case 'hubspot':
       return (
         <svg viewBox="0 0 512 512" className={`${sizeClasses} ${className}`} fill="#FF7A59">
@@ -138,6 +186,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 12. Linear
     case 'linear':
       return (
         <svg viewBox="0 0 100 100" className={`${sizeClasses} ${className}`} fill="#5E6AD2">
@@ -145,6 +194,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 13. Shopify
     case 'shopify':
       return (
         <svg viewBox="0 0 109 123" className={`${sizeClasses} ${className}`}>
@@ -154,6 +204,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 14. Stripe
     case 'stripe':
       return (
         <svg viewBox="0 0 40 40" className={`${sizeClasses} ${className}`}>
@@ -162,6 +213,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 15. Box
     case 'box':
       return (
         <svg viewBox="0 0 32 32" className={`${sizeClasses} ${className}`}>
@@ -170,6 +222,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 16. Twilio
     case 'twilio':
       return (
         <svg viewBox="0 0 32 32" className={`${sizeClasses} ${className}`}>
@@ -181,6 +234,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 17. Asana
     case 'asana':
       return (
         <svg viewBox="0 0 32 32" className={`${sizeClasses} ${className}`}>
@@ -190,6 +244,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 18. Dropbox
     case 'dropbox':
       return (
         <svg viewBox="0 0 40 40" className={`${sizeClasses} ${className}`} fill="#0061FE">
@@ -197,6 +252,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 19. GitLab
     case 'gitlab':
       return (
         <svg viewBox="0 0 36 36" className={`${sizeClasses} ${className}`}>
@@ -210,6 +266,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 20. Figma
     case 'figma':
       return (
         <svg viewBox="0 0 38 57" className={`${sizeClasses} ${className}`}>
@@ -221,6 +278,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 21. Spotify
     case 'spotify':
       return (
         <svg viewBox="0 0 168 168" className={`${sizeClasses} ${className}`} fill="#1DB954">
@@ -229,6 +287,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 22. Zoom
     case 'zoom':
       return (
         <svg viewBox="0 0 24 24" className={`${sizeClasses} ${className}`}>
@@ -237,6 +296,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 23. Loom
     case 'loom':
       return (
         <svg viewBox="0 0 40 40" className={`${sizeClasses} ${className}`} fill="none">
@@ -250,6 +310,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 24. Microsoft / Azure / Entra ID
     case 'microsoft':
     case 'azure':
     case 'entra':
@@ -263,6 +324,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 25. X / Twitter
     case 'x':
     case 'twitter':
       return (
@@ -271,6 +333,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 26. Zoho
     case 'zoho':
       return (
         <svg viewBox="0 0 32 32" className={`${sizeClasses} ${className}`}>
@@ -281,6 +344,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 27. Miro
     case 'miro':
       return (
         <svg viewBox="0 0 24 24" className={`${sizeClasses} ${className}`}>
@@ -292,6 +356,7 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 28. Canva
     case 'canva':
       return (
         <svg viewBox="0 0 32 32" className={`${sizeClasses} ${className}`}>
@@ -303,24 +368,194 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
         </svg>
       );
 
+    // 29. Atlassian / Jira / Confluence
+    case 'atlassian':
+    case 'jira':
+    case 'confluence':
+      return (
+        <svg viewBox="0 0 32 32" className={`${sizeClasses} ${className}`}>
+          <rect width="32" height="32" rx="6" fill="#0052CC" />
+          <path d="M15.8 7.5c-.3-.5-.9-.8-1.5-.7-.6.1-1.1.5-1.3 1.1L8.5 22.8c-.2.5 0 1.1.4 1.5.4.4 1 .5 1.5.3l6.2-2.5c.6-.2 1-.8 1-1.4V8.5c0-.4-.3-.8-.8-1z" fill="#2684FF" />
+          <path d="M16.2 7.5c.3-.5.9-.8 1.5-.7.6.1 1.1.5 1.3 1.1l4.5 14.9c.2.5 0 1.1-.4 1.5-.4.4-1 .5-1.5.3l-6.2-2.5c-.6-.2-1-.8-1-1.4V8.5c0-.4.3-.8.8-1z" fill="#FFFFFF" />
+        </svg>
+      );
+
+    // 30. Okta
+    case 'okta':
+      return (
+        <svg viewBox="0 0 32 32" className={`${sizeClasses} ${className}`}>
+          <circle cx="16" cy="16" r="16" fill="#007DC1" />
+          <circle cx="16" cy="16" r="8" fill="#FFFFFF" />
+        </svg>
+      );
+
+    // 31. Auth0
+    case 'auth0':
+      return (
+        <svg viewBox="0 0 32 32" className={`${sizeClasses} ${className}`}>
+          <rect width="32" height="32" rx="6" fill="#16214C" />
+          <path d="M16 6.5l7 3.5v6.5c0 4.5-3 8.7-7 9.8-4-1.1-7-5.3-7-9.8V10l7-3.5z" fill="#EB5424" />
+          <path d="M16 8.5L11 11v5.5c0 3.3 2.1 6.4 5 7.2 2.9-.8 5-3.9 5-7.2V11l-5-2.5z" fill="#FFFFFF" />
+        </svg>
+      );
+
+    // 32. PostHog
+    case 'posthog':
+      return (
+        <svg viewBox="0 0 32 32" className={`${sizeClasses} ${className}`}>
+          <rect width="32" height="32" rx="6" fill="#1D1F27" />
+          <path d="M7 16c0-4.4 3.6-8 8-8h2v4h-2c-2.2 0-4 1.8-4 4v1h-4v-1zm14-4v1h4v-1c0-4.4-3.6-8-8-8h-2v4h2c2.2 0 4 1.8 4 4zm-8 12c-2.2 0-4-1.8-4-4v-1H5v1c0 4.4 3.6 8 8 8h2v-4h-2zm12-4c0 2.2-1.8 4-4 4h-2v4h2c4.4 0 8-3.6 8-8v-1h-4v1z" fill="#F54E00" />
+          <circle cx="16" cy="16" r="3" fill="#FFD02F" />
+        </svg>
+      );
+
+    // 33. LinkedIn
+    case 'linkedin':
+      return (
+        <svg viewBox="0 0 32 32" className={`${sizeClasses} ${className}`}>
+          <rect width="32" height="32" rx="6" fill="#0A66C2" />
+          <path d="M9 13h3.5v11H9V13zm1.8-5.5a2 2 0 1 1 0 4 2 2 0 0 1 0-4zm4.7 5.5h3.3v1.5h.1c.5-.9 1.7-1.8 3.4-1.8 3.6 0 4.3 2.4 4.3 5.5V24h-3.5v-5.2c0-1.2 0-2.8-1.7-2.8s-2 1.3-2 2.7V24h-3.5V13z" fill="#FFFFFF" />
+        </svg>
+      );
+
+    // 34. PayPal
+    case 'paypal':
+      return (
+        <svg viewBox="0 0 32 32" className={`${sizeClasses} ${className}`}>
+          <rect width="32" height="32" rx="6" fill="#003087" />
+          <path d="M12 7h6c2.8 0 5 1.8 5 4.5 0 3.2-2.3 5.5-5.5 5.5h-2.3l-1.2 7H10l3-17h-1zm3.8 2.2l-1.2 6.6h2.2c1.8 0 3.2-1.3 3.2-3.3 0-1.8-1.4-3.3-3.2-3.3h-1z" fill="#0079C1" />
+          <path d="M14.5 11h5.5c2.5 0 4.5 1.6 4.5 4 0 2.8-2 4.8-4.8 4.8h-2l-1 6H13l2.5-14.8h-1zm3.2 2l-1 5.8h1.8c1.5 0 2.8-1.1 2.8-2.9 0-1.6-1.2-2.9-2.8-2.9h-.8z" fill="#FFFFFF" />
+        </svg>
+      );
+
+    // 35. Square
+    case 'square':
+      return (
+        <svg viewBox="0 0 32 32" className={`${sizeClasses} ${className}`}>
+          <rect width="32" height="32" rx="8" fill="#000000" />
+          <rect x="7" y="7" width="18" height="18" rx="4" fill="#FFFFFF" />
+          <rect x="11" y="11" width="10" height="10" rx="2" fill="#000000" />
+        </svg>
+      );
+
+    // 36. QuickBooks / Intuit
+    case 'quickbooks':
+    case 'intuit':
+      return (
+        <svg viewBox="0 0 32 32" className={`${sizeClasses} ${className}`}>
+          <circle cx="16" cy="16" r="16" fill="#2CA01C" />
+          <path d="M12 10c-3.3 0-6 2.7-6 6s2.7 6 6 6h1v-2.2h-1c-2.1 0-3.8-1.7-3.8-3.8s1.7-3.8 3.8-3.8h1V10h-1zm8 0h-1v2.2h1c2.1 0 3.8 1.7 3.8 3.8s-1.7 3.8-3.8 3.8h-1V22h1c3.3 0 6-2.7 6-6s-2.7-6-6-6z" fill="#FFFFFF" />
+          <rect x="11" y="10" width="2.2" height="9" fill="#FFFFFF" rx="1" />
+          <rect x="18.8" y="13" width="2.2" height="9" fill="#FFFFFF" rx="1" />
+        </svg>
+      );
+
+    // 37. Xero
+    case 'xero':
+      return (
+        <svg viewBox="0 0 32 32" className={`${sizeClasses} ${className}`}>
+          <circle cx="16" cy="16" r="16" fill="#13B5EA" />
+          <path d="M10 12l4 4-4 4h2.5l2.75-2.75L18 20h2.5l-4-4 4-4H18l-2.75 2.75L12.5 12H10z" fill="#FFFFFF" />
+        </svg>
+      );
+
+    // 38. Calendly
+    case 'calendly':
+      return (
+        <svg viewBox="0 0 32 32" className={`${sizeClasses} ${className}`}>
+          <circle cx="16" cy="16" r="16" fill="#006BFF" />
+          <path d="M16 8c-4.4 0-8 3.6-8 8s3.6 8 8 8c3.2 0 6-1.9 7.2-4.6l-3.2-1.3c-.7 1.6-2.3 2.7-4 2.7-2.5 0-4.5-2-4.5-4.8s2-4.8 4.5-4.8c1.7 0 3.3 1.1 4 2.7l3.2-1.3C22 9.9 19.2 8 16 8z" fill="#FFFFFF" />
+        </svg>
+      );
+
+    // 39. Reddit
+    case 'reddit':
+      return (
+        <svg viewBox="0 0 32 32" className={`${sizeClasses} ${className}`}>
+          <circle cx="16" cy="16" r="16" fill="#FF4500" />
+          <path d="M24 16a2 2 0 0 0-2-2c-.3 0-.6.1-.8.2-1.3-.9-3-1.5-4.9-1.6l1-4 2.7.6a1.5 1.5 0 1 0 1.5-1.5 1.5 1.5 0 0 0-1.4 1l-3.1-.7c-.3-.1-.5.1-.6.4l-1.2 4.8c-2 .1-3.8.7-5.1 1.6-.2-.1-.5-.2-.8-.2a2 2 0 0 0 0 4c0 .3 0 .6.1.9-.1.3-.1.6-.1.9 0 2.8 3.1 5 7 5s7-2.2 7-5c0-.3 0-.6-.1-.9.1-.3.1-.6.1-.9a2 2 0 0 0 1.8-2.2zm-11.5 1a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4zm7 5.2c-1 .8-2.3 1.2-3.5 1.2s-2.5-.4-3.5-1.2a.5.5 0 0 1 .7-.7c.8.6 1.8.9 2.8.9s2-.3 2.8-.9a.5.5 0 0 1 .7.7zm-.5-2.8a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4z" fill="#FFFFFF" />
+        </svg>
+      );
+
+    // 40. DocuSign
+    case 'docusign':
+      return (
+        <svg viewBox="0 0 32 32" className={`${sizeClasses} ${className}`}>
+          <rect width="32" height="32" rx="6" fill="#1E2832" />
+          <path d="M8 10h16v3H8v-3zm0 5h16v3H8v-3zm0 5h10v3H8v-3z" fill="#FFCE00" />
+          <path d="M21 19l4 4-4 4" stroke="#FFCE00" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        </svg>
+      );
+
+    // 41. ClickUp
+    case 'clickup':
+      return (
+        <svg viewBox="0 0 32 32" className={`${sizeClasses} ${className}`}>
+          <rect width="32" height="32" rx="6" fill="#7B68EE" />
+          <path d="M9 19l7-6 7 6" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <circle cx="16" cy="22" r="2.5" fill="#FFDD00" />
+        </svg>
+      );
+
+    // 42. Monday.com
+    case 'monday':
+    case 'mondaycom':
+      return (
+        <svg viewBox="0 0 32 32" className={`${sizeClasses} ${className}`}>
+          <rect width="32" height="32" rx="6" fill="#FFFFFF" stroke="#E5E7EB" />
+          <circle cx="9" cy="16" r="3.5" fill="#FF3D57" />
+          <circle cx="16" cy="16" r="3.5" fill="#FFCB00" />
+          <circle cx="23" cy="16" r="3.5" fill="#00CA72" />
+        </svg>
+      );
+
+    // 43. Zendesk
+    case 'zendesk':
+      return (
+        <svg viewBox="0 0 32 32" className={`${sizeClasses} ${className}`}>
+          <rect width="32" height="32" rx="6" fill="#03363D" />
+          <circle cx="11" cy="11" r="4" fill="#FFFFFF" />
+          <path d="M21 7v8h-8a8 8 0 0 1 8-8z" fill="#FFFFFF" />
+          <circle cx="21" cy="21" r="4" fill="#FFFFFF" />
+          <path d="M11 25v-8h8a8 8 0 0 1-8 8z" fill="#FFFFFF" />
+        </svg>
+      );
+
+    // 44. Intercom
+    case 'intercom':
+      return (
+        <svg viewBox="0 0 32 32" className={`${sizeClasses} ${className}`}>
+          <rect width="32" height="32" rx="6" fill="#286EFA" />
+          <path d="M10 10v7c0 3.3 2.7 6 6 6s6-2.7 6-6v-7" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+          <path d="M13 14v4M16 13v5M19 14v4" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      );
+
     default: {
-      // Dynamic fallback for any arbitrary new or uncurated provider:
-      // 1. Try Google's high-reliability Favicon CDN (handles SVG, redirects, subdomains)
-      // 2. If blocked or offline, fall back to a styled monogram avatar with rich gradient
+      // Dynamic fallback for any uncataloged or custom provider:
+      // 1. Try Google Favicon CDN with apex domain resolution
+      // 2. Try DuckDuckGo Favicon CDN
+      // 3. Fall back to styled monogram avatar with rich gradient
       const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9-.]/g, '');
-      const domain = cleanSlug.includes('.')
+      const rawDomain = cleanSlug.includes('.')
         ? cleanSlug
         : cleanSlug.replace(/-oauth|-api|-app/g, '') + '.com';
-      const resolvedLogo =
-        logoUrl ||
-        `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
 
-      if (!hasError && resolvedLogo) {
+      // Extract apex domain if domain has subdomains (e.g. docs.foo.com -> foo.com)
+      const domainParts = rawDomain.split('.').filter(Boolean);
+      const apexDomain = domainParts.length > 2 ? domainParts.slice(-2).join('.') : rawDomain;
+
+      const primaryLogo = logoUrl || `https://www.google.com/s2/favicons?domain=${apexDomain}&sz=128`;
+      const fallbackLogo = `https://icons.duckduckgo.com/ip3/${apexDomain}.ico`;
+
+      const resolvedLogo = imgAttempt === 0 ? primaryLogo : imgAttempt === 1 ? fallbackLogo : null;
+
+      if (resolvedLogo && imgAttempt < 2) {
         return (
           <img
             src={resolvedLogo}
             alt={name || slug}
-            onError={() => setHasError(true)}
+            onError={() => setImgAttempt((prev) => prev + 1)}
             className={`${sizeClasses} object-contain ${className}`}
             loading="lazy"
           />
@@ -341,5 +576,3 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
     }
   }
 };
-
-
