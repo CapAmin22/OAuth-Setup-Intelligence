@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Sparkles, ArrowRight, ShieldCheck, Zap, Layers, BookOpen } from 'lucide-react';
 import { SearchBar } from '../components/SearchBar';
 import { ProviderCard } from '../components/ProviderCard';
+import { ProviderLogo } from '../components/ProviderLogo';
 import { fetchProviders, fetchAllGuides } from '../lib/api';
 import { Provider, GuideVersion } from '../types';
 
@@ -45,21 +46,43 @@ export const Home: React.FC = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16 w-full">
         {/* Hero Section */}
         <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-800 text-xs font-semibold uppercase tracking-wider mb-5 border border-amber-500/20">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/10 text-amber-900 text-xs font-semibold uppercase tracking-wider mb-5 border border-amber-500/25 shadow-2xs">
             <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-            Phase 1 MVP · Source-Grounded Guides
+            Verified OAuth 2.0 Runbooks · Zero Hallucinations
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-extrabold text-sand-900 tracking-tight leading-[1.15] mb-4">
-            Setup and Approval Intelligence for OAuth Apps
+            Setup & Approval Intelligence for OAuth Apps
           </h1>
 
           <p className="text-base sm:text-lg text-sand-700 max-w-2xl mx-auto leading-relaxed mb-8">
-            Clear, actionable developer runbooks for popular OAuth providers — with live,
-            source-grounded AI research for unfamiliar APIs.
+            Battle-tested runbooks, 1-click endpoints, and ready-to-run code snippets for popular OAuth providers — with autonomous AI research for unfamiliar APIs.
           </p>
 
           <SearchBar size="large" autoFocus={true} />
+
+          {/* Popular Providers Quick-Launch Pills */}
+          <div className="flex items-center justify-center gap-2 mt-4 flex-wrap text-xs">
+            <span className="text-sand-500 font-medium mr-1">Popular:</span>
+            {[
+              { slug: 'google', name: 'Google' },
+              { slug: 'github', name: 'GitHub' },
+              { slug: 'slack', name: 'Slack' },
+              { slug: 'discord', name: 'Discord' },
+              { slug: 'linear', name: 'Linear' },
+              { slug: 'spotify', name: 'Spotify' },
+              { slug: 'notion', name: 'Notion' },
+            ].map((item) => (
+              <Link
+                key={item.slug}
+                to={`/guides/${item.slug}/v/1`}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-sand-200 hover:border-amber-500 text-sand-800 hover:text-amber-900 font-medium transition-all shadow-2xs hover:shadow-xs group"
+              >
+                <ProviderLogo slug={item.slug} name={item.name} size="sm" />
+                <span>{item.name}</span>
+              </Link>
+            ))}
+          </div>
         </div>
 
         {/* AI Researched Guides Section (shows immediately when any custom provider is researched) */}

@@ -19,6 +19,7 @@ import { EvidencePanel } from '../components/EvidencePanel';
 import { BlockerWizard } from '../components/BlockerWizard';
 import { CodePlayground } from '../components/CodePlayground';
 import { ProviderLogo } from '../components/ProviderLogo';
+import { QuickEndpointsCard } from '../components/QuickEndpointsCard';
 import { fetchGuide } from '../lib/api';
 import { GuideVersion } from '../types';
 
@@ -323,10 +324,18 @@ ${guide.sources.map((src) => `- [${src.id}] ${src.url} (Hash: ${src.contentHash}
         </div>
       </div>
 
+      {/* Quick Endpoints & Credentials Cheat Sheet */}
+      <QuickEndpointsCard
+        providerSlug={guide.providerSlug}
+        providerName={guide.providerName}
+        defaultScopes={guide.intent?.capabilities}
+        canonicalDomain={`${guide.providerSlug}.com`}
+      />
+
       {/* Main Content Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column: Prerequisites, Steps, Blockers */}
-        <div className="lg:col-span-7 space-y-8">
+        {/* Left Column: Prerequisites, Steps, Blockers (66.7% width) */}
+        <div className="lg:col-span-8 space-y-8">
           {/* Next Action Callout */}
           <div className="bg-amber-500/10 border border-amber-600/30 rounded-xl p-4 flex items-start gap-3">
             <div className="w-6 h-6 rounded-md bg-amber-600 text-white flex items-center justify-center shrink-0 font-bold text-xs mt-0.5">
@@ -433,8 +442,8 @@ ${guide.sources.map((src) => `- [${src.id}] ${src.url} (Hash: ${src.contentHash}
           )}
         </div>
 
-        {/* Right Column: Evidence Dossier Panel */}
-        <div className="lg:col-span-5">
+        {/* Right Column: Evidence Dossier Panel (33.3% width) */}
+        <div className="lg:col-span-4">
           <div className="sticky top-20">
             <EvidencePanel guide={guide} activeClaimId={activeClaimId} />
           </div>
