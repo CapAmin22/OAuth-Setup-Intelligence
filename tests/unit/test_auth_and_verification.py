@@ -18,6 +18,9 @@ class TestAuthAndVerification(unittest.TestCase):
         self.header_path = os.path.join(self.repo_root, "apps", "web", "src", "components", "Header.tsx")
         self.migration_path = os.path.join(self.repo_root, "supabase", "migrations", "0005_developer_profiles.sql")
         self.tour_path = os.path.join(self.repo_root, "apps", "web", "src", "components", "WelcomeModal.tsx")
+        self.modal_path = os.path.join(self.repo_root, "apps", "web", "src", "components", "DeveloperAuthModal.tsx")
+        self.reviewer_path = os.path.join(self.repo_root, "apps", "web", "src", "pages", "Reviewer.tsx")
+        self.app_path = os.path.join(self.repo_root, "apps", "web", "src", "App.tsx")
 
     def test_auth_validation_rules(self):
         """Verify auth.ts contains strict verification for Name, Email, Company, and LinkedIn."""
@@ -89,6 +92,43 @@ class TestAuthAndVerification(unittest.TestCase):
         self.assertIn("In-Context Grounded Copilot (⌘J)", content)
         self.assertIn("Research Any Unfamiliar Provider", content)
         self.assertIn("Blocker Wizard & Multi-Language Code", content)
+
+    def test_developer_auth_modal_implementation(self):
+        """Verify DeveloperAuthModal.tsx renders anti-fake verification meter and fields."""
+        self.assertTrue(os.path.exists(self.modal_path), "DeveloperAuthModal.tsx must exist")
+        with open(self.modal_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        self.assertIn("Genuine Profile Verification", content)
+        self.assertIn("auditDeveloperProfile", content)
+        self.assertIn("registerDeveloper", content)
+        self.assertIn("Full Name *", content)
+        self.assertIn("Work / Dev Email *", content)
+        self.assertIn("Company / Team *", content)
+        self.assertIn("LinkedIn Profile URL *", content)
+        self.assertIn("Unlock Workspace", content)
+
+    def test_app_first_load_auth_gate_and_preview_banner(self):
+        """Verify App.tsx initializes authModalOpen when not authenticated and displays preview banner."""
+        with open(self.app_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        self.assertIn("DeveloperAuthModal", content)
+        self.assertIn("!getCurrentDeveloper()", content)
+        self.assertIn("Read-Only Preview", content)
+        self.assertIn("oauth_open_auth_modal", content)
+
+    def test_reviewer_linkedin_outreach_hub(self):
+        """Verify Reviewer.tsx provides Developer Leads & LinkedIn outreach hub with message generator."""
+        with open(self.reviewer_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        self.assertIn("developer_roster", content)
+        self.assertIn("Developer Leads & Outreach", content)
+        self.assertIn("copyOutreachTemplate", content)
+        self.assertIn("Message on LinkedIn", content)
+        self.assertIn("listRegisteredDevelopers", content)
+
 
 if __name__ == "__main__":
     unittest.main()

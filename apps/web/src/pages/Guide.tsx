@@ -22,6 +22,7 @@ import { ProviderLogo } from '../components/ProviderLogo';
 import { QuickEndpointsCard } from '../components/QuickEndpointsCard';
 import { ProviderCopilotDrawer } from '../components/ProviderCopilotDrawer';
 import { fetchGuide } from '../lib/api';
+import { getCurrentDeveloper, promptDeveloperAuth } from '../lib/auth';
 import { GuideVersion } from '../types';
 
 export const Guide: React.FC = () => {
@@ -42,6 +43,10 @@ export const Guide: React.FC = () => {
 
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'j') {
         e.preventDefault();
+        if (!getCurrentDeveloper()) {
+          promptDeveloperAuth();
+          return;
+        }
         setCopilotOpen((prev) => !prev);
       }
     };
@@ -187,8 +192,14 @@ ${guide.sources.map((src) => `- [${src.id}] ${src.url} (Hash: ${src.contentHash}
 
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           <button
-            onClick={() => setCopilotOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/40 bg-gradient-to-r from-amber-500/10 to-amber-600/15 hover:from-amber-500/20 hover:to-amber-600/25 text-amber-950 text-xs font-bold transition-all shadow-xs group"
+            onClick={() => {
+              if (!getCurrentDeveloper()) {
+                promptDeveloperAuth();
+                return;
+              }
+              setCopilotOpen(true);
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/40 bg-gradient-to-r from-amber-500/10 to-amber-600/15 hover:from-amber-500/20 hover:to-amber-600/25 text-amber-950 text-xs font-bold transition-all shadow-xs group cursor-pointer"
             title="Ask grounded questions about this OAuth provider (Cmd+J)"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-600 group-hover:scale-110 transition-transform" />

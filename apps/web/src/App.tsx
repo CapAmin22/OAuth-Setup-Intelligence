@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Header } from './components/Header';
 import { WelcomeModal } from './components/WelcomeModal';
+import { DeveloperAuthModal } from './components/DeveloperAuthModal';
 import { Home } from './pages/Home';
 import { Library } from './pages/Library';
 import { Guide } from './pages/Guide';
@@ -17,39 +18,88 @@ import { getCurrentDeveloper, DeveloperProfile } from './lib/auth';
 export const App: React.FC = () => {
   const [tourOpen, setTourOpen] = useState(false);
   const [developer, setDeveloper] = useState<DeveloperProfile | null>(() => getCurrentDeveloper());
+  const [authModalOpen, setAuthModalOpen] = useState<boolean>(() => !getCurrentDeveloper());
 
   useEffect(() => {
     try {
       const dismissed = localStorage.getItem('oauth_welcome_dismissed');
-      if (!dismissed) {
+      // If user is already authenticated and hasn't seen the tour, show it
+      if (developer && !dismissed) {
         setTourOpen(true);
       }
     } catch {
       // Ignore in private browsing mode
     }
-  }, []);
+  }, [developer]);
 
   useEffect(() => {
     const handleAuthChange = () => {
-      setDeveloper(getCurrentDeveloper());
+      const current = getCurrentDeveloper();
+      setDeveloper(current);
+      if (!current) {
+        setAuthModalOpen(true);
+      }
     };
+
+    const handleOpenModal = () => {
+      setAuthModalOpen(true);
+    };
+
     window.addEventListener('oauth_auth_state_change', handleAuthChange);
     window.addEventListener('storage', handleAuthChange);
+    window.addEventListener('oauth_open_auth_modal', handleOpenModal);
+
     return () => {
       window.removeEventListener('oauth_auth_state_change', handleAuthChange);
       window.removeEventListener('storage', handleAuthChange);
+      window.removeEventListener('oauth_open_auth_modal', handleOpenModal);
     };
   }, []);
 
   return (
     <BrowserRouter>
       <div className="min-h-screen flex flex-col bg-[#faf9f5] text-[#1f1e1d]">
+        {/* Sticky Unauthenticated Preview Banner */}
+        {!developer && (
+          <div className="bg-sand-900 text-white text-xs py-2 px-4 shadow-xs sticky top-0 z-60 border-b border-sand-800">
+            <div className="max-w-6xl mx-auto w-full flex items-center justify-between flex-wrap gap-2">
+              <span className="flex items-center gap-2 font-medium">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
+                <span>
+                  You are in <strong>Read-Only Preview</strong>. Verify your profile with LinkedIn to unlock all 10+ production runbooks, Copilot ⌘J, and ready-to-run snippets.
+                </span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setAuthModalOpen(true)}
+                className="bg-amber-500 hover:bg-amber-400 text-sand-950 font-bold px-3 py-1 rounded-lg text-xs transition-colors cursor-pointer shrink-0"
+              >
+                Unlock Developer Workspace →
+              </button>
+            </div>
+          </div>
+        )}
+
         <Header onOpenTour={() => setTourOpen(true)} />
+
+        {/* Global Developer Access Modal (First-time & Action Gate) */}
+        <DeveloperAuthModal
+          isOpen={authModalOpen}
+          onClose={() => setAuthModalOpen(false)}
+          onSuccess={(prof) => {
+            setDeveloper(prof);
+            setAuthModalOpen(false);
+            setTourOpen(true); // Smooth handoff into 4-step Product Tour!
+          }}
+        />
+
+        {/* 4-Step Value-Centric Product Tour */}
         <WelcomeModal
           isOpen={tourOpen}
           onClose={() => setTourOpen(false)}
           developerName={developer?.name}
         />
+
         <main className="flex-1">
           <Routes>
             <Route path="/" element={<Home />} />
@@ -70,7 +120,8 @@ export const App: React.FC = () => {
                 <Login
                   onLoginSuccess={(prof) => {
                     setDeveloper(prof);
-                    setTourOpen(true); // Smooth onboarding handoff into the value-centric tour!
+                    setAuthModalOpen(false);
+                    setTourOpen(true);
                   }}
                 />
               }
@@ -81,6 +132,7 @@ export const App: React.FC = () => {
                 <Login
                   onLoginSuccess={(prof) => {
                     setDeveloper(prof);
+                    setAuthModalOpen(false);
                     setTourOpen(true);
                   }}
                 />

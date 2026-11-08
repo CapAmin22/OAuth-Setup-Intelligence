@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { 
   ShieldCheck, Check, X, AlertCircle, MessageSquare, 
-  RefreshCw, CheckCircle2, Clock, Filter, Eye, ChevronRight 
+  RefreshCw, CheckCircle2, Clock, Filter, Eye, ChevronRight,
+  Users, Linkedin, Building2, Copy, ExternalLink, Mail, Search, Sparkles, UserCheck
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { listRegisteredDevelopers, DeveloperProfile } from '../lib/auth';
 
 interface FeedbackItem {
   id: string;
@@ -46,7 +49,18 @@ const DEFAULT_FEEDBACK: FeedbackItem[] = [
 ];
 
 export const Reviewer: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'drift_queue' | 'guide_review'>('drift_queue');
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState<'drift_queue' | 'guide_review' | 'developer_roster'>(() => {
+    if (typeof window !== 'undefined' && window.location.search.includes('tab=developers')) {
+      return 'developer_roster';
+    }
+    return 'drift_queue';
+  });
+
+  // Registered Developer Leads State (for LinkedIn Outreach)
+  const [developers, setDevelopers] = useState<DeveloperProfile[]>([]);
+  const [searchLead, setSearchLead] = useState('');
+  const [copiedLeadId, setCopiedLeadId] = useState<string | null>(null);
 
   // Guide Review State
   const [targetProvider, setTargetProvider] = useState('Linear');
@@ -65,6 +79,27 @@ export const Reviewer: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'acknowledged' | 'resolved'>('all');
   const [auditingProvider, setAuditingProvider] = useState<string | null>(null);
   const [auditMessage, setAuditMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadDevelopers();
+  }, []);
+
+  const loadDevelopers = async () => {
+    try {
+      const list = await listRegisteredDevelopers();
+      setDevelopers(list);
+    } catch (err) {
+      console.warn('Failed to load registered developers:', err);
+    }
+  };
+
+  const copyOutreachTemplate = (dev: DeveloperProfile) => {
+    const firstName = dev.name.split(' ')[0] || dev.name;
+    const message = `Hi ${firstName}, saw you're setting up OAuth for ${dev.company} using OAuth Setup Intelligence! How is the implementation going? Let me know if you run into any provider blockers (like redirect URI mismatch, CORS, or refresh tokens) or need custom scope reviews!`;
+    navigator.clipboard.writeText(message);
+    setCopiedLeadId(dev.email);
+    setTimeout(() => setCopiedLeadId(null), 3500);
+  };
 
   useEffect(() => {
     loadFeedback();
@@ -186,6 +221,23 @@ export const Reviewer: React.FC = () => {
         >
           <ShieldCheck className="w-4 h-4" />
           <span>Guide Publishing Gate</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('developer_roster')}
+          className={`pb-3 px-4 text-xs font-bold transition-all relative flex items-center gap-2 cursor-pointer ${
+            activeTab === 'developer_roster'
+              ? 'text-amber-800 border-b-2 border-amber-600'
+              : 'text-sand-600 hover:text-sand-900'
+          }`}
+        >
+          <Users className="w-4 h-4 text-indigo-600" />
+          <span>Developer Leads & Outreach</span>
+          {developers.length > 0 && (
+            <span className="bg-emerald-600 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+              {developers.length}
+            </span>
+          )}
         </button>
       </div>
 
@@ -455,6 +507,112 @@ export const Reviewer: React.FC = () => {
           >
             {guideSubmitted ? 'Decision Recorded & Published ✓' : 'Submit Review Decision'}
           </button>
+        </div>
+      )}
+
+      {/* TAB 3: Developer Leads & Outreach Hub */}
+      {activeTab === 'developer_roster' && (
+        <div className="space-y-6 animate-fadeIn">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-sand-50 p-5 rounded-2xl border border-sand-200">
+            <div>
+              <h2 className="text-sm font-bold text-sand-900 flex items-center gap-2">
+                <Users className="w-4 h-4 text-indigo-600" />
+                <span>Verified Developer Leads ({developers.length})</span>
+                <span className="text-[11px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
+                  100% Genuine Profiles
+                </span>
+              </h2>
+              <p className="text-xs text-sand-600 mt-1">
+                Reach out on LinkedIn to engineers actively implementing OAuth with your runbooks. Click to message directly or copy custom outreach notes.
+              </p>
+            </div>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search by name, company, email..."
+                value={searchLead}
+                onChange={(e) => setSearchLead(e.target.value)}
+                className="pl-8 pr-3 py-1.5 text-xs rounded-xl border border-sand-300 bg-white focus:outline-none focus:ring-1 focus:ring-amber-600 w-full sm:w-64"
+              />
+              <Search className="w-3.5 h-3.5 text-sand-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            </div>
+          </div>
+
+          {/* List of Developers */}
+          <div className="space-y-3">
+            {developers
+              .filter(
+                (d) =>
+                  !searchLead ||
+                  d.name.toLowerCase().includes(searchLead.toLowerCase()) ||
+                  d.company.toLowerCase().includes(searchLead.toLowerCase()) ||
+                  d.email.toLowerCase().includes(searchLead.toLowerCase())
+              )
+              .map((dev) => (
+                <div
+                  key={dev.email}
+                  className="bg-white border border-sand-200 rounded-2xl p-4 sm:p-5 shadow-2xs hover:border-sand-300 transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+                >
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-800 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-inner">
+                      {dev.name[0]?.toUpperCase()}
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-bold text-sm text-sand-900">{dev.name}</h3>
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          Verified ({dev.verificationScore}%)
+                        </span>
+                        <span className="text-[11px] text-sand-400 font-mono">
+                          {new Date(dev.verifiedAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-sand-600 flex-wrap">
+                        <span className="flex items-center gap-1 font-medium text-sand-800">
+                          <Building2 className="w-3.5 h-3.5 text-sand-400" />
+                          {dev.company}
+                        </span>
+                        <span className="text-sand-300">•</span>
+                        <span>{dev.role}</span>
+                        <span className="text-sand-300">•</span>
+                        <a
+                          href={`mailto:${dev.email}`}
+                          className="flex items-center gap-1 text-sand-500 hover:text-sand-800 transition-colors"
+                        >
+                          <Mail className="w-3 h-3" />
+                          {dev.email}
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Outreach Actions */}
+                  <div className="flex items-center gap-2 self-end md:self-center w-full md:w-auto justify-end">
+                    <button
+                      type="button"
+                      onClick={() => copyOutreachTemplate(dev)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-sand-300 bg-white hover:bg-sand-50 text-xs font-semibold text-sand-700 transition-colors shadow-2xs cursor-pointer"
+                      title="Copy personalized LinkedIn message template"
+                    >
+                      <Copy className="w-3.5 h-3.5 text-sand-500" />
+                      <span>{copiedLeadId === dev.email ? 'Copied Note ✓' : 'Copy Intro Note'}</span>
+                    </button>
+
+                    <a
+                      href={dev.linkedinUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#0a66c2] hover:bg-[#004182] text-white text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                    >
+                      <Linkedin className="w-3.5 h-3.5" />
+                      <span>Message on LinkedIn</span>
+                      <ExternalLink className="w-3 h-3 text-white/80" />
+                    </a>
+                  </div>
+                </div>
+              ))}
+          </div>
         </div>
       )}
     </div>

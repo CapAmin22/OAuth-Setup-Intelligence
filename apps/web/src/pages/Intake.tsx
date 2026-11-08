@@ -18,6 +18,7 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import { enqueueJob } from '../lib/api';
+import { getCurrentDeveloper, promptDeveloperAuth } from '../lib/auth';
 
 const POPULAR_SUGGESTIONS = [
   { name: 'Google Calendar', website: 'https://developers.google.com/calendar/api' },
@@ -86,6 +87,11 @@ export const Intake: React.FC = () => {
 
   const executeSubmit = async () => {
     if (!query.trim() || submitting) return;
+
+    if (!getCurrentDeveloper()) {
+      promptDeveloperAuth();
+      return;
+    }
 
     setSubmitting(true);
     const combinedCaps = [...selectedCaps];

@@ -17,8 +17,9 @@ import {
   Linkedin,
   Building2,
   CheckCircle2,
+  Users,
 } from 'lucide-react';
-import { getCurrentDeveloper, logoutDeveloper, DeveloperProfile } from '../lib/auth';
+import { getCurrentDeveloper, logoutDeveloper, promptDeveloperAuth, DeveloperProfile } from '../lib/auth';
 
 interface HeaderProps {
   onOpenTour?: () => void;
@@ -157,6 +158,13 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTour }) => {
                     <span>Reviewer & Drift Queue</span>
                   </Link>
                   <Link
+                    to="/admin/reviewer?tab=developers"
+                    className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-sand-800 hover:text-sand-900 hover:bg-sand-50 transition-colors"
+                  >
+                    <Users className="w-4 h-4 text-indigo-600" />
+                    <span>Developer Leads & Outreach</span>
+                  </Link>
+                  <Link
                     to="/feedback"
                     className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-sand-800 hover:text-sand-900 hover:bg-sand-50 transition-colors"
                   >
@@ -289,13 +297,14 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTour }) => {
               )}
             </div>
           ) : (
-            <Link
-              to="/login"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sand-900 hover:bg-black text-white text-xs font-semibold transition-all shadow-xs"
+            <button
+              type="button"
+              onClick={() => promptDeveloperAuth()}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-sand-900 hover:bg-black text-white text-xs font-semibold transition-all shadow-xs cursor-pointer"
             >
               <Key className="w-3.5 h-3.5 text-amber-400" />
               <span>Developer Sign In</span>
-            </Link>
+            </button>
           )}
 
           {/* GitHub Source Link */}
