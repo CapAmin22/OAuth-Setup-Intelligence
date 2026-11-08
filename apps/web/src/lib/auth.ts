@@ -3,11 +3,12 @@ import { supabase, isSupabaseConfigured } from './supabase';
 export interface DeveloperProfile {
   id?: string;
   name: string;
-  email: string;
+  email?: string;
   company: string;
-  linkedinUrl: string;
-  role: string;
-  verificationScore: number;
+  title?: string;
+  role?: string;
+  linkedinUrl?: string;
+  verificationScore?: number;
   verifiedAt: string;
   isVerified: boolean;
 }
@@ -243,32 +244,41 @@ export function auditDeveloperProfile(data: {
 }
 
 /**
- * 6. Register & Persist Verified Developer Profile
+ * 6. Register & Persist Developer Profile
  * Writes to Supabase database (developer_profiles table) with fallback to localStorage.
+ * Accepts minimal Name, Company, and Title for a friction-free, ultra-clean developer experience.
  */
 export async function registerDeveloper(profileData: {
   name: string;
-  email: string;
   company: string;
-  linkedinUrl: string;
+  title?: string;
   role?: string;
+  email?: string;
+  linkedinUrl?: string;
 }): Promise<{ success: boolean; profile?: DeveloperProfile; error?: string }> {
-  const audit = auditDeveloperProfile(profileData);
-  if (!audit.canProceed) {
-    const firstError =
-      audit.errors.name ||
-      audit.errors.email ||
-      audit.errors.company ||
-      audit.errors.linkedin ||
-      'Please correct the highlighted fields with genuine developer details.';
-    return { success: false, error: firstError };
+  const nameVal = profileData.name?.trim();
+  const companyVal = profileData.company?.trim();
+  const titleVal = profileData.title?.trim() || profileData.role?.trim() || 'Software Engineer';
+
+  if (!nameVal || nameVal.length < 2) {
+    return { success: false, error: 'Please enter your name.' };
+  }
+  if (!companyVal || companyVal.length < 2) {
+    return { success: false, error: 'Please enter your company or project name.' };
   }
 
-  const nameVal = validateName(profileData.name).normalized || profileData.name.trim();
-  const emailVal = validateEmail(profileData.email).normalized || profileData.email.trim();
-  const companyVal = validateCompany(profileData.company).normalized || profileData.company.trim();
-  const linkedinVal = validateLinkedIn(profileData.linkedinUrl).normalized || profileData.linkedinUrl.trim();
-  const roleVal = profileData.role?.trim() || 'Software Engineer';
+  // Safe unique email placeholder if not provided (for database upsert onConflict)
+  const cleanName = nameVal.toLowerCase().replace(/[^a-z0-9]/g, '.');
+  const cleanCompany = companyVal.toLowerCase().replace(/[^a-z0-9]/g, '') || 'dev';
+  const emailVal =
+    profileData.email?.trim() ||
+    `${cleanName}.${Date.now().toString(36).slice(-4)}@${cleanCompany}.oauthintel.dev`;
+
+  // Auto-generate clean 1-click LinkedIn search URL if not explicitly provided
+  const linkedinVal =
+    profileData.linkedinUrl?.trim() ||
+    `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(nameVal + ' ' + companyVal)}`;
+
   const now = new Date().toISOString();
 
   const profile: DeveloperProfile = {
@@ -276,8 +286,9 @@ export async function registerDeveloper(profileData: {
     name: nameVal,
     email: emailVal,
     company: companyVal,
+    title: titleVal,
+    role: titleVal,
     linkedinUrl: linkedinVal,
-    role: roleVal,
     verificationScore: 100,
     verifiedAt: now,
     isVerified: true,
@@ -312,7 +323,7 @@ export async function registerDeveloper(profileData: {
       if (error) {
         console.warn('Supabase upsert warning (profile saved to local state):', error.message);
       } else {
-        console.log('Successfully recorded verified developer profile in Supabase:', profile.email);
+        console.log('Successfully recorded developer profile in Supabase:', profile.name, profile.company);
       }
     } catch (err) {
       console.warn('Could not reach remote Supabase (using verified local session):', err);

@@ -66,12 +66,11 @@ class TestAuthAndVerification(unittest.TestCase):
         with open(self.login_path, "r", encoding="utf-8") as f:
             content = f.read()
 
-        self.assertIn("auditDeveloperProfile", content)
         self.assertIn("registerDeveloper", content)
-        self.assertIn("Verification Meter", content)
         self.assertIn("Full Name *", content)
-        self.assertIn("LinkedIn Profile Link *", content)
         self.assertIn("Company or Organization *", content)
+        self.assertIn("Job Title", content)
+        self.assertIn("Continue to Workspace", content)
 
     def test_header_auth_integration(self):
         """Verify Header.tsx displays developer profile badge or Sign In button."""
@@ -94,19 +93,18 @@ class TestAuthAndVerification(unittest.TestCase):
         self.assertIn("Blocker Wizard & Multi-Language Code", content)
 
     def test_developer_auth_modal_implementation(self):
-        """Verify DeveloperAuthModal.tsx renders anti-fake verification meter and fields."""
+        """Verify DeveloperAuthModal.tsx renders clean, simple Name, Company, and Job Title fields without clutter."""
         self.assertTrue(os.path.exists(self.modal_path), "DeveloperAuthModal.tsx must exist")
         with open(self.modal_path, "r", encoding="utf-8") as f:
             content = f.read()
 
-        self.assertIn("Genuine Profile Verification", content)
-        self.assertIn("auditDeveloperProfile", content)
-        self.assertIn("registerDeveloper", content)
+        self.assertIn("Welcome to OAuth Intelligence", content)
         self.assertIn("Full Name *", content)
-        self.assertIn("Work / Dev Email *", content)
-        self.assertIn("Company / Team *", content)
-        self.assertIn("LinkedIn Profile URL *", content)
-        self.assertIn("Unlock Workspace", content)
+        self.assertIn("Company or Organization *", content)
+        self.assertIn("Job Title", content)
+        self.assertIn("Continue to Workspace", content)
+        self.assertNotIn("Genuine Profile Verification", content)
+        self.assertNotIn("Required: 100%", content)
 
     def test_app_first_load_auth_gate_and_preview_banner(self):
         """Verify App.tsx initializes authModalOpen when not authenticated and displays preview banner."""
