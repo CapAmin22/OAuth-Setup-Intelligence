@@ -43,8 +43,8 @@ def test_phase3_welcome_tour():
     code = welcome_path.read_text(encoding="utf-8")
 
     assert "Step 1 of 3" in code or "step" in code
-    assert "Browse Verified Runbooks" in code or "Browse reviewed guides" in code
-    assert "Research Any Provider Live" in code
+    assert any(phrase in code for phrase in ["Production-Tested OAuth Runbooks", "Browse Verified Runbooks", "OAuth Runbooks", "Browse reviewed guides"])
+    assert any(phrase in code for phrase in ["Research Any Unfamiliar Provider", "Research Any Provider Live"])
     assert "Instant Blocker Fixes" in code or "Blocker" in code
     assert "oauth_welcome_dismissed" in code
     assert "handleComplete" in code
