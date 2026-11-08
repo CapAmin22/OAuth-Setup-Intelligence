@@ -3,6 +3,7 @@ import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { CheckCircle2, Globe, ArrowRight, Sparkles, BookOpen } from 'lucide-react';
 import { fetchJob, saveCustomGuide } from '../lib/api';
 import { normalizeProviderName, generateRunbookForProvider } from '../lib/guideGenerator';
+import { ProviderLogo } from '../components/ProviderLogo';
 
 const STAGES = [
   { key: 'resolving', label: 'Resolve Provider Identity', desc: 'Validating official domains and canonical aliases' },
@@ -89,10 +90,11 @@ export const Job: React.FC = () => {
         }
 
         if (prev === 1) {
-          // Clean discovered domains feed without double .com
+          // Clean discovered domains feed without double domain or .com
+          const rootDomain = canonicalDomain.replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/\.com\.com$/i, '.com');
           setDiscoveredDomains([
-            `developers.${canonicalDomain}`,
-            `docs.${canonicalDomain}`,
+            `developers.${rootDomain}`,
+            `docs.${rootDomain}`,
           ]);
         }
 
@@ -114,18 +116,23 @@ export const Job: React.FC = () => {
       <div className="bg-white border border-sand-200 rounded-2xl p-6 sm:p-8 shadow-sm mb-6">
         {/* Top Header */}
         <div className="flex items-center justify-between pb-6 border-b border-sand-100 mb-6">
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-800 text-xs font-semibold uppercase tracking-wider mb-1.5 border border-amber-500/20">
-              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-              Live Autonomous Research
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-sand-50 border border-sand-200 flex items-center justify-center p-2 shrink-0 shadow-2xs">
+              <ProviderLogo slug={generatedSlug} name={displayName} size="md" />
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-sand-900">
-              Researching "{displayName}"
-            </h1>
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-900 text-xs font-semibold uppercase tracking-wider mb-1 border border-amber-500/20">
+                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                Live Autonomous Research
+              </div>
+              <h1 className="text-xl sm:text-2xl font-extrabold text-sand-900 tracking-tight">
+                Researching "{displayName}"
+              </h1>
+            </div>
           </div>
 
           <div className="text-right">
-            <span className="text-[11px] text-sand-700 block">Elapsed Time</span>
+            <span className="text-[11px] text-sand-400 font-medium block">Elapsed</span>
             <span className="font-mono text-base font-bold text-sand-900">{elapsed}s</span>
           </div>
         </div>

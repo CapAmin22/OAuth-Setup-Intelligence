@@ -46,6 +46,13 @@ export function normalizeProviderName(rawQuery: string, rawWebsite?: string): {
     zoom: { domain: 'zoom.us', portal: 'https://marketplace.zoom.us/develop/create' },
     dropbox: { domain: 'dropbox.com', portal: 'https://www.dropbox.com/developers/apps' },
     shopify: { domain: 'shopify.com', portal: 'https://partners.shopify.com' },
+    supabase: { domain: 'supabase.com', portal: 'https://supabase.com/dashboard/project/_/auth/providers' },
+    box: { domain: 'box.com', portal: 'https://app.box.com/developers/console' },
+    twilio: { domain: 'twilio.com', portal: 'https://console.twilio.com' },
+    asana: { domain: 'asana.com', portal: 'https://app.asana.com/0/my-apps' },
+    stripe: { domain: 'stripe.com', portal: 'https://dashboard.stripe.com/settings/connect' },
+    'google-calendar': { domain: 'google.com', portal: 'https://console.cloud.google.com/apis/credentials' },
+    gcal: { domain: 'google.com', portal: 'https://console.cloud.google.com/apis/credentials' },
     gitlab: { domain: 'gitlab.com', portal: 'https://gitlab.com/-/user_settings/applications' },
     figma: { domain: 'figma.com', portal: 'https://www.figma.com/developers/api#oauth2' },
   };

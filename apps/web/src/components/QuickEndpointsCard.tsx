@@ -20,6 +20,13 @@ const DEVELOPER_PORTALS: Record<string, { name: string; url: string }> = {
   linear: { name: 'Linear API Settings', url: 'https://linear.app/settings/api' },
   hubspot: { name: 'HubSpot Developer Portal', url: 'https://app.hubspot.com/developer/' },
   zoom: { name: 'Zoom App Marketplace', url: 'https://marketplace.zoom.us/' },
+  airtable: { name: 'Airtable Developer Hub', url: 'https://airtable.com/create/oauth' },
+  shopify: { name: 'Shopify Partners Console', url: 'https://partners.shopify.com' },
+  supabase: { name: 'Supabase Dashboard Auth', url: 'https://supabase.com/dashboard/project/_/auth/providers' },
+  box: { name: 'Box Developer Console', url: 'https://app.box.com/developers/console' },
+  asana: { name: 'Asana Developer App Console', url: 'https://app.asana.com/0/my-apps' },
+  'google-calendar': { name: 'Google Cloud Credentials', url: 'https://console.cloud.google.com/apis/credentials' },
+  gcal: { name: 'Google Cloud Credentials', url: 'https://console.cloud.google.com/apis/credentials' },
 };
 
 export const QuickEndpointsCard: React.FC<QuickEndpointsCardProps> = ({

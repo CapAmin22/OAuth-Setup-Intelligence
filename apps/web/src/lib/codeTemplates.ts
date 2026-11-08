@@ -89,6 +89,55 @@ export const PROVIDER_ENDPOINTS: Record<string, ProviderEndpointConfig> = {
     scopeDelimiter: ' ',
     authMethod: 'basic',
   },
+  airtable: {
+    authUrl: 'https://airtable.com/oauth2/v1/authorize',
+    tokenUrl: 'https://airtable.com/oauth2/v1/token',
+    userUrl: 'https://api.airtable.com/v0/meta/whoami',
+    scopeDelimiter: ' ',
+    authMethod: 'basic',
+  },
+  shopify: {
+    authUrl: 'https://{shop}.myshopify.com/admin/oauth/authorize',
+    tokenUrl: 'https://{shop}.myshopify.com/admin/oauth/access_token',
+    userUrl: 'https://{shop}.myshopify.com/admin/api/2024-01/shop.json',
+    scopeDelimiter: ',',
+    authMethod: 'body',
+  },
+  supabase: {
+    authUrl: 'https://api.supabase.com/v1/oauth/authorize',
+    tokenUrl: 'https://api.supabase.com/v1/oauth/token',
+    userUrl: 'https://api.supabase.com/v1/profile',
+    scopeDelimiter: ' ',
+    authMethod: 'body',
+  },
+  box: {
+    authUrl: 'https://account.box.com/api/oauth2/authorize',
+    tokenUrl: 'https://api.box.com/oauth2/token',
+    userUrl: 'https://api.box.com/2.0/users/me',
+    scopeDelimiter: ' ',
+    authMethod: 'body',
+  },
+  asana: {
+    authUrl: 'https://app.asana.com/-/oauth_authorize',
+    tokenUrl: 'https://app.asana.com/-/oauth_token',
+    userUrl: 'https://app.asana.com/api/1.0/users/me',
+    scopeDelimiter: ' ',
+    authMethod: 'body',
+  },
+  'google-calendar': {
+    authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+    tokenUrl: 'https://oauth2.googleapis.com/token',
+    userUrl: 'https://www.googleapis.com/oauth2/v3/userinfo',
+    scopeDelimiter: ' ',
+    authMethod: 'body',
+  },
+  gcal: {
+    authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+    tokenUrl: 'https://oauth2.googleapis.com/token',
+    userUrl: 'https://www.googleapis.com/oauth2/v3/userinfo',
+    scopeDelimiter: ' ',
+    authMethod: 'body',
+  },
 };
 
 function getEndpointConfig(slug: string): ProviderEndpointConfig {
