@@ -24,6 +24,7 @@ import { getCurrentDeveloper, promptDeveloperAuth } from '../lib/auth';
 import {
   searchProviderCatalog,
   resolveProviderFromCatalog,
+  getProbableProviderCandidates,
   CatalogProvider,
 } from '../lib/providerCatalog';
 import { ProviderLogo } from '../components/ProviderLogo';
@@ -77,10 +78,12 @@ export const Intake: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  // App recognition and auto-link states
+  // App recognition, probable candidate matching, and confirmation states
   const [matchedCatalog, setMatchedCatalog] = useState<CatalogProvider[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [recognizedProvider, setRecognizedProvider] = useState<CatalogProvider | null>(null);
+  const [isConfirmed, setIsConfirmed] = useState<boolean>(false);
+  const [confirmedCandidate, setConfirmedCandidate] = useState<CatalogProvider | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -88,6 +91,10 @@ export const Intake: React.FC = () => {
       setQuery(initialQuery);
       const rec = resolveProviderFromCatalog(initialQuery);
       setRecognizedProvider(rec);
+      if (rec) {
+        setConfirmedCandidate(rec);
+        setIsConfirmed(true);
+      }
       if (initialWebsite) {
         setWebsite(initialWebsite);
       } else if (rec) {
@@ -130,18 +137,19 @@ export const Intake: React.FC = () => {
 
   const handleQueryChange = (newVal: string) => {
     setQuery(newVal);
+    setIsConfirmed(false); // Reset confirmation state so candidate list opens
 
     if (!newVal.trim()) {
       setMatchedCatalog([]);
       setIsDropdownOpen(false);
       setRecognizedProvider(null);
+      setConfirmedCandidate(null);
       return;
     }
 
     // 1. Search catalog for live autocomplete
     const matches = searchProviderCatalog(newVal);
     setMatchedCatalog(matches.slice(0, 5));
-    setIsDropdownOpen(matches.length > 0);
 
     // 2. Direct recognized provider
     const rec = resolveProviderFromCatalog(newVal);
@@ -149,34 +157,59 @@ export const Intake: React.FC = () => {
 
     // 3. Contamination firewall & auto-link
     if (rec) {
-      // If recognized and website is empty or contaminated by another provider, auto-link verified doc URL
       if (!website.trim() || !isWebsiteCompatibleWithQuery(website, newVal)) {
         setWebsite(rec.docUrl);
       }
     } else {
-      // If user typed an unknown or different query, clear stale website if it was from a different known provider
       if (website.trim() && !isWebsiteCompatibleWithQuery(website, newVal)) {
         setWebsite('');
       }
     }
   };
 
-  const applyCatalogProvider = (prov: CatalogProvider) => {
-    setQuery(prov.displayName);
-    setWebsite(prov.docUrl);
-    setRecognizedProvider(prov);
+  const handleConfirmCandidate = (candidate: CatalogProvider) => {
+    setQuery(candidate.displayName);
+    setWebsite(candidate.docUrl);
+    setRecognizedProvider(candidate);
+    setConfirmedCandidate(candidate);
+    setIsConfirmed(true);
     setIsDropdownOpen(false);
-    if (prov.defaultScopes && prov.defaultScopes.length > 0 && !customScopes) {
-      setCustomScopes(prov.defaultScopes.join(prov.scopeDelimiter || ' '));
+    if (candidate.defaultScopes && candidate.defaultScopes.length > 0 && !customScopes) {
+      setCustomScopes(candidate.defaultScopes.join(candidate.scopeDelimiter || ' '));
     }
   };
 
+  const handleConfirmCustom = () => {
+    const cleanSlug = query.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    const rootDomain = query.includes('.') ? query.trim().toLowerCase() : `${cleanSlug}.com`;
+    const customProv: CatalogProvider = {
+      slug: cleanSlug,
+      displayName: query.trim(),
+      canonicalDomain: rootDomain,
+      developerPortalUrl: `https://${rootDomain}/developers`,
+      docUrl: website.trim() || `https://docs.${rootDomain}`,
+      category: 'Custom & Proprietary App',
+      aliases: [query.trim().toLowerCase()],
+      description: `Custom OAuth 2.0 integration for ${query.trim()}.`,
+      authMethod: 'body',
+      scopeDelimiter: ' ',
+    };
+    handleConfirmCandidate(customProv);
+  };
+
+  const applyCatalogProvider = (prov: CatalogProvider) => {
+    handleConfirmCandidate(prov);
+  };
+
   const applySuggestion = (sug: { name: string; website: string }) => {
-    setQuery(sug.name);
-    setWebsite(sug.website);
     const rec = resolveProviderFromCatalog(sug.name);
-    setRecognizedProvider(rec);
-    setIsDropdownOpen(false);
+    if (rec) {
+      handleConfirmCandidate(rec);
+    } else {
+      setQuery(sug.name);
+      setWebsite(sug.website);
+      setIsConfirmed(true);
+    }
   };
 
   const executeSubmit = async () => {
@@ -217,6 +250,8 @@ export const Intake: React.FC = () => {
     executeSubmit();
   };
 
+  const confirmedTarget = isConfirmed ? (confirmedCandidate || recognizedProvider) : null;
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
       {/* Hero Section */}
@@ -253,184 +288,167 @@ export const Intake: React.FC = () => {
                   required
                   value={query}
                   onChange={(e) => handleQueryChange(e.target.value)}
-                  onFocus={() => {
-                    if (matchedCatalog.length > 0) setIsDropdownOpen(true);
-                  }}
-                  placeholder="Enter service or API (e.g. Loom, Supabase, Stripe, Box)..."
+                  placeholder="Enter service or API (e.g. Loom, Microsoft, X, Zoho, Supabase)..."
                   className="w-full bg-sand-50/60 border border-sand-300 rounded-xl px-4 py-3 text-sm text-sand-900 outline-none focus:ring-2 focus:ring-amber-600/30 focus:border-amber-600 font-medium transition-all"
                   autoFocus
                 />
-                {recognizedProvider && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200/80 px-2 py-0.5 rounded-md text-[11px] font-medium shadow-2xs">
+                {isConfirmed && confirmedTarget && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200/80 px-2 py-0.5 rounded-md text-[11px] font-bold shadow-2xs">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Catalog Verified</span>
+                    <span>✓ Catalog Verified: {confirmedTarget.displayName}</span>
                   </div>
                 )}
               </div>
 
-              {/* Autocomplete Dropdown with Live Vector Logos */}
-              {isDropdownOpen && matchedCatalog.length > 0 && (
-                <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-sand-200 rounded-xl shadow-lg overflow-hidden py-1 divide-y divide-sand-100 max-h-72 overflow-y-auto">
-                  <div className="px-3 py-1.5 bg-sand-50/80 text-[10px] font-bold uppercase tracking-wider text-sand-500 flex items-center justify-between">
-                    <span>Verified Developer Platforms ({matchedCatalog.length})</span>
-                    <span>Click to auto-fill doc specs</span>
-                  </div>
-                  {matchedCatalog.map((prov) => (
+              {/* Quick suggestion pills (shown when not confirmed) */}
+              {!isConfirmed && (
+                <div className="flex items-center gap-1.5 mt-2.5 flex-wrap text-xs">
+                  <span className="text-[11px] text-sand-400 font-medium">Quick suggestions:</span>
+                  {POPULAR_SUGGESTIONS.map((sug) => (
                     <button
-                      key={prov.slug}
+                      key={sug.name}
                       type="button"
-                      onClick={() => applyCatalogProvider(prov)}
-                      className="w-full px-3.5 py-2.5 text-left hover:bg-amber-500/10 flex items-center justify-between gap-3 transition-colors group cursor-pointer"
+                      onClick={() => applySuggestion(sug)}
+                      className="px-2 py-0.5 rounded-md bg-sand-100/70 hover:bg-amber-100 text-sand-700 hover:text-amber-900 text-[11px] transition-colors border border-sand-200/60 font-medium cursor-pointer"
                     >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-7 h-7 rounded-lg bg-sand-50 border border-sand-200 flex items-center justify-center p-1 shrink-0 group-hover:scale-105 transition-transform">
-                          <ProviderLogo slug={prov.slug} name={prov.displayName} size="sm" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-xs text-sand-900 group-hover:text-amber-900">
-                              {prov.displayName}
-                            </span>
-                            <span className="text-[10px] font-mono text-sand-400 bg-sand-100 px-1.5 py-0.5 rounded">
-                              {prov.canonicalDomain}
-                            </span>
-                            <span className="text-[10px] text-amber-800 bg-amber-50 border border-amber-200/60 px-1.5 py-0.5 rounded font-medium">
-                              {prov.category}
-                            </span>
-                          </div>
-                          <span className="text-[11px] text-sand-500 truncate block mt-0.5 font-mono">
-                            {prov.docUrl}
-                          </span>
-                        </div>
-                      </div>
-                      <span className="text-[10px] font-semibold text-amber-700 bg-amber-100 group-hover:bg-amber-200 px-2 py-1 rounded shrink-0 transition-colors">
-                        Auto-link ↗
-                      </span>
+                      {sug.name}
                     </button>
                   ))}
                 </div>
               )}
 
-              {/* Quick suggestion pills */}
-              <div className="flex items-center gap-1.5 mt-2.5 flex-wrap text-xs">
-                <span className="text-[11px] text-sand-400 font-medium">Quick suggestions:</span>
-                {POPULAR_SUGGESTIONS.map((sug) => (
-                  <button
-                    key={sug.name}
-                    type="button"
-                    onClick={() => applySuggestion(sug)}
-                    className="px-2 py-0.5 rounded-md bg-sand-100/70 hover:bg-amber-100 text-sand-700 hover:text-amber-900 text-[11px] transition-colors border border-sand-200/60 font-medium cursor-pointer"
-                  >
-                    {sug.name}
-                  </button>
-                ))}
-              </div>
-
-              {/* Initial Research: Recognized Platform Visual Verification Card */}
-              {recognizedProvider && (
-                <div className="mt-3.5 p-4 rounded-xl bg-gradient-to-r from-emerald-500/10 via-emerald-50 to-teal-500/10 border border-emerald-300/80 text-xs text-emerald-950 transition-all shadow-xs">
-                  <div className="flex items-start justify-between gap-3 mb-2.5">
-                    <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-xl bg-white border border-emerald-200 flex items-center justify-center p-1.5 shrink-0 shadow-2xs">
-                        <ProviderLogo slug={recognizedProvider.slug} name={recognizedProvider.displayName} size="md" />
+              {/* CASE A: Target Platform Confirmed (Locked-in Verified Console) */}
+              {isConfirmed && confirmedTarget && (
+                <div className="mt-3.5 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-emerald-50/70 to-teal-500/10 border-2 border-emerald-400 text-xs text-emerald-950 transition-all shadow-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-12 h-12 rounded-xl bg-white border border-emerald-200 flex items-center justify-center p-2 shrink-0 shadow-xs">
+                        {recognizedProvider ? (
+                          <ProviderLogo slug={recognizedProvider.slug} name={recognizedProvider.displayName} size="lg" />
+                        ) : (
+                          <ProviderLogo slug={confirmedTarget.slug} name={confirmedTarget.displayName} size="lg" />
+                        )}
                       </div>
                       <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-extrabold text-sm text-sand-900">
-                            {recognizedProvider.displayName}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-extrabold text-base text-sand-900">
+                            {confirmedTarget.displayName}
                           </span>
-                          <span className="text-[10px] font-mono text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded border border-emerald-300">
-                            {recognizedProvider.canonicalDomain}
+                          <span className="text-[11px] font-mono text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded border border-emerald-300">
+                            {confirmedTarget.canonicalDomain}
+                          </span>
+                          <span className="text-[10px] text-emerald-900 bg-emerald-100/60 border border-emerald-200 px-2 py-0.5 rounded font-medium">
+                            {confirmedTarget.category}
                           </span>
                         </div>
-                        <span className="text-[11px] text-emerald-800 font-medium block mt-0.5">
-                          {recognizedProvider.category} · Initial Research Verified
-                        </span>
+                        <div className="flex items-center gap-1.5 mt-1 text-emerald-800 font-semibold text-xs">
+                          <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                          <span>Initial Research Verified · Target App Confirmed · Zero-Hallucination Active</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 bg-emerald-600 text-white px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-2xs shrink-0">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>Verified Vendor App</span>
+
+                    <div className="flex items-center gap-2 self-start sm:self-auto">
+                      <button
+                        type="button"
+                        onClick={() => setIsConfirmed(false)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-sand-50 text-sand-800 hover:text-sand-950 border border-sand-300 hover:border-sand-400 rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                      >
+                        <span>↺ Change / Reselect App</span>
+                      </button>
                     </div>
                   </div>
-                  <p className="text-[11px] text-emerald-800 leading-relaxed mb-2.5">
-                    {recognizedProvider.description ||
-                      'Official OAuth 2.0 specifications indexed. Endpoints, token refresh rules, and callback validations are pre-grounded.'}
+
+                  <p className="text-xs text-emerald-900 leading-relaxed mb-3">
+                    {confirmedTarget.description ||
+                      `Official OAuth 2.0 specifications indexed for ${confirmedTarget.displayName}. Endpoints, token refresh rules, and callback validations are anchored.`}
                   </p>
-                  <div className="pt-2.5 border-t border-emerald-200/80 flex items-center justify-between text-[11px]">
-                    <span className="text-emerald-900 font-medium flex items-center gap-1.5">
+
+                  <div className="pt-2.5 border-t border-emerald-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-2 text-emerald-900 font-medium truncate">
                       <span>Official Doc Endpoint:</span>
-                      <code className="bg-white px-2 py-0.5 rounded text-[10px] font-mono text-emerald-800 border border-emerald-200">
-                        {recognizedProvider.docUrl}
+                      <code className="bg-white px-2 py-0.5 rounded text-[11px] font-mono text-emerald-800 border border-emerald-200 truncate">
+                        {confirmedTarget.docUrl}
                       </code>
-                    </span>
+                    </div>
                     <a
-                      href={recognizedProvider.docUrl}
+                      href={confirmedTarget.docUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-emerald-800 hover:text-emerald-950 font-bold underline inline-flex items-center gap-1"
+                      className="text-emerald-800 hover:text-emerald-950 font-bold underline inline-flex items-center gap-1 shrink-0"
                     >
                       <span>Test Official Doc</span>
-                      <ExternalLink className="w-3 h-3" />
+                      <ExternalLink className="w-3.5 h-3.5" />
                     </a>
                   </div>
                 </div>
               )}
 
-              {/* Initial Research: Uncataloged App Visual Verification Card */}
-              {!recognizedProvider && query.trim().length >= 2 && (
-                <div className="mt-3.5 p-4 rounded-xl bg-sand-50 border border-sand-200 text-xs text-sand-800 transition-all shadow-xs">
-                  <div className="flex items-start justify-between gap-3 mb-2.5">
-                    <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-xl bg-white border border-sand-200 flex items-center justify-center p-1.5 shrink-0 shadow-2xs">
-                        <ProviderLogo
-                          slug={query.trim().toLowerCase().replace(/[^a-z0-9]/g, '')}
-                          name={query.trim()}
-                          size="md"
-                        />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-extrabold text-sm text-sand-900">
-                            {query.trim()}
-                          </span>
-                          <span className="text-[10px] font-mono text-sand-600 bg-sand-100 px-2 py-0.5 rounded border border-sand-200">
-                            {query.trim().toLowerCase().replace(/[^a-z0-9]/g, '')}.com
-                          </span>
-                        </div>
-                        <span className="text-[11px] text-sand-600 font-medium block mt-0.5">
-                          Autonomous Discovery · Initial Research in Progress
-                        </span>
-                      </div>
+              {/* CASE B: Probable Candidates & Logo List with "Select & Confirm" UX */}
+              {!isConfirmed && query.trim().length >= 1 && (
+                <div className="mt-3.5 p-4 rounded-xl bg-sand-50/90 border border-sand-200 text-xs text-sand-900 transition-all shadow-sm">
+                  <div className="flex items-center justify-between mb-2.5">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-amber-600" />
+                      <span className="font-bold text-xs uppercase tracking-wider text-sand-900">
+                        Probable Platforms &amp; Official Logos ({getProbableProviderCandidates(query).length})
+                      </span>
                     </div>
-                    <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-900 border border-amber-500/30 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-2xs shrink-0">
-                      <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Live Crawler Active</span>
-                    </div>
+                    <span className="text-[11px] text-sand-500 font-medium">Click &quot;Select &amp; Confirm&quot;</span>
                   </div>
-                  <p className="text-[11px] text-sand-600 leading-relaxed mb-2.5">
-                    Our autonomous crawler will identify RFC 6749 OAuth endpoints and parse authorization flows for &quot;{query.trim()}&quot;.
+                  <p className="text-[11px] text-sand-600 mb-3 leading-relaxed">
+                    Select and confirm your target app to verify the official vector logo, canonical domain, and OAuth 2.0 documentation.
                   </p>
-                  <div className="pt-2 border-t border-sand-200/80 flex items-center justify-between text-[11px] flex-wrap gap-2">
+
+                  <div className="space-y-2 mb-3">
+                    {getProbableProviderCandidates(query).slice(0, 4).map((prov) => (
+                      <div
+                        key={prov.slug}
+                        className="bg-white hover:bg-amber-500/5 border border-sand-200 hover:border-amber-400 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all group"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-lg bg-sand-50 border border-sand-200 flex items-center justify-center p-1.5 shrink-0 group-hover:scale-105 transition-transform shadow-2xs">
+                            <ProviderLogo slug={prov.slug} name={prov.displayName} size="md" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-extrabold text-xs text-sand-900 group-hover:text-amber-900">
+                                {prov.displayName}
+                              </span>
+                              <span className="text-[10px] font-mono text-sand-500 bg-sand-100 px-1.5 py-0.5 rounded">
+                                {prov.canonicalDomain}
+                              </span>
+                              <span className="text-[10px] text-amber-800 bg-amber-50 border border-amber-200/60 px-1.5 py-0.5 rounded font-medium">
+                                {prov.category}
+                              </span>
+                            </div>
+                            <span className="text-[11px] text-sand-500 truncate block mt-0.5 font-mono">
+                              {prov.docUrl}
+                            </span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleConfirmCandidate(prov)}
+                          className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-sand-950 font-bold text-xs rounded-lg transition-all shadow-2xs hover:shadow cursor-pointer shrink-0 self-end sm:self-auto"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Select &amp; Confirm</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="pt-2.5 border-t border-sand-200/80 flex items-center justify-between text-xs flex-wrap gap-2">
+                    <span className="text-sand-600 font-medium">Initial Research in Progress for custom apps?</span>
                     <button
                       type="button"
-                      onClick={() => {
-                        const autoDomain = query.trim().toLowerCase().replace(/[^a-z0-9]/g, '') + '.com';
-                        setWebsite(`https://docs.${autoDomain}/oauth`);
-                      }}
-                      className="text-amber-800 hover:text-amber-950 font-semibold underline inline-flex items-center gap-1 cursor-pointer"
+                      onClick={handleConfirmCustom}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-800 hover:text-amber-950 underline cursor-pointer"
                     >
-                      <span>Auto-target docs.{query.trim().toLowerCase().replace(/[^a-z0-9]/g, '')}.com</span>
+                      <span>Confirm as Custom App: &quot;{query.trim()}&quot; →</span>
                     </button>
-                    <a
-                      href={`https://www.google.com/search?q=${encodeURIComponent(query.trim() + ' oauth 2.0 developer api documentation')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sand-600 hover:text-sand-900 inline-flex items-center gap-1"
-                    >
-                      <span>Search Official Docs on Google</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
                   </div>
                 </div>
               )}

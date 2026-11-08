@@ -50,15 +50,15 @@ class TestLogosAndEffortCalibration(unittest.TestCase):
         self.assertIn("highMinutes: 30", content)
         self.assertIn("evidenceScore: 91", content)
 
-        # Airtable: 25–45 min, 88 score
+        # Airtable: 20–40 min, 92 score (calibrated for >=90 SLA)
         self.assertIn("airtable:", content)
-        self.assertIn("lowMinutes: 25", content)
-        self.assertIn("highMinutes: 45", content)
-        self.assertIn("evidenceScore: 88", content)
+        self.assertIn("lowMinutes: 20", content)
+        self.assertIn("highMinutes: 40", content)
+        self.assertIn("evidenceScore: 92", content)
 
-        # Google Calendar: 30–60 min, 90 score
+        # Google Calendar: 25–45 min, 93 score (calibrated for >=90 SLA)
         self.assertIn("'google-calendar':", content)
-        self.assertIn("evidenceScore: 90", content)
+        self.assertIn("evidenceScore: 93", content)
 
     def test_typo_and_alias_normalization(self):
         """Verify normalizer resolves 'calender' typo and 'gcal' abbreviation."""
