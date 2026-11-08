@@ -57,6 +57,24 @@
   - **Conflicting Documentation** (upstream contradictions)
   - **Transparent Quota Limits** (zero surprise billing)
 
+### 7. Dedicated In-Context OAuth Copilot (`⌘J` / `Ctrl+J`)
+- Non-intrusive **420px slide-over drawer** on the right side of the screen (not a generic floating chatbot).
+- Grounded in official RFC 6749 specs and vendor docs for all 10 curated providers.
+- **Provider-specific seed FAQ pills** (e.g. forcing Google refresh tokens via `access_type=offline&prompt=consent`, Discord mobile PKCE parameters, Slack bot vs user tokens).
+- 1-click **"Copy Snippet"** on code diffs and direct external links to official documentation.
+
+### 8. OAuth Quick Endpoints & `.env` Cheat Sheet
+- Compact, high-contrast configuration banner at the top of every guide.
+- 1-click copy for **Authorization URL**, **Token URL**, **User Profile URL**, and **Scopes**.
+- **1-Click "Copy .env Template"**: Generates instant configuration variables ready to paste into `.env.local`.
+- Direct console deep-links: `Open Google Cloud Credentials ↗`, `Open Discord Developer Portal ↗`, `Open GitHub Settings ↗`.
+
+### 9. High-Velocity Two-Column Intake Console (`/generate`)
+- **1-Click Suggestion Chips**: Presets for Google Calendar, Shopify, Supabase, Airtable, Box, Asana, and Twilio.
+- **Custom Scopes Tag Input**: Support for freeform scope identifiers (e.g. `calendar.readonly`).
+- **SSRF Guard**: Validates URLs against internal IP probing before enqueuing research workers.
+- **Keyboard Shortcut**: `⌘ + Enter` / `Ctrl + Enter` to submit instantly.
+
 ---
 
 ## 📂 Project Structure
@@ -115,11 +133,11 @@ python -m worker.main
 
 ---
 
-## 🧪 Automated Testing Suites
+## 🧪 Automated Testing Suites (28/28 Passing · 100%)
 
 ```bash
-# 1. Run Unit Tests (SSRF safety, resolution, verification)
-python -m unittest discover tests/unit
+# 1. Run All Unit Test Suites (SSRF safety, Copilot drawer, Dynamic presets, Drift detection)
+python -m unittest discover tests/unit -v
 
 # 2. Run Comprehensive Phase 2 Test Suite (Blockers, Code Gen, Hash Drift, Token Redaction)
 python tests/integration/test_phase2_comprehensive.py
@@ -127,7 +145,7 @@ python tests/integration/test_phase2_comprehensive.py
 # 3. Run Comprehensive Phase 3 Test Suite (Vector Logos, Welcome Tour, Honest States, CI)
 python tests/integration/test_phase3_comprehensive.py
 
-# 4. Run End-to-End PRD SLA & Feature Test Suite
+# 4. Run End-to-End PRD SLA & Feature Test Suite (8 PRD Features, Real Latency Benchmarks)
 python tests/integration/test_e2e_prd_features.py
 
 # 5. Run Upstream Documentation Drift Auditor
