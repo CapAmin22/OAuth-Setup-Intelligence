@@ -494,6 +494,34 @@ export const PROVIDER_PROFILES: Record<string, ProviderProfile> = {
       'Authorized redirect URIs must be explicitly whitelisted in the OAuth Provider settings in the Odoo admin backend.',
     ],
   },
+
+  autonoma: {
+    slug: 'autonoma',
+    displayName: 'Autonoma',
+    domain: 'autonoma.app',
+    portal: 'https://github.com/autonoma-ai/autonoma',
+    lowMinutes: 15,
+    highMinutes: 30,
+    evidenceScore: 94,
+    criticalClaimGrounding: 34,
+    officialSourceCoverage: 25,
+    completeness: 20,
+    freshness: 9,
+    consistency: 6,
+    externalWait: {
+      status: 'none',
+      publishedRange: 'Instant self-serve Google OAuth credential setup in GCP Console',
+    },
+    assumptions: [
+      'Active Google Cloud Platform project with OAuth 2.0 Web Client credentials',
+      'Configured environment variables: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and BETTER_AUTH_SECRET',
+      'Whitelisted authorized redirect URI: http://localhost:3000/api/auth/callback/google for dev or custom domain for production',
+    ],
+    limitations: [
+      'Autonoma agent execution engine requires GEMINI_API_KEY for structured multimodal AI and Playwright test navigation.',
+      'Database migrations (pnpm db:migrate) and Redis queues must be initialized before session logins.',
+    ],
+  },
 };
 
 // Calibrate an existing or retrieved guide with researched metrics
@@ -514,6 +542,8 @@ export function calibrateGuideMetrics(guide: GuideVersion): GuideVersion {
       ? PROVIDER_PROFILES['microsoft']
       : normSlug.includes('odoo')
       ? PROVIDER_PROFILES['odoo']
+      : normSlug.includes('autonoma')
+      ? PROVIDER_PROFILES['autonoma']
       : null);
 
   if (profile) {

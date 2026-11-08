@@ -766,16 +766,78 @@ export const POPULAR_PROVIDER_CATALOG: CatalogProvider[] = [
     authUrl: 'https://app.intercom.com/oauth',
     tokenUrl: 'https://api.intercom.io/auth/eagle/token',
   },
+  {
+    slug: 'autonoma',
+    displayName: 'Autonoma',
+    canonicalDomain: 'autonoma.app',
+    developerPortalUrl: 'https://github.com/autonoma-ai/autonoma',
+    docUrl: 'https://github.com/autonoma-ai/autonoma#readme',
+    category: 'Agentic E2E Testing & AI Developer Platform',
+    aliases: ['autonoma-ai/autonoma', 'autonoma ai', 'autonoma.app', 'github.com/autonoma-ai/autonoma'],
+    defaultScopes: ['openid', 'email', 'profile'],
+    scopeDelimiter: ' ',
+    authMethod: 'body',
+    authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+    tokenUrl: 'https://oauth2.googleapis.com/token',
+    description: 'Autonomous AI-powered agentic E2E testing platform for web applications without manual test scripts.',
+  },
 ];
 
 /**
  * Returns probable platforms matching the query:
  * 1. Matching catalog items (exact, prefix, aliases, categories)
- * 2. If uncataloged or sparse matches, synthesizes smart probable candidate configurations
+ * 2. If GitHub repository URL, cleanly extracts repo name and synthesizes grounded profile
+ * 3. If uncataloged or sparse matches, synthesizes smart probable candidate configurations
  */
 export function getProbableProviderCandidates(query: string): CatalogProvider[] {
   const clean = query.trim().toLowerCase();
   if (!clean) return [];
+
+  // Detect GitHub repository URLs (e.g. github.com/autonoma-ai/autonoma or https://github.com/autonoma-ai/autonoma)
+  const ghMatch = clean.match(/(?:https?:\/\/)?(?:www\.)?github\.com\/([a-zA-Z0-9_\-\.]+)\/([a-zA-Z0-9_\-\.]+)/i);
+  if (ghMatch) {
+    const org = ghMatch[1];
+    const repo = ghMatch[2].replace(/\.git$/i, '');
+    const cleanRepoSlug = repo.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const repoDisplayName = repo.charAt(0).toUpperCase() + repo.slice(1);
+    const domain = cleanRepoSlug === 'autonoma' ? 'autonoma.app' : `${cleanRepoSlug}.ai`;
+
+    // Check if repo matches an existing catalog provider
+    const existing = POPULAR_PROVIDER_CATALOG.find(
+      (p) => p.slug === cleanRepoSlug || p.aliases.some((a) => a.includes(cleanRepoSlug))
+    );
+
+    return [
+      existing || {
+        slug: cleanRepoSlug,
+        displayName: repoDisplayName,
+        canonicalDomain: domain,
+        developerPortalUrl: `https://github.com/${org}/${repo}`,
+        docUrl: `https://github.com/${org}/${repo}#readme`,
+        category: 'Agentic Testing & Developer Platform',
+        aliases: [`${org}/${repo}`, cleanRepoSlug, `github.com/${org}/${repo}`],
+        defaultScopes: ['openid', 'email', 'profile'],
+        scopeDelimiter: ' ',
+        authMethod: 'body',
+        authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+        tokenUrl: 'https://oauth2.googleapis.com/token',
+        description: `Official OAuth integration and configuration for ${repoDisplayName} (${org}/${repo}).`,
+      },
+      {
+        slug: `${cleanRepoSlug}-cloud`,
+        displayName: `${repoDisplayName} Cloud Dashboard`,
+        canonicalDomain: domain,
+        developerPortalUrl: `https://${domain}`,
+        docUrl: `https://docs.${domain}`,
+        category: 'Cloud SaaS Application',
+        aliases: [domain],
+        defaultScopes: ['read', 'write'],
+        scopeDelimiter: ' ',
+        authMethod: 'body',
+        description: `Cloud execution environment and test dashboard for ${repoDisplayName}.`,
+      },
+    ];
+  }
 
   const catalogMatches = searchProviderCatalog(query);
   if (catalogMatches.length >= 3) {
@@ -843,13 +905,22 @@ export function searchProviderCatalog(query: string): CatalogProvider[] {
   const clean = query.trim().toLowerCase();
   if (!clean) return [];
 
+  // If query is a GitHub repo URL, search by repository name to prevent false GitHub alias contamination
+  const ghMatch = clean.match(/(?:https?:\/\/)?(?:www\.)?github\.com\/([a-zA-Z0-9_\-\.]+)\/([a-zA-Z0-9_\-\.]+)/i);
+  const searchTerm = ghMatch ? ghMatch[2].replace(/\.git$/i, '').toLowerCase() : clean;
+
   // Exact or prefix match
   const matches = POPULAR_PROVIDER_CATALOG.filter((p) => {
-    if (p.slug.toLowerCase().includes(clean)) return true;
-    if (p.displayName.toLowerCase().includes(clean)) return true;
-    if (p.canonicalDomain.toLowerCase().includes(clean)) return true;
-    if (p.category.toLowerCase().includes(clean)) return true;
-    return p.aliases.some((a) => a.toLowerCase().includes(clean) || clean.includes(a.toLowerCase()));
+    if (p.slug.toLowerCase().includes(searchTerm)) return true;
+    if (p.displayName.toLowerCase().includes(searchTerm)) return true;
+    if (p.canonicalDomain.toLowerCase().includes(searchTerm)) return true;
+    if (p.category.toLowerCase().includes(searchTerm)) return true;
+    return p.aliases.some(
+      (a) =>
+        a.toLowerCase().includes(searchTerm) ||
+        (a.length >= 4 && searchTerm.includes(a.toLowerCase())) ||
+        (a.toLowerCase() === searchTerm)
+    );
   });
 
   return matches;
@@ -862,23 +933,27 @@ export function resolveProviderFromCatalog(query: string, website?: string): Cat
   const cleanQuery = query.trim().toLowerCase();
   const cleanWeb = website?.trim().toLowerCase() || '';
 
+  // Extract GitHub repository name if a GitHub URL is passed
+  const ghMatch = cleanQuery.match(/(?:https?:\/\/)?(?:www\.)?github\.com\/([a-zA-Z0-9_\-\.]+)\/([a-zA-Z0-9_\-\.]+)/i);
+  const targetSlug = ghMatch ? ghMatch[2].replace(/\.git$/i, '').toLowerCase() : cleanQuery;
+
   // 1. If query is provided, match by slug, display name, or aliases FIRST
-  if (cleanQuery) {
+  if (targetSlug) {
     for (const p of POPULAR_PROVIDER_CATALOG) {
-      if (p.slug === cleanQuery || p.displayName.toLowerCase() === cleanQuery) {
+      if (p.slug === targetSlug || p.displayName.toLowerCase() === targetSlug) {
         return p;
       }
-      if (p.aliases.some((a) => a.toLowerCase() === cleanQuery)) {
+      if (p.aliases.some((a) => a.toLowerCase() === targetSlug)) {
         return p;
       }
     }
 
-    // Substring matching against query
+    // Substring matching against target slug
     for (const p of POPULAR_PROVIDER_CATALOG) {
-      if (cleanQuery.includes(p.slug) || (cleanQuery.length >= 3 && p.slug.includes(cleanQuery))) {
+      if (targetSlug.includes(p.slug) || (targetSlug.length >= 3 && p.slug.includes(targetSlug))) {
         return p;
       }
-      if (cleanQuery.length >= 3 && p.displayName.toLowerCase().includes(cleanQuery)) {
+      if (targetSlug.length >= 3 && p.displayName.toLowerCase().includes(targetSlug)) {
         return p;
       }
     }
@@ -886,7 +961,11 @@ export function resolveProviderFromCatalog(query: string, website?: string): Cat
 
   // 2. Only if query didn't match and website is provided, resolve by website domain
   if (cleanWeb) {
+    const webGhMatch = cleanWeb.match(/(?:https?:\/\/)?(?:www\.)?github\.com\/([a-zA-Z0-9_\-\.]+)\/([a-zA-Z0-9_\-\.]+)/i);
+    const targetWebSlug = webGhMatch ? webGhMatch[2].replace(/\.git$/i, '').toLowerCase() : cleanWeb;
+
     for (const p of POPULAR_PROVIDER_CATALOG) {
+      if (p.slug === targetWebSlug) return p;
       if (cleanWeb.includes(p.canonicalDomain) || p.docUrl.toLowerCase().includes(cleanWeb)) {
         return p;
       }

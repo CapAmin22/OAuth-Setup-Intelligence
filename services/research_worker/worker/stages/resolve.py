@@ -43,6 +43,7 @@ KNOWN_DOMAINS = {
     "auth0": "auth0.com",
     "atlassian": "atlassian.com",
     "jira": "atlassian.com",
+    "autonoma": "autonoma.app",
 }
 
 def resolve_provider(query: str, website: str = "") -> Tuple[Dict[str, Any], bool]:
@@ -50,6 +51,22 @@ def resolve_provider(query: str, website: str = "") -> Tuple[Dict[str, Any], boo
 
     # Strip web protocol and trailing slash if user entered a full URL as query
     clean_query = re.sub(r"^https?://", "", clean_query, flags=re.IGNORECASE).rstrip("/")
+
+    # Detect GitHub repository URLs (e.g. github.com/autonoma-ai/autonoma or https://github.com/autonoma-ai/autonoma)
+    gh_match = re.search(r"github\.com/([a-zA-Z0-9_\-\.]+)/([a-zA-Z0-9_\-\.]+)", clean_query, re.IGNORECASE)
+    if gh_match:
+        org_name = gh_match.group(1)
+        repo_name = re.sub(r"\.git$", "", gh_match.group(2), flags=re.IGNORECASE)
+        slug = re.sub(r"[^a-z0-9]+", "-", repo_name.lower()).strip("-")
+        display_name = repo_name.title()
+        canonical_domain = KNOWN_DOMAINS.get(slug, f"{slug}.app")
+        return ({
+            "slug": slug,
+            "display_name": display_name,
+            "canonical_domain": canonical_domain,
+            "official_domains": [f"github.com/{org_name}/{repo_name}", canonical_domain],
+            "aliases": [f"{org_name}/{repo_name}", f"github.com/{org_name}/{repo_name}", f"{slug} oauth", f"{slug} api"],
+        }, True)
 
     # Strip common TLDs from slug base (e.g. "airtable.com" -> "airtable")
     query_no_tld = re.sub(r"\.(com|org|net|io|app|dev|co|ai|us|me)$", "", clean_query, flags=re.IGNORECASE)
@@ -75,6 +92,8 @@ def resolve_provider(query: str, website: str = "") -> Tuple[Dict[str, Any], boo
         if clean_slug_root in netloc or netloc.split(".")[0] in clean_slug_root:
             is_compatible = True
         elif any(part in netloc for part in slug_parts):
+            is_compatible = True
+        elif netloc == "github.com" and any(part in parsed.path.lower() for part in [slug, clean_slug_root]):
             is_compatible = True
 
         if is_compatible:

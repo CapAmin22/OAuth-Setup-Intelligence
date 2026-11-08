@@ -215,6 +215,13 @@ export const PROVIDER_ENDPOINTS: Record<string, ProviderEndpointConfig> = {
     scopeDelimiter: ' ',
     authMethod: 'body',
   },
+  autonoma: {
+    authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+    tokenUrl: 'https://oauth2.googleapis.com/token',
+    userUrl: 'https://www.googleapis.com/oauth2/v3/userinfo',
+    scopeDelimiter: ' ',
+    authMethod: 'body',
+  },
 };
 
 function getEndpointConfig(slug: string): ProviderEndpointConfig {
