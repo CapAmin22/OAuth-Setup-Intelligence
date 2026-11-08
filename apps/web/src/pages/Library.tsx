@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { Search, Filter, CheckCircle2, Sparkles } from 'lucide-react';
 import { ProviderCard } from '../components/ProviderCard';
 import { fetchProviders, fetchAllGuides } from '../lib/api';
@@ -106,13 +107,13 @@ export const Library: React.FC = () => {
       {filteredProviders.length === 0 && (
         <div className="text-center py-16 bg-white border border-sand-200 rounded-xl mt-4">
           <p className="text-sand-700 text-sm mb-3">No providers matched "{search}".</p>
-          <a
-            href={`/generate?query=${encodeURIComponent(search)}`}
+          <Link
+            to={`/generate?query=${encodeURIComponent(search)}`}
             className="inline-flex items-center gap-1.5 px-4 py-2 bg-sand-900 text-white rounded-lg text-xs font-semibold hover:bg-black transition-colors"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             Generate New Guide for "{search}"
-          </a>
+          </Link>
         </div>
       )}
     </div>

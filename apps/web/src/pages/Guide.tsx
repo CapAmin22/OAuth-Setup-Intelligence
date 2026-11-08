@@ -420,7 +420,17 @@ ${guide.sources.map((src) => `- [${src.id}] ${src.url} (Hash: ${src.contentHash}
               <div className="space-y-3">
                 {guide.blockers.map((b) => (
                   <div key={b.id} className="bg-amber-50/50 border border-amber-200 rounded-xl p-4 text-xs">
-                    <span className="font-semibold text-sand-900 block mb-1 text-sm">{b.title}</span>
+                    <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
+                      <span className="font-semibold text-sand-900 text-sm">{b.title}</span>
+                      <button
+                        onClick={() => openTroubleshooter(b.title)}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-900 bg-amber-500/15 hover:bg-amber-500/25 px-2.5 py-0.5 rounded-md border border-amber-600/30 transition-colors shadow-2xs"
+                        title="Open interactive side-by-side fix diff"
+                      >
+                        <AlertTriangle className="w-3 h-3 text-amber-600" />
+                        <span>Inspect Fix</span>
+                      </button>
+                    </div>
                     <p className="text-sand-800 leading-relaxed">{b.description}</p>
                   </div>
                 ))}
