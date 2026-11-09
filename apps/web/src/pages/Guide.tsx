@@ -12,7 +12,7 @@ import {
   Calendar,
   CheckCircle2,
   Info,
-  Sparkles
+  Bot
 } from 'lucide-react';
 import { RunbookStep } from '../components/RunbookStep';
 import { EvidencePanel } from '../components/EvidencePanel';
@@ -202,7 +202,7 @@ ${guide.sources.map((src) => `- [${src.id}] ${src.url} (Hash: ${src.contentHash}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/40 bg-gradient-to-r from-amber-500/10 to-amber-600/15 hover:from-amber-500/20 hover:to-amber-600/25 text-amber-950 text-xs font-bold transition-all shadow-xs group cursor-pointer"
             title="Ask grounded questions about this OAuth provider (Cmd+J)"
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-600 group-hover:scale-110 transition-transform" />
+            <Bot className="w-3.5 h-3.5 text-amber-700" />
             <span>Ask {guide.providerName} Copilot</span>
             <kbd className="hidden sm:inline-block px-1.5 py-0.2 text-[9px] font-mono text-amber-800 bg-amber-100/80 rounded border border-amber-300/60 ml-0.5">
               ⌘J
@@ -354,7 +354,7 @@ ${guide.sources.map((src) => `- [${src.id}] ${src.url} (Hash: ${src.contentHash}
 
           {isComplete && (
             <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2.5 text-xs text-emerald-900 font-medium">
-              <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>
                 <strong>Integration Ready!</strong> You have verified all {totalSteps} setup steps for {guide.providerName}. You can now test live token exchanges in your application.
               </span>

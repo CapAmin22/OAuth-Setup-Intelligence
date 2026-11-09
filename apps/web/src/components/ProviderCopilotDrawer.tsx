@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Sparkles,
   X,
   Send,
   ExternalLink,
@@ -337,8 +336,8 @@ export const ProviderCopilotDrawer: React.FC<ProviderCopilotDrawerProps> = ({
                     </>
                   ) : (
                     <>
-                      <Sparkles className="w-3 h-3 text-amber-600" />
-                      <span className="font-bold text-amber-900">{providerName} Copilot</span>
+                      <Bot className="w-3.5 h-3.5 text-amber-700" />
+                      <span className="font-bold text-sand-900">{providerName} Copilot</span>
                       <span>·</span>
                       <span>{m.timestamp}</span>
                     </>

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
-  Sparkles,
   Globe,
   Shield,
   ArrowRight,
@@ -256,8 +255,7 @@ export const Intake: React.FC = () => {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
       {/* Hero Section */}
       <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-12">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/10 text-amber-900 text-xs font-semibold uppercase tracking-wider mb-3.5 border border-amber-500/25 shadow-2xs">
-          <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+        <div className="inline-flex items-center px-3.5 py-1 rounded-full bg-sand-100 text-sand-800 text-xs font-semibold uppercase tracking-wider mb-3.5 border border-sand-200">
           Autonomous Documentation Research Agent
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-sand-900 tracking-tight leading-tight">
@@ -389,7 +387,6 @@ export const Intake: React.FC = () => {
                 <div className="mt-3.5 p-4 rounded-xl bg-sand-50/90 border border-sand-200 text-xs text-sand-900 transition-all shadow-sm">
                   <div className="flex items-center justify-between mb-2.5">
                     <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-amber-600" />
                       <span className="font-bold text-xs uppercase tracking-wider text-sand-900">
                         Probable Platforms &amp; Official Logos ({getProbableProviderCandidates(query).length})
                       </span>
@@ -633,8 +630,8 @@ export const Intake: React.FC = () => {
         <div className="lg:col-span-5 space-y-5">
           {/* How the Agent Works Card */}
           <div className="bg-sand-900 text-white rounded-2xl p-6 shadow-md border border-sand-800">
-            <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider mb-3">
-              <Sparkles className="w-4 h-4" />
+            <div className="flex items-center gap-2 text-sand-300 font-bold text-xs uppercase tracking-wider mb-3">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
               <span>Multi-Stage Autonomous Agent</span>
             </div>
             <h3 className="text-lg font-bold text-white mb-2 tracking-tight">

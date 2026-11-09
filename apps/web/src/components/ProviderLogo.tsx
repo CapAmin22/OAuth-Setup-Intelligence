@@ -123,22 +123,20 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
 
   // Embedded official vector SVGs for curated and top requested providers (0 network dependency, 0 broken images)
   switch (key) {
-    // 1. Odoo (Enterprise ERP, CRM & Business Suite)
+    // 1. Odoo (Enterprise ERP, CRM & Business Suite - Authentic Official Vector)
     case 'odoo':
     case 'docsodoo':
     case 'docsodoocom':
       return (
-        <svg viewBox="0 0 100 100" className={`${sizeClasses} ${className}`} fill="none">
-          <rect width="100" height="100" rx="20" fill="#714B67" />
+        <svg viewBox="0 0 24 24" className={`${sizeClasses} ${className}`} fill="none">
           <path
-            d="M31 66c-9.4 0-17-7.6-17-17s7.6-17 17-17 17 7.6 17 17-7.6 17-17 17zm0-8c5 0 9-4 9-9s-4-9-9-9-9 4-9 9 4 9 9 9z"
-            fill="#FFFFFF"
+            d="M11.865 12.858c0 1.6199-1.2979 2.9378-2.8977 2.9378s-2.8998-1.314-2.8998-2.9358 1.1799-2.8597 2.8998-2.8597c.6359 0 1.2239.134 1.6998.484v-1.68a.6.6 0 0 1 1.2 0v4.0537h-.002zm-1.2-1.144c-.39-.33-.87-.498-1.3738-.498-1.0779 0-1.7278.8519-1.7278 1.8398 0 .9738.6499 1.8198 1.7278 1.8198 1.0778 0 1.7378-.8539 1.7378-1.8198v-1.3418zm-7.667 3.3218c-1.6015 0-2.8998-1.2983-2.8998-2.8998s1.2983-2.8997 2.8998-2.8997 2.8997 1.2982 2.8997 2.8997-1.2982 2.8998-2.8997 2.8998zm0-1.2c.9388.0006 1.7003-.7601 1.7007-1.6989.0005-.9388-.7601-1.7003-1.6989-1.7007h-.0018c-.9388.0004-1.7003.7619-1.6998 1.7007.0005.9381.761 1.6985 1.6998 1.699zm12.067 1.2c-1.6014 0-2.8997-1.2983-2.8997-2.8998s1.2983-2.8997 2.8997-2.8997c1.6015 0 2.8998 1.2982 2.8998 2.8997 0 1.5999-1.2999 2.8998-2.8998 2.8998zm0-1.2c.9389.0006 1.7003-.7601 1.7008-1.6989.0005-.9388-.7602-1.7003-1.699-1.7007h-.0018c-.9388.0004-1.6994.7619-1.699 1.7007.0005.9381.761 1.6985 1.699 1.699z"
+            fill="#714B67"
           />
           <path
-            d="M52 32h8v10.5c2.5-3.5 6.5-5.5 11-5.5 8.3 0 15 6.7 15 15s-6.7 15-15 15c-4.5 0-8.5-2-11-5.5V66h-8V32zm19 26c4.4 0 8-3.6 8-8s-3.6-8-8-8-8 3.6-8 8 3.6 8 8 8z"
-            fill="#FFFFFF"
+            d="M21.1002 15.7957c-1.6015 0-2.8997-1.2983-2.8997-2.8998s1.2983-2.8997 2.8997-2.8997c1.6015 0 2.8998 1.2982 2.8998 2.8997 0 1.5999-1.2979 2.8998-2.8998 2.8998zm0-1.2c.9388.0006 1.7003-.7601 1.7008-1.6989.0004-.9388-.7602-1.7003-1.699-1.7007h-.0018c-.9388.0004-1.6994.7619-1.699 1.7007.0005.9381.761 1.6985 1.699 1.699z"
+            fill="#017E84"
           />
-          <circle cx="84" cy="51" r="5" fill="#017E84" />
         </svg>
       );
 
@@ -596,8 +594,11 @@ export const ProviderLogo: React.FC<ProviderLogoProps> = ({
       const domainParts = rawDomain.split('.').filter(Boolean);
       const apexDomain = domainParts.length > 2 ? domainParts.slice(-2).join('.') : rawDomain;
 
-      const primaryLogo = logoUrl || `https://www.google.com/s2/favicons?domain=${apexDomain}&sz=128`;
-      const fallbackLogo = `https://icons.duckduckgo.com/ip3/${apexDomain}.ico`;
+      const googleFavicon = `https://www.google.com/s2/favicons?domain=${apexDomain}&sz=128`;
+      const duckFavicon = `https://icons.duckduckgo.com/ip3/${apexDomain}.ico`;
+      // High-resolution Google Favicon CDN resolves authentic production brand marks across domains and subdomains
+      const primaryLogo = logoUrl && !logoUrl.endsWith('/favicon.ico') ? logoUrl : googleFavicon;
+      const fallbackLogo = primaryLogo === googleFavicon ? duckFavicon : googleFavicon;
 
       const resolvedLogo = imgAttempt === 0 ? primaryLogo : imgAttempt === 1 ? fallbackLogo : null;
 

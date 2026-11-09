@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
-import { CheckCircle2, Globe, ArrowRight, Sparkles, BookOpen } from 'lucide-react';
+import { CheckCircle2, Globe, ArrowRight, RefreshCw, BookOpen } from 'lucide-react';
 import { fetchJob, saveCustomGuide } from '../lib/api';
 import { normalizeProviderName, generateRunbookForProvider } from '../lib/guideGenerator';
 import { ProviderLogo } from '../components/ProviderLogo';
@@ -124,8 +124,8 @@ export const Job: React.FC = () => {
               <ProviderLogo slug={generatedSlug} name={displayName} size="md" />
             </div>
             <div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-900 text-xs font-semibold uppercase tracking-wider mb-1 border border-amber-500/20">
-                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-sand-100 text-sand-800 text-xs font-semibold uppercase tracking-wider mb-1 border border-sand-200">
+                <RefreshCw className="w-3.5 h-3.5 text-amber-700 animate-spin" />
                 Live Autonomous Research
               </div>
               <h1 className="text-xl sm:text-2xl font-extrabold text-sand-900 tracking-tight">

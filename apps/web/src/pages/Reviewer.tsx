@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { 
   ShieldCheck, Check, X, AlertCircle, MessageSquare, 
   RefreshCw, CheckCircle2, Clock, Filter, Eye, ChevronRight,
-  Users, Linkedin, Building2, Copy, ExternalLink, Mail, Search, Sparkles, UserCheck, Lock
+  Users, Linkedin, Building2, Copy, ExternalLink, Mail, Search, UserCheck, Lock
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import {

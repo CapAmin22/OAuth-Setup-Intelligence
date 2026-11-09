@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   ShieldCheck,
-  Sparkles,
+  Globe,
   Terminal,
   ArrowRight,
   ArrowLeft,
@@ -151,7 +151,7 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({
         {step === 3 && (
           <div className="space-y-4 animate-fadeIn">
             <div className="w-12 h-12 rounded-xl bg-sky-50 border border-sky-200 text-sky-700 flex items-center justify-center shadow-2xs">
-              <Sparkles className="w-6 h-6" />
+              <Globe className="w-6 h-6" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-sand-900 tracking-tight">

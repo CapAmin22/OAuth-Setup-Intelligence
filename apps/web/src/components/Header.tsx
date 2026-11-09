@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  Sparkles,
   BookOpen,
   Key,
   HelpCircle,
@@ -85,19 +84,14 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTour }) => {
   return (
     <header className="border-b border-sand-200 bg-white/95 backdrop-blur-md sticky top-0 z-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        {/* Brand Logo & Name */}
+        {/* Brand Logo & Clean Name */}
         <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-xl bg-amber-600/10 text-amber-700 flex items-center justify-center font-bold text-lg border border-amber-600/20 group-hover:scale-105 transition-transform shadow-xs">
+          <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-700 flex items-center justify-center font-bold text-base border border-amber-500/20 group-hover:scale-105 transition-transform shadow-2xs">
             ⚡
           </div>
-          <div>
-            <span className="font-extrabold text-sand-900 tracking-tight text-base sm:text-lg block leading-none">
-              OAuth Setup Intelligence
-            </span>
-            <span className="text-[10px] sm:text-[11px] text-sand-500 font-medium tracking-wider uppercase">
-              Production Runbooks & AI Research
-            </span>
-          </div>
+          <span className="font-bold text-sand-900 tracking-tight text-base sm:text-lg">
+            OAuth Setup Intelligence
+          </span>
         </Link>
 
         {/* Primary Navigation */}
@@ -115,14 +109,13 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTour }) => {
 
           <Link
             to="/generate"
-            className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
               location.pathname === '/generate'
                 ? 'bg-amber-500/15 text-amber-900'
                 : 'text-sand-700 hover:text-sand-900 hover:bg-sand-50'
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-            <span>Generate</span>
+            Generate
           </Link>
 
           {/* Secondary Utilities & Developer Tools Dropdown */}

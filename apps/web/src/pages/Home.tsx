@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Sparkles, ArrowRight, ShieldCheck, Zap, Layers, BookOpen } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Zap, Layers, BookOpen } from 'lucide-react';
 import { SearchBar } from '../components/SearchBar';
 import { ProviderCard } from '../components/ProviderCard';
 import { ProviderLogo } from '../components/ProviderLogo';
@@ -46,8 +46,7 @@ export const Home: React.FC = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16 w-full">
         {/* Hero Section */}
         <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-12">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/10 text-amber-900 text-xs font-semibold uppercase tracking-wider mb-5 border border-amber-500/25 shadow-2xs">
-            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+          <div className="inline-flex items-center px-3.5 py-1 rounded-full bg-sand-100 text-sand-800 text-xs font-semibold uppercase tracking-wider mb-5 border border-sand-200">
             Verified OAuth 2.0 Runbooks · Zero Hallucinations
           </div>
 
@@ -90,8 +89,7 @@ export const Home: React.FC = () => {
           <div className="mb-14">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-900 text-xs font-semibold uppercase tracking-wider mb-1.5 border border-amber-500/20">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                <div className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-sand-100 text-sand-800 text-xs font-semibold uppercase tracking-wider mb-1.5 border border-sand-200">
                   AI Researched Guides
                 </div>
                 <h2 className="text-lg sm:text-xl font-bold text-sand-900 tracking-tight">
@@ -167,10 +165,10 @@ export const Home: React.FC = () => {
               />
               <button
                 type="submit"
-                className="bg-sand-900 hover:bg-black text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 shrink-0"
+                className="bg-sand-900 hover:bg-black text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 shrink-0 cursor-pointer"
               >
                 <span>Research & Generate</span>
-                <Sparkles className="w-4 h-4 text-amber-400" />
+                <ArrowRight className="w-4 h-4 text-sand-300" />
               </button>
             </form>
           </div>
