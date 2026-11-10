@@ -84,6 +84,39 @@ export const Home: React.FC = () => {
           </div>
         </div>
 
+        {/* Value Proposition & 3-Step Pro Workflow Strip */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 sm:mb-14">
+          <div className="p-4 sm:p-5 rounded-2xl bg-white border border-sand-200 shadow-2xs hover:shadow-xs transition-shadow">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-800 flex items-center justify-center font-bold text-xs mb-3 border border-emerald-200/60">
+              1
+            </div>
+            <h3 className="text-sm font-bold text-sand-900 mb-1">Pick or Synthesize</h3>
+            <p className="text-xs text-sand-600 leading-relaxed">
+              Select pre-verified providers or submit any unlisted API doc URL to autonomously crawl and extract OAuth 2.0 specifications.
+            </p>
+          </div>
+
+          <div className="p-4 sm:p-5 rounded-2xl bg-white border border-sand-200 shadow-2xs hover:shadow-xs transition-shadow">
+            <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-800 flex items-center justify-center font-bold text-xs mb-3 border border-amber-200/60">
+              2
+            </div>
+            <h3 className="text-sm font-bold text-sand-900 mb-1">Drop-in Code &amp; .env</h3>
+            <p className="text-xs text-sand-600 leading-relaxed">
+              Export verified callback rules, scope delimiters (space vs comma), and production code in TypeScript, Python, or cURL.
+            </p>
+          </div>
+
+          <div className="p-4 sm:p-5 rounded-2xl bg-white border border-sand-200 shadow-2xs hover:shadow-xs transition-shadow">
+            <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-800 flex items-center justify-center font-bold text-xs mb-3 border border-sky-200/60">
+              3
+            </div>
+            <h3 className="text-sm font-bold text-sand-900 mb-1">Solve Gotchas with Copilot</h3>
+            <p className="text-xs text-sand-600 leading-relaxed">
+              Press <kbd className="px-1 py-0.5 rounded bg-sand-100 font-mono text-[10px] font-semibold text-sand-800 border border-sand-200">⌘J</kbd> on any guide for in-context gotcha triage or use the Blocker Wizard for side-by-side diffs.
+            </p>
+          </div>
+        </div>
+
         {/* AI Researched Guides Section (shows immediately when any custom provider is researched) */}
         {generatedProviders.length > 0 && (
           <div className="mb-14">

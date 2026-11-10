@@ -66,7 +66,7 @@ export const App: React.FC = () => {
               <span className="flex items-center gap-2 font-medium">
                 <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
                 <span>
-                  You are in <strong>Read-Only Preview</strong>. Verify your profile with LinkedIn to unlock all 10+ production runbooks, Copilot ⌘J, and ready-to-run snippets.
+                  You are in <strong>Read-Only Preview</strong>. Set up your developer workspace to unlock all 10+ production runbooks, Copilot ⌘J, and ready-to-run snippets.
                 </span>
               </span>
               <button
