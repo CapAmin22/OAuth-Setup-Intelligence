@@ -610,10 +610,7 @@ export const Intake: React.FC = () => {
                 ) : (
                   <>
                     <Zap className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
-                    <span>Synthesize OAuth Runbook with AI</span>
-                    <span className="hidden sm:inline-block text-[11px] font-mono text-sand-400 bg-sand-800 px-2 py-0.5 rounded ml-1">
-                      ~60s SLA
-                    </span>
+                    <span>Generate OAuth Runbook</span>
                     <ArrowRight className="w-4 h-4 text-sand-300 group-hover:translate-x-1 transition-transform" />
                   </>
                 )}
@@ -626,7 +623,7 @@ export const Intake: React.FC = () => {
           </form>
         </div>
 
-        {/* Right Column: Engine Architecture & Trust Guarantees (5 of 12 cols) */}
+        {/* Right Column: Autonomous Research & Runbook Deliverables (5 of 12 cols) */}
         <div className="lg:col-span-5 space-y-5">
           {/* How the Agent Works Card */}
           <div className="bg-sand-900 text-white rounded-2xl p-6 shadow-md border border-sand-800">
@@ -684,36 +681,68 @@ export const Intake: React.FC = () => {
             </div>
           </div>
 
-          {/* SLA & Confidence Gates */}
-          <div className="bg-white border border-sand-200 rounded-2xl p-5 shadow-xs text-xs space-y-3">
+          {/* What Your Runbook Delivers */}
+          <div className="bg-white border border-sand-200 rounded-2xl p-6 shadow-xs text-xs space-y-4">
             <div className="flex items-center gap-2 text-sand-900 font-bold text-xs uppercase tracking-wider">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>Production Guarantees</span>
+              <Code className="w-4 h-4 text-amber-700" />
+              <span>What Your Runbook Delivers</span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2.5 pt-1">
-              <div className="p-3 rounded-xl bg-sand-50 border border-sand-100">
-                <span className="text-[10px] font-mono uppercase text-sand-500 block mb-1">
-                  Speed SLA
-                </span>
-                <span className="font-bold text-sand-900 text-sm block">≤ 120s</span>
-                <span className="text-[10px] text-sand-500">Observed avg: 69s</span>
+            <p className="text-sand-600 text-xs leading-relaxed">
+              Every synthesized runbook gives developers everything needed to implement OAuth 2.0 without guesswork:
+            </p>
+
+            <div className="space-y-3 pt-1">
+              <div className="flex items-start gap-2.5">
+                <div className="w-5 h-5 rounded-md bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-200/60">
+                  <Check className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <span className="font-semibold text-sand-900 block">Verified OAuth Endpoints</span>
+                  <span className="text-[11px] text-sand-500">Authorize, Token, Revocation, and UserInfo URLs with exact HTTP methods.</span>
+                </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-sand-50 border border-sand-100">
-                <span className="text-[10px] font-mono uppercase text-sand-500 block mb-1">
-                  Confidence Gate
-                </span>
-                <span className="font-bold text-emerald-700 text-sm block">≥ 90% Score</span>
-                <span className="text-[10px] text-sand-500">Sub-90 held for review</span>
+              <div className="flex items-start gap-2.5">
+                <div className="w-5 h-5 rounded-md bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-200/60">
+                  <Check className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <span className="font-semibold text-sand-900 block">Ready-to-Use Code Snippets</span>
+                  <span className="text-[11px] text-sand-500">Tested implementation snippets in TypeScript / Node.js, Python, and cURL.</span>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2.5">
+                <div className="w-5 h-5 rounded-md bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-200/60">
+                  <Check className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <span className="font-semibold text-sand-900 block">Redirect URI &amp; PKCE Gotchas</span>
+                  <span className="text-[11px] text-sand-500">Exact localhost rules, trailing slash sensitivity, and code_verifier specs.</span>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2.5">
+                <div className="w-5 h-5 rounded-md bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-200/60">
+                  <Check className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <span className="font-semibold text-sand-900 block">Error Blocker Diagnostics</span>
+                  <span className="text-[11px] text-sand-500">Instant triage playbooks for redirect_uri_mismatch, CORS, and scope errors.</span>
+                </div>
               </div>
             </div>
 
-            <div className="p-3 bg-amber-500/10 border border-amber-600/20 rounded-xl text-amber-900 text-[11px] leading-relaxed">
-              <strong>Need a popular provider right now?</strong> Curated runbooks for Google, GitHub, Slack, Discord, Linear, Spotify, and HubSpot are instantly available in the{' '}
-              <Link to="/library" className="underline font-bold text-amber-950">
-                Library
-              </Link>.
+            <div className="pt-3 border-t border-sand-100 flex items-center justify-between text-xs text-sand-600">
+              <span className="text-[11px] text-sand-500">Need a pre-verified provider?</span>
+              <Link
+                to="/library"
+                className="font-bold text-amber-800 hover:text-amber-950 inline-flex items-center gap-1 group text-xs"
+              >
+                <span>Browse Library</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
             </div>
           </div>
         </div>
