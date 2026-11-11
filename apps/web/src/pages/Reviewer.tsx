@@ -30,36 +30,6 @@ interface FeedbackItem {
   createdAt: string;
 }
 
-const DEFAULT_FEEDBACK: FeedbackItem[] = [
-  {
-    id: 'fb-seed-1',
-    provider: 'Discord',
-    stepRef: 'Step 3: Redirect URIs',
-    classification: 'documentation_drift',
-    message: 'Discord Developer Portal now explicitly requires http://localhost:port or https:// for all redirect URIs.',
-    status: 'open',
-    createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
-  },
-  {
-    id: 'fb-seed-2',
-    provider: 'Slack',
-    stepRef: 'Step 2: Basic Information',
-    classification: 'documentation_drift',
-    message: 'The Slack API console moved "Install your app" to a new top-level sidebar tab named "Install to Workspace".',
-    status: 'acknowledged',
-    createdAt: new Date(Date.now() - 3600000 * 18).toISOString(),
-  },
-  {
-    id: 'fb-seed-3',
-    provider: 'GitHub',
-    stepRef: 'Step 1: Register Application',
-    classification: 'permission_scope',
-    message: 'GitHub Apps are now favored over legacy OAuth Apps; fine-grained repository permissions are highlighted in docs.',
-    status: 'resolved',
-    createdAt: new Date(Date.now() - 3600000 * 48).toISOString(),
-  },
-];
-
 export const Reviewer: React.FC = () => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<'drift_queue' | 'guide_review' | 'developer_roster'>(() => {
@@ -184,15 +154,12 @@ export const Reviewer: React.FC = () => {
         }
       }
 
-      if (localItems.length === 0) {
-        localItems = DEFAULT_FEEDBACK;
-        localStorage.setItem('oauth_feedback_list', JSON.stringify(DEFAULT_FEEDBACK));
-      }
-
+      // Clean out any synthetic/mock feedback so only authentic user reports exist
+      localItems = localItems.filter((i) => i && typeof i.id === 'string' && !i.id.startsWith('fb-seed-'));
       setFeedbackList(localItems);
     } catch (err) {
       console.warn('Error loading feedback:', err);
-      setFeedbackList(DEFAULT_FEEDBACK);
+      setFeedbackList([]);
     }
   };
 
@@ -613,10 +580,12 @@ export const Reviewer: React.FC = () => {
               <div className="bg-white border border-sand-200 rounded-2xl p-4 shadow-2xs">
                 <span className="text-[11px] text-sand-500 font-medium block mb-1">Avg Satisfaction</span>
                 <span className="text-xl font-extrabold text-amber-900 flex items-center gap-1.5">
-                  <span>{feedbackStats.avgRating}</span>
-                  <div className="flex items-center text-amber-400">
-                    <Star className="w-4 h-4 fill-amber-400 text-amber-500" />
-                  </div>
+                  <span>{feedbackStats.avgRating !== null ? `${feedbackStats.avgRating} / 5.0` : '—'}</span>
+                  {feedbackStats.avgRating !== null && (
+                    <div className="flex items-center text-amber-400">
+                      <Star className="w-4 h-4 fill-amber-400 text-amber-500" />
+                    </div>
+                  )}
                 </span>
               </div>
               <div className="bg-white border border-sand-200 rounded-2xl p-4 shadow-2xs">
@@ -626,7 +595,7 @@ export const Reviewer: React.FC = () => {
               <div className="bg-white border border-sand-200 rounded-2xl p-4 shadow-2xs">
                 <span className="text-[11px] text-sand-500 font-medium block mb-1">Top Rated Capability</span>
                 <span className="text-xs font-bold text-emerald-800 truncate block">
-                  {feedbackStats.topFeatures[0]?.name || 'Copilot ⌘J'}
+                  {feedbackStats.topFeatures[0]?.name || 'Awaiting developer responses'}
                 </span>
               </div>
             </div>
@@ -760,159 +729,179 @@ export const Reviewer: React.FC = () => {
             {/* SUB-VIEW 2: Developer Feedback Loop Feed */}
             {developerSubTab === 'feedback' && (
               <div className="space-y-4 animate-fadeIn">
-                {/* Feature Preference Bar */}
-                <div className="bg-white border border-sand-200 rounded-2xl p-4 sm:p-5 shadow-2xs">
-                  <div className="flex items-center gap-2 text-sand-900 font-bold text-xs uppercase tracking-wider mb-3">
-                    <TrendingUp className="w-4 h-4 text-amber-600" />
-                    <span>Top Capabilities Rated Most Helpful</span>
+                {devFeedbackList.length === 0 ? (
+                  <div className="bg-white border border-sand-200 rounded-2xl p-8 sm:p-12 text-center shadow-2xs space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center mx-auto shadow-2xs">
+                      <MessageSquare className="w-6 h-6" />
+                    </div>
+                    <h3 className="font-extrabold text-sand-900 text-base">
+                      No Developer Feedback Recorded Yet
+                    </h3>
+                    <p className="text-xs text-sand-600 max-w-md mx-auto leading-relaxed">
+                      All feedback in this console is 100% authentic with zero fabricated reviews. As developers use your OAuth runbooks and submit ratings, their exact 5-star ratings, feature choices, and improvement suggestions will appear here in real time.
+                    </p>
+                    <div className="pt-2 flex items-center justify-center gap-2 text-[11px] text-sand-500 font-mono">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>Live feedback listener connected</span>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    {feedbackStats.topFeatures.slice(0, 3).map((feat) => (
-                      <div key={feat.name} className="p-3 rounded-xl bg-sand-50 border border-sand-200/80">
-                        <div className="flex items-center justify-between text-xs font-bold text-sand-900 mb-1">
-                          <span className="truncate">{feat.name}</span>
-                          <span className="text-amber-800 font-mono shrink-0 ml-1">{feat.percentage}%</span>
-                        </div>
-                        <div className="w-full h-1.5 bg-sand-200 rounded-full overflow-hidden">
+                ) : (
+                  <>
+                    {/* Feature Preference Bar */}
+                    <div className="bg-white border border-sand-200 rounded-2xl p-4 sm:p-5 shadow-2xs">
+                      <div className="flex items-center gap-2 text-sand-900 font-bold text-xs uppercase tracking-wider mb-3">
+                        <TrendingUp className="w-4 h-4 text-amber-600" />
+                        <span>Top Capabilities Rated Most Helpful</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        {feedbackStats.topFeatures.slice(0, 3).map((feat) => (
+                          <div key={feat.name} className="p-3 rounded-xl bg-sand-50 border border-sand-200/80">
+                            <div className="flex items-center justify-between text-xs font-bold text-sand-900 mb-1">
+                              <span className="truncate">{feat.name}</span>
+                              <span className="text-amber-800 font-mono shrink-0 ml-1">{feat.percentage}%</span>
+                            </div>
+                            <div className="w-full h-1.5 bg-sand-200 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-amber-500 rounded-full"
+                                style={{ width: `${feat.percentage}%` }}
+                              />
+                            </div>
+                            <span className="text-[10px] text-sand-500 mt-1 block font-mono">
+                              {feat.count} developer endorsements
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Feedback Entries List */}
+                    <div className="space-y-3">
+                      {devFeedbackList
+                        .filter((item) => {
+                          if (!searchFeedback) return true;
+                          const q = searchFeedback.toLowerCase();
+                          return (
+                            (item.developerName || '').toLowerCase().includes(q) ||
+                            (item.developerCompany || '').toLowerCase().includes(q) ||
+                            (item.providerName || '').toLowerCase().includes(q) ||
+                            (item.helpfulFeatures || []).some((f) => f.toLowerCase().includes(q)) ||
+                            (item.improvementSuggestion || '').toLowerCase().includes(q) ||
+                            (item.featureIdeas || '').toLowerCase().includes(q)
+                          );
+                        })
+                        .map((item) => (
                           <div
-                            className="h-full bg-amber-500 rounded-full"
-                            style={{ width: `${feat.percentage}%` }}
-                          />
-                        </div>
-                        <span className="text-[10px] text-sand-500 mt-1 block font-mono">
-                          {feat.count} developer endorsements
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Feedback Entries List */}
-                <div className="space-y-3">
-                  {devFeedbackList
-                    .filter((item) => {
-                      if (!searchFeedback) return true;
-                      const q = searchFeedback.toLowerCase();
-                      return (
-                        (item.developerName || '').toLowerCase().includes(q) ||
-                        (item.developerCompany || '').toLowerCase().includes(q) ||
-                        (item.providerName || '').toLowerCase().includes(q) ||
-                        (item.helpfulFeatures || []).some((f) => f.toLowerCase().includes(q)) ||
-                        (item.improvementSuggestion || '').toLowerCase().includes(q) ||
-                        (item.featureIdeas || '').toLowerCase().includes(q)
-                      );
-                    })
-                    .map((item) => (
-                      <div
-                        key={item.id}
-                        className="bg-white border border-sand-200 rounded-2xl p-4 sm:p-5 shadow-2xs hover:border-sand-300 transition-all space-y-3"
-                      >
-                        {/* Top Meta Line: Stars, Provider, Date */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-sand-100">
-                          <div className="flex items-center gap-2.5 flex-wrap">
-                            <div className="flex items-center gap-0.5 text-amber-500">
-                              {[1, 2, 3, 4, 5].map((s) => (
-                                <Star
-                                  key={s}
-                                  className={`w-4 h-4 ${
-                                    s <= item.rating
-                                      ? 'fill-amber-400 text-amber-500'
-                                      : 'fill-transparent text-sand-200'
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                            <span className="text-xs font-bold text-amber-900 font-mono">
-                              {item.rating}.0 / 5.0
-                            </span>
-                            <span className="text-sand-300">•</span>
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-900 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">
-                              {item.providerName} Guide
-                            </span>
-                          </div>
-
-                          <span className="text-[11px] text-sand-400 font-mono">
-                            {new Date(item.createdAt).toLocaleDateString()} at{' '}
-                            {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-
-                        {/* Developer Profile Line */}
-                        <div className="flex items-center gap-2 text-xs text-sand-700 flex-wrap">
-                          <strong className="text-sand-900 font-bold">{item.developerName}</strong>
-                          {item.developerCompany && (
-                            <>
-                              <span className="text-sand-400">at</span>
-                              <span className="font-semibold text-sand-800">{item.developerCompany}</span>
-                            </>
-                          )}
-                          {item.developerRole && (
-                            <>
-                              <span className="text-sand-300">•</span>
-                              <span className="text-sand-500">{item.developerRole}</span>
-                            </>
-                          )}
-                          {item.developerEmail && (
-                            <>
-                              <span className="text-sand-300">•</span>
-                              <a
-                                href={`mailto:${item.developerEmail}`}
-                                className="text-sand-500 hover:text-sand-800 underline flex items-center gap-1"
-                              >
-                                <Mail className="w-3 h-3" />
-                                <span>{item.developerEmail}</span>
-                              </a>
-                            </>
-                          )}
-                        </div>
-
-                        {/* What Helped Most (Features) */}
-                        {item.helpfulFeatures && item.helpfulFeatures.length > 0 && (
-                          <div>
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-sand-400 block mb-1">
-                              Most Helpful Capabilities
-                            </span>
-                            <div className="flex flex-wrap gap-1.5">
-                              {item.helpfulFeatures.map((feat) => (
-                                <span
-                                  key={feat}
-                                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-200 text-xs font-semibold"
-                                >
-                                  <Check className="w-3 h-3 text-emerald-600" />
-                                  <span>{feat}</span>
+                            key={item.id}
+                            className="bg-white border border-sand-200 rounded-2xl p-4 sm:p-5 shadow-2xs hover:border-sand-300 transition-all space-y-3"
+                          >
+                            {/* Top Meta Line: Stars, Provider, Date */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-sand-100">
+                              <div className="flex items-center gap-2.5 flex-wrap">
+                                <div className="flex items-center gap-0.5 text-amber-500">
+                                  {[1, 2, 3, 4, 5].map((s) => (
+                                    <Star
+                                      key={s}
+                                      className={`w-4 h-4 ${
+                                        s <= item.rating
+                                          ? 'fill-amber-400 text-amber-500'
+                                          : 'fill-transparent text-sand-200'
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                                <span className="text-xs font-bold text-amber-900 font-mono">
+                                  {item.rating}.0 / 5.0
                                 </span>
-                              ))}
+                                <span className="text-sand-300">•</span>
+                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-900 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">
+                                  {item.providerName} Guide
+                                </span>
+                              </div>
+
+                              <span className="text-[11px] text-sand-400 font-mono">
+                                {new Date(item.createdAt).toLocaleDateString()} at{' '}
+                                {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+
+                            {/* Developer Profile Line */}
+                            <div className="flex items-center gap-2 text-xs text-sand-700 flex-wrap">
+                              <strong className="text-sand-900 font-bold">{item.developerName}</strong>
+                              {item.developerCompany && (
+                                <>
+                                  <span className="text-sand-400">at</span>
+                                  <span className="font-semibold text-sand-800">{item.developerCompany}</span>
+                                </>
+                              )}
+                              {item.developerRole && (
+                                <>
+                                  <span className="text-sand-300">•</span>
+                                  <span className="text-sand-500">{item.developerRole}</span>
+                                </>
+                              )}
+                              {item.developerEmail && (
+                                <>
+                                  <span className="text-sand-300">•</span>
+                                  <a
+                                    href={`mailto:${item.developerEmail}`}
+                                    className="text-sand-500 hover:text-sand-800 underline flex items-center gap-1"
+                                  >
+                                    <Mail className="w-3 h-3" />
+                                    <span>{item.developerEmail}</span>
+                                  </a>
+                                </>
+                              )}
+                            </div>
+
+                            {/* What Helped Most (Features) */}
+                            {item.helpfulFeatures && item.helpfulFeatures.length > 0 && (
+                              <div>
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-sand-400 block mb-1">
+                                  Most Helpful Capabilities
+                                </span>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {item.helpfulFeatures.map((feat) => (
+                                    <span
+                                      key={feat}
+                                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-200 text-xs font-semibold"
+                                    >
+                                      <Check className="w-3 h-3 text-emerald-600" />
+                                      <span>{feat}</span>
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Suggestions Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                              {item.improvementSuggestion && (
+                                <div className="p-3 rounded-xl bg-sand-50/80 border border-sand-200/80 text-xs text-sand-800">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 block mb-1">
+                                    Suggested Improvement
+                                  </span>
+                                  <p className="italic leading-relaxed text-sand-700">
+                                    &quot;{item.improvementSuggestion}&quot;
+                                  </p>
+                                </div>
+                              )}
+
+                              {item.featureIdeas && (
+                                <div className="p-3 rounded-xl bg-sand-50/80 border border-sand-200/80 text-xs text-sand-800">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-sky-800 block mb-1">
+                                    What to Add or Remove
+                                  </span>
+                                  <p className="italic leading-relaxed text-sand-700">
+                                    &quot;{item.featureIdeas}&quot;
+                                  </p>
+                                </div>
+                              )}
                             </div>
                           </div>
-                        )}
-
-                        {/* Suggestions Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-                          {item.improvementSuggestion && (
-                            <div className="p-3 rounded-xl bg-sand-50/80 border border-sand-200/80 text-xs text-sand-800">
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 block mb-1">
-                                Suggested Improvement
-                              </span>
-                              <p className="italic leading-relaxed text-sand-700">
-                                &quot;{item.improvementSuggestion}&quot;
-                              </p>
-                            </div>
-                          )}
-
-                          {item.featureIdeas && (
-                            <div className="p-3 rounded-xl bg-sand-50/80 border border-sand-200/80 text-xs text-sand-800">
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-sky-800 block mb-1">
-                                What to Add or Remove
-                              </span>
-                              <p className="italic leading-relaxed text-sand-700">
-                                &quot;{item.featureIdeas}&quot;
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>

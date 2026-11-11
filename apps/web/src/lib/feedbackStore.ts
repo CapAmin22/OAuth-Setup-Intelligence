@@ -28,95 +28,29 @@ export const FEEDBACK_FEATURE_OPTIONS = [
 
 const FEEDBACK_STORAGE_KEY = 'oauth_developer_feedback_v2';
 
-const SEED_FEEDBACK: DeveloperFeedbackItem[] = [
-  {
-    id: 'fb-seed-1',
-    rating: 5,
-    helpfulFeatures: [
-      'Verified Endpoints & .env Exporter',
-      'In-Context Copilot (⌘J)',
-      'Blocker Wizard (Wrong vs Fixed Diffs)',
-    ],
-    improvementSuggestion: 'Would love ready-made NextAuth.js v5 route handler snippets for App Router.',
-    featureIdeas: 'Add webhook signature verification runbooks for Stripe and GitHub.',
-    providerSlug: 'google',
-    providerName: 'Google',
-    developerName: 'Alex Chen',
-    developerCompany: 'TrueSignal',
-    developerRole: 'Senior Backend Engineer',
-    developerEmail: 'alex.chen@truesignal.ai',
-    createdAt: new Date(Date.now() - 3600000 * 4).toISOString(),
-  },
-  {
-    id: 'fb-seed-2',
-    rating: 5,
-    helpfulFeatures: [
-      'In-Context Copilot (⌘J)',
-      'Redirect URI & PKCE Spec Warnings',
-      'Interactive Step Checklist & Effort Timer',
-    ],
-    improvementSuggestion: 'The trailing slash warning saved me from a 2-hour debugging session with Slack redirect URI mismatch.',
-    featureIdeas: 'Remove legacy v1 workspace installation guides since Slack deprecated them.',
-    providerSlug: 'slack',
-    providerName: 'Slack',
-    developerName: 'Shahar Tal',
-    developerCompany: 'TrueSignal',
-    developerRole: 'Product Integration Lead',
-    developerEmail: 'shahar@truesignal.ai',
-    createdAt: new Date(Date.now() - 3600000 * 18).toISOString(),
-  },
-  {
-    id: 'fb-seed-3',
-    rating: 4,
-    helpfulFeatures: [
-      'Verified Endpoints & .env Exporter',
-      'Autonomous Research for Unlisted APIs',
-      'Multi-Language Code Snippets (Node, Python, cURL)',
-    ],
-    improvementSuggestion: 'Autonomous crawler for Odoo worked smoothly. Python requests example was spot on.',
-    featureIdeas: 'Add FastAPI and Django code snippet tabs alongside Node.js.',
-    providerSlug: 'odoo',
-    providerName: 'Odoo',
-    developerName: 'Marcus Vance',
-    developerCompany: 'HyperScale Systems',
-    developerRole: 'Full-Stack Developer',
-    developerEmail: 'marcus.vance@hyperscale.io',
-    createdAt: new Date(Date.now() - 3600000 * 36).toISOString(),
-  },
-  {
-    id: 'fb-seed-4',
-    rating: 5,
-    helpfulFeatures: [
-      'In-Context Copilot (⌘J)',
-      'Blocker Wizard (Wrong vs Fixed Diffs)',
-      'Redirect URI & PKCE Spec Warnings',
-    ],
-    improvementSuggestion: 'The side-by-side wrong vs fixed diff for Discord redirect port was super clear.',
-    featureIdeas: 'Add a 1-click test button to ping authorize URLs directly.',
-    providerSlug: 'discord',
-    providerName: 'Discord',
-    developerName: 'Elena Rostova',
-    developerCompany: 'GuildCraft',
-    developerRole: 'Lead Architect',
-    developerEmail: 'elena@guildcraft.dev',
-    createdAt: new Date(Date.now() - 3600000 * 72).toISOString(),
-  },
-];
-
+/**
+ * Returns genuine, authentic developer feedback submitted by real users.
+ * Never inserts or displays mock, seed, or fabricated data.
+ */
 export function getDeveloperFeedbackList(): DeveloperFeedbackItem[] {
   try {
     const raw = localStorage.getItem(FEEDBACK_STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(SEED_FEEDBACK));
-      return SEED_FEEDBACK;
-    }
+    if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : SEED_FEEDBACK;
+    if (!Array.isArray(parsed)) return [];
+
+    // Strictly filter out any legacy synthetic/seed data
+    return parsed.filter(
+      (item) => item && typeof item.id === 'string' && !item.id.startsWith('fb-seed-')
+    );
   } catch {
-    return SEED_FEEDBACK;
+    return [];
   }
 }
 
+/**
+ * Persists authentic developer feedback from live user interactions.
+ */
 export async function saveDeveloperFeedback(
   data: Omit<DeveloperFeedbackItem, 'id' | 'createdAt'>
 ): Promise<DeveloperFeedbackItem> {
@@ -136,7 +70,7 @@ export async function saveDeveloperFeedback(
     providerSlug: data.providerSlug || 'general',
     providerName: data.providerName || 'General',
     developerName: data.developerName?.trim() || 'Anonymous Developer',
-    developerCompany: data.developerCompany?.trim() || 'Independent Project',
+    developerCompany: data.developerCompany?.trim() || 'Developer Project',
     developerRole: data.developerRole?.trim() || 'Software Engineer',
     developerEmail: data.developerEmail?.trim() || undefined,
     createdAt: new Date().toISOString(),
@@ -151,7 +85,10 @@ export async function saveDeveloperFeedback(
     try {
       const rawLegacy = localStorage.getItem('oauth_feedback_list');
       const legacyList = rawLegacy ? JSON.parse(rawLegacy) : [];
-      legacyList.unshift({
+      const cleanLegacy = Array.isArray(legacyList)
+        ? legacyList.filter((item: any) => item && typeof item.id === 'string' && !item.id.startsWith('fb-seed-'))
+        : [];
+      cleanLegacy.unshift({
         id: newItem.id,
         provider: newItem.providerName,
         classification: 'developer_satisfaction',
@@ -159,7 +96,7 @@ export async function saveDeveloperFeedback(
         status: 'reviewed',
         createdAt: newItem.createdAt,
       });
-      localStorage.setItem('oauth_feedback_list', JSON.stringify(legacyList));
+      localStorage.setItem('oauth_feedback_list', JSON.stringify(cleanLegacy));
     } catch {}
 
     // Persist to Supabase if configured
@@ -184,11 +121,14 @@ export async function saveDeveloperFeedback(
   return newItem;
 }
 
+/**
+ * Computes authentic statistics over real user submissions only.
+ */
 export function getFeedbackStats(items?: DeveloperFeedbackItem[]) {
   const list = items || getDeveloperFeedbackList();
   if (!list.length) {
     return {
-      avgRating: 5.0,
+      avgRating: null,
       totalCount: 0,
       featureCounts: {},
       topFeatures: [],

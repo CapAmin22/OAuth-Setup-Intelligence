@@ -37,7 +37,7 @@ class TestFeedbackLoop(unittest.TestCase):
         self.assertIn("Submit Developer Feedback", content)
 
     def test_feedback_store_schema_and_methods(self):
-        """Verify feedbackStore provides typed storage, stats calculation, and seed data."""
+        """Verify feedbackStore provides typed storage, stats calculation, and authentic data only."""
         self.assertTrue(os.path.exists(self.feedback_store_path), "feedbackStore.ts must exist")
         with open(self.feedback_store_path, "r", encoding="utf-8") as f:
             content = f.read()
@@ -47,6 +47,18 @@ class TestFeedbackLoop(unittest.TestCase):
         self.assertIn("getDeveloperFeedbackList", content)
         self.assertIn("getFeedbackStats", content)
         self.assertIn("oauth_feedback_updated", content)
+        # Ensure no fabricated or mock seed feedback exists
+        self.assertNotIn("SEED_FEEDBACK", content)
+        self.assertNotIn("fb-seed-", content.replace("!item.id.startsWith('fb-seed-')", ""))
+
+    def test_admin_reviewer_authentic_empty_state(self):
+        """Verify Reviewer.tsx contains clean, authentic empty state with zero fake data."""
+        with open(self.reviewer_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        self.assertIn("No Developer Feedback Recorded Yet", content)
+        self.assertIn("All feedback in this console is 100% authentic with zero fabricated reviews", content)
+        self.assertNotIn("DEFAULT_FEEDBACK", content)
 
     def test_guide_page_embeds_feedback_widget(self):
         """Verify Guide.tsx embeds GuideFeedbackWidget at the conclusion of the runbook."""
