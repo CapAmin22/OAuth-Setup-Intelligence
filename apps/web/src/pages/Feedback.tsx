@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { MessageSquare, Check, ShieldCheck, ArrowLeft, AlertCircle } from 'lucide-react';
+import { MessageSquare, Check, ShieldCheck, ArrowLeft, AlertCircle, Star } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { GuideFeedbackWidget } from '../components/GuideFeedbackWidget';
 
 export function redactSensitiveData(text: string): string {
   return text
@@ -24,6 +25,7 @@ export const Feedback: React.FC = () => {
   const [message, setMessage] = useState('');
   const [sent, setSent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState<'satisfaction' | 'drift'>('satisfaction');
 
   useEffect(() => {
     if (urlProvider) {
@@ -100,18 +102,53 @@ export const Feedback: React.FC = () => {
         </Link>
       </div>
 
-      <div className="text-center mb-8">
+      <div className="text-center mb-6">
         <div className="inline-flex items-center gap-1.5 text-amber-700 bg-amber-50 border border-amber-200/80 px-2.5 py-1 rounded-full text-[11px] font-semibold mb-3">
           <MessageSquare className="w-3.5 h-3.5" />
           <span>Community Feedback Loop</span>
         </div>
-        <h1 className="text-2xl font-bold text-sand-900 tracking-tight">Report Documentation Drift</h1>
+        <h1 className="text-2xl font-bold text-sand-900 tracking-tight">Developer Insights &amp; Feedback</h1>
         <p className="text-xs text-sand-700 mt-1.5 max-w-md mx-auto">
-          Did a provider alter their developer console layout, change scope naming, or deprecate a callback pattern?
-          Help us keep all developer runbooks accurate.
+          Help us build the most reliable OAuth setup assistant. Rate your experience or report developer console changes.
         </p>
+
+        {/* Tab Toggle */}
+        <div className="flex items-center justify-center gap-2 mt-5">
+          <div className="inline-flex rounded-xl bg-sand-200/80 p-1 text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => setActiveTab('satisfaction')}
+              className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'satisfaction'
+                  ? 'bg-white text-sand-900 shadow-2xs'
+                  : 'text-sand-700 hover:text-sand-900'
+              }`}
+            >
+              <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+              <span>Rate Tool &amp; Suggest Features</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('drift')}
+              className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'drift'
+                  ? 'bg-white text-sand-900 shadow-2xs'
+                  : 'text-sand-700 hover:text-sand-900'
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Report Documentation Drift</span>
+            </button>
+          </div>
+        </div>
       </div>
 
+      {activeTab === 'satisfaction' ? (
+        <GuideFeedbackWidget
+          providerName={provider}
+          providerSlug={providerSlug}
+        />
+      ) : (
       <div className="bg-white border border-sand-200 rounded-2xl p-6 sm:p-8 shadow-sm">
         {sent ? (
           <div className="text-center py-6">
@@ -225,6 +262,7 @@ export const Feedback: React.FC = () => {
           </form>
         )}
       </div>
+      )}
     </div>
   );
 };

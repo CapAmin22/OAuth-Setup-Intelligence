@@ -3,7 +3,8 @@ import { useLocation } from 'react-router-dom';
 import { 
   ShieldCheck, Check, X, AlertCircle, MessageSquare, 
   RefreshCw, CheckCircle2, Clock, Filter, Eye, ChevronRight,
-  Users, Linkedin, Building2, Copy, ExternalLink, Mail, Search, UserCheck, Lock
+  Users, Linkedin, Building2, Copy, ExternalLink, Mail, Search, UserCheck, Lock,
+  Star, ThumbsUp, TrendingUp
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import {
@@ -13,6 +14,11 @@ import {
   promptDeveloperAuth,
   DeveloperProfile,
 } from '../lib/auth';
+import {
+  getDeveloperFeedbackList,
+  getFeedbackStats,
+  DeveloperFeedbackItem,
+} from '../lib/feedbackStore';
 
 interface FeedbackItem {
   id: string;
@@ -83,6 +89,12 @@ export const Reviewer: React.FC = () => {
   const [searchLead, setSearchLead] = useState('');
   const [copiedLeadId, setCopiedLeadId] = useState<string | null>(null);
 
+  // Developer Feedback & Ratings State
+  const [devFeedbackList, setDevFeedbackList] = useState<DeveloperFeedbackItem[]>(() => getDeveloperFeedbackList());
+  const [developerSubTab, setDeveloperSubTab] = useState<'leads' | 'feedback'>('leads');
+  const [searchFeedback, setSearchFeedback] = useState('');
+  const feedbackStats = getFeedbackStats(devFeedbackList);
+
   // Guide Review State
   const [targetProvider, setTargetProvider] = useState('Linear');
   const [decision, setDecision] = useState<'approved' | 'rejected' | 'needs_changes'>('approved');
@@ -103,6 +115,15 @@ export const Reviewer: React.FC = () => {
 
   useEffect(() => {
     loadDevelopers();
+    const handleFeedbackUpdate = () => {
+      setDevFeedbackList(getDeveloperFeedbackList());
+    };
+    window.addEventListener('oauth_feedback_updated', handleFeedbackUpdate);
+    window.addEventListener('storage', handleFeedbackUpdate);
+    return () => {
+      window.removeEventListener('oauth_feedback_updated', handleFeedbackUpdate);
+      window.removeEventListener('storage', handleFeedbackUpdate);
+    };
   }, []);
 
   const loadDevelopers = async () => {
@@ -583,106 +604,317 @@ export const Reviewer: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-6 animate-fadeIn">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-sand-50 p-5 rounded-2xl border border-sand-200">
-              <div>
-                <h2 className="text-sm font-bold text-sand-900 flex items-center gap-2">
-                  <Users className="w-4 h-4 text-indigo-600" />
-                  <span>Verified Developer Leads ({developers.length})</span>
-                  <span className="text-[11px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
-                    Admin Access: Amin
-                  </span>
-                </h2>
-                <p className="text-xs text-sand-600 mt-1">
-                  Reach out on LinkedIn to engineers actively implementing OAuth with your runbooks. Click to message directly or copy custom outreach notes.
-                </p>
+            {/* Top KPI Metrics Strip */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-white border border-sand-200 rounded-2xl p-4 shadow-2xs">
+                <span className="text-[11px] text-sand-500 font-medium block mb-1">Developer Leads</span>
+                <span className="text-xl font-extrabold text-sand-900">{developers.length}</span>
               </div>
+              <div className="bg-white border border-sand-200 rounded-2xl p-4 shadow-2xs">
+                <span className="text-[11px] text-sand-500 font-medium block mb-1">Avg Satisfaction</span>
+                <span className="text-xl font-extrabold text-amber-900 flex items-center gap-1.5">
+                  <span>{feedbackStats.avgRating}</span>
+                  <div className="flex items-center text-amber-400">
+                    <Star className="w-4 h-4 fill-amber-400 text-amber-500" />
+                  </div>
+                </span>
+              </div>
+              <div className="bg-white border border-sand-200 rounded-2xl p-4 shadow-2xs">
+                <span className="text-[11px] text-sand-500 font-medium block mb-1">Reviews Logged</span>
+                <span className="text-xl font-extrabold text-sand-900">{devFeedbackList.length}</span>
+              </div>
+              <div className="bg-white border border-sand-200 rounded-2xl p-4 shadow-2xs">
+                <span className="text-[11px] text-sand-500 font-medium block mb-1">Top Rated Capability</span>
+                <span className="text-xs font-bold text-emerald-800 truncate block">
+                  {feedbackStats.topFeatures[0]?.name || 'Copilot ⌘J'}
+                </span>
+              </div>
+            </div>
+
+            {/* Sub-Tab Navigation Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-sand-50 p-4 sm:p-5 rounded-2xl border border-sand-200">
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex rounded-xl bg-sand-200/70 p-1 text-xs font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => setDeveloperSubTab('leads')}
+                    className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                      developerSubTab === 'leads' ? 'bg-white text-sand-900 shadow-2xs' : 'text-sand-700 hover:text-sand-900'
+                    }`}
+                  >
+                    <Users className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Verified Developer Leads ({developers.length})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeveloperSubTab('feedback')}
+                    className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                      developerSubTab === 'feedback' ? 'bg-white text-sand-900 shadow-2xs' : 'text-sand-700 hover:text-sand-900'
+                    }`}
+                  >
+                    <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+                    <span>Developer Feedback &amp; Ratings ({devFeedbackList.length})</span>
+                  </button>
+                </div>
+
+                <span className="text-[11px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
+                  Admin Access: Amin
+                </span>
+              </div>
+
+              {/* Search Bar (dynamic for active subtab) */}
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Search by name, company, email..."
-                  value={searchLead}
-                  onChange={(e) => setSearchLead(e.target.value)}
+                  placeholder={developerSubTab === 'leads' ? 'Search by name, company, email...' : 'Search feedback by provider, feature, user...'}
+                  value={developerSubTab === 'leads' ? searchLead : searchFeedback}
+                  onChange={(e) => developerSubTab === 'leads' ? setSearchLead(e.target.value) : setSearchFeedback(e.target.value)}
                   className="pl-8 pr-3 py-1.5 text-xs rounded-xl border border-sand-300 bg-white focus:outline-none focus:ring-1 focus:ring-amber-600 w-full sm:w-64"
                 />
                 <Search className="w-3.5 h-3.5 text-sand-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
               </div>
             </div>
 
-            {/* List of Developers */}
-            <div className="space-y-3">
-              {developers
-                .filter(
-                  (d) =>
-                    !searchLead ||
-                    d.name.toLowerCase().includes(searchLead.toLowerCase()) ||
-                    d.company.toLowerCase().includes(searchLead.toLowerCase()) ||
-                    d.email.toLowerCase().includes(searchLead.toLowerCase())
-                )
-                .map((dev) => (
-                  <div
-                    key={dev.email}
-                    className="bg-white border border-sand-200 rounded-2xl p-4 sm:p-5 shadow-2xs hover:border-sand-300 transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
-                  >
-                    <div className="flex items-start gap-3.5">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-800 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-inner">
-                        {dev.name[0]?.toUpperCase()}
+            {/* SUB-VIEW 1: Developer Leads & LinkedIn Outreach */}
+            {developerSubTab === 'leads' && (
+              <div className="space-y-3 animate-fadeIn">
+                <p className="text-xs text-sand-600 px-1">
+                  Reach out on LinkedIn to engineers actively implementing OAuth with your runbooks. Click to message directly or copy custom outreach notes.
+                </p>
+
+                {developers
+                  .filter(
+                    (d) =>
+                      !searchLead ||
+                      d.name.toLowerCase().includes(searchLead.toLowerCase()) ||
+                      d.company.toLowerCase().includes(searchLead.toLowerCase()) ||
+                      d.email.toLowerCase().includes(searchLead.toLowerCase())
+                  )
+                  .map((dev) => (
+                    <div
+                      key={dev.email}
+                      className="bg-white border border-sand-200 rounded-2xl p-4 sm:p-5 shadow-2xs hover:border-sand-300 transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+                    >
+                      <div className="flex items-start gap-3.5">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-800 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-inner">
+                          {dev.name[0]?.toUpperCase()}
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-bold text-sm text-sand-900">{dev.name}</h3>
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              Verified ({dev.verificationScore}%)
+                            </span>
+                            <span className="text-[11px] text-sand-400 font-mono">
+                              {new Date(dev.verifiedAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-sand-600 flex-wrap">
+                            <span className="flex items-center gap-1 font-medium text-sand-800">
+                              <Building2 className="w-3.5 h-3.5 text-sand-400" />
+                              {dev.company}
+                            </span>
+                            <span className="text-sand-300">•</span>
+                            <span>{dev.role}</span>
+                            <span className="text-sand-300">•</span>
+                            <a
+                              href={`mailto:${dev.email}`}
+                              className="flex items-center gap-1 text-sand-500 hover:text-sand-800 transition-colors"
+                            >
+                              <Mail className="w-3 h-3" />
+                              {dev.email}
+                            </a>
+                          </div>
+                        </div>
                       </div>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-bold text-sm text-sand-900">{dev.name}</h3>
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                            Verified ({dev.verificationScore}%)
-                          </span>
-                          <span className="text-[11px] text-sand-400 font-mono">
-                            {new Date(dev.verifiedAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-sand-600 flex-wrap">
-                          <span className="flex items-center gap-1 font-medium text-sand-800">
-                            <Building2 className="w-3.5 h-3.5 text-sand-400" />
-                            {dev.company}
-                          </span>
-                          <span className="text-sand-300">•</span>
-                          <span>{dev.role}</span>
-                          <span className="text-sand-300">•</span>
-                          <a
-                            href={`mailto:${dev.email}`}
-                            className="flex items-center gap-1 text-sand-500 hover:text-sand-800 transition-colors"
-                          >
-                            <Mail className="w-3 h-3" />
-                            {dev.email}
-                          </a>
-                        </div>
+
+                      {/* Outreach Actions */}
+                      <div className="flex items-center gap-2 self-end md:self-center w-full md:w-auto justify-end">
+                        <button
+                          type="button"
+                          onClick={() => copyOutreachTemplate(dev)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-sand-300 bg-white hover:bg-sand-50 text-xs font-semibold text-sand-700 transition-colors shadow-2xs cursor-pointer"
+                          title="Copy personalized LinkedIn message template"
+                        >
+                          <Copy className="w-3.5 h-3.5 text-sand-500" />
+                          <span>{copiedLeadId === dev.email ? 'Copied Note ✓' : 'Copy Intro Note'}</span>
+                        </button>
+
+                        <a
+                          href={dev.linkedinUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#0a66c2] hover:bg-[#004182] text-white text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                        >
+                          <Linkedin className="w-3.5 h-3.5" />
+                          <span>Message on LinkedIn</span>
+                          <ExternalLink className="w-3 h-3 text-white/80" />
+                        </a>
                       </div>
                     </div>
+                  ))}
+              </div>
+            )}
 
-                    {/* Outreach Actions */}
-                    <div className="flex items-center gap-2 self-end md:self-center w-full md:w-auto justify-end">
-                      <button
-                        type="button"
-                        onClick={() => copyOutreachTemplate(dev)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-sand-300 bg-white hover:bg-sand-50 text-xs font-semibold text-sand-700 transition-colors shadow-2xs cursor-pointer"
-                        title="Copy personalized LinkedIn message template"
-                      >
-                        <Copy className="w-3.5 h-3.5 text-sand-500" />
-                        <span>{copiedLeadId === dev.email ? 'Copied Note ✓' : 'Copy Intro Note'}</span>
-                      </button>
-
-                      <a
-                        href={dev.linkedinUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#0a66c2] hover:bg-[#004182] text-white text-xs font-semibold transition-all shadow-xs cursor-pointer"
-                      >
-                        <Linkedin className="w-3.5 h-3.5" />
-                        <span>Message on LinkedIn</span>
-                        <ExternalLink className="w-3 h-3 text-white/80" />
-                      </a>
-                    </div>
+            {/* SUB-VIEW 2: Developer Feedback Loop Feed */}
+            {developerSubTab === 'feedback' && (
+              <div className="space-y-4 animate-fadeIn">
+                {/* Feature Preference Bar */}
+                <div className="bg-white border border-sand-200 rounded-2xl p-4 sm:p-5 shadow-2xs">
+                  <div className="flex items-center gap-2 text-sand-900 font-bold text-xs uppercase tracking-wider mb-3">
+                    <TrendingUp className="w-4 h-4 text-amber-600" />
+                    <span>Top Capabilities Rated Most Helpful</span>
                   </div>
-                ))}
-            </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    {feedbackStats.topFeatures.slice(0, 3).map((feat) => (
+                      <div key={feat.name} className="p-3 rounded-xl bg-sand-50 border border-sand-200/80">
+                        <div className="flex items-center justify-between text-xs font-bold text-sand-900 mb-1">
+                          <span className="truncate">{feat.name}</span>
+                          <span className="text-amber-800 font-mono shrink-0 ml-1">{feat.percentage}%</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-sand-200 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-amber-500 rounded-full"
+                            style={{ width: `${feat.percentage}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] text-sand-500 mt-1 block font-mono">
+                          {feat.count} developer endorsements
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Feedback Entries List */}
+                <div className="space-y-3">
+                  {devFeedbackList
+                    .filter((item) => {
+                      if (!searchFeedback) return true;
+                      const q = searchFeedback.toLowerCase();
+                      return (
+                        (item.developerName || '').toLowerCase().includes(q) ||
+                        (item.developerCompany || '').toLowerCase().includes(q) ||
+                        (item.providerName || '').toLowerCase().includes(q) ||
+                        (item.helpfulFeatures || []).some((f) => f.toLowerCase().includes(q)) ||
+                        (item.improvementSuggestion || '').toLowerCase().includes(q) ||
+                        (item.featureIdeas || '').toLowerCase().includes(q)
+                      );
+                    })
+                    .map((item) => (
+                      <div
+                        key={item.id}
+                        className="bg-white border border-sand-200 rounded-2xl p-4 sm:p-5 shadow-2xs hover:border-sand-300 transition-all space-y-3"
+                      >
+                        {/* Top Meta Line: Stars, Provider, Date */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-sand-100">
+                          <div className="flex items-center gap-2.5 flex-wrap">
+                            <div className="flex items-center gap-0.5 text-amber-500">
+                              {[1, 2, 3, 4, 5].map((s) => (
+                                <Star
+                                  key={s}
+                                  className={`w-4 h-4 ${
+                                    s <= item.rating
+                                      ? 'fill-amber-400 text-amber-500'
+                                      : 'fill-transparent text-sand-200'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-xs font-bold text-amber-900 font-mono">
+                              {item.rating}.0 / 5.0
+                            </span>
+                            <span className="text-sand-300">•</span>
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-900 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">
+                              {item.providerName} Guide
+                            </span>
+                          </div>
+
+                          <span className="text-[11px] text-sand-400 font-mono">
+                            {new Date(item.createdAt).toLocaleDateString()} at{' '}
+                            {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+
+                        {/* Developer Profile Line */}
+                        <div className="flex items-center gap-2 text-xs text-sand-700 flex-wrap">
+                          <strong className="text-sand-900 font-bold">{item.developerName}</strong>
+                          {item.developerCompany && (
+                            <>
+                              <span className="text-sand-400">at</span>
+                              <span className="font-semibold text-sand-800">{item.developerCompany}</span>
+                            </>
+                          )}
+                          {item.developerRole && (
+                            <>
+                              <span className="text-sand-300">•</span>
+                              <span className="text-sand-500">{item.developerRole}</span>
+                            </>
+                          )}
+                          {item.developerEmail && (
+                            <>
+                              <span className="text-sand-300">•</span>
+                              <a
+                                href={`mailto:${item.developerEmail}`}
+                                className="text-sand-500 hover:text-sand-800 underline flex items-center gap-1"
+                              >
+                                <Mail className="w-3 h-3" />
+                                <span>{item.developerEmail}</span>
+                              </a>
+                            </>
+                          )}
+                        </div>
+
+                        {/* What Helped Most (Features) */}
+                        {item.helpfulFeatures && item.helpfulFeatures.length > 0 && (
+                          <div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-sand-400 block mb-1">
+                              Most Helpful Capabilities
+                            </span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {item.helpfulFeatures.map((feat) => (
+                                <span
+                                  key={feat}
+                                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-200 text-xs font-semibold"
+                                >
+                                  <Check className="w-3 h-3 text-emerald-600" />
+                                  <span>{feat}</span>
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Suggestions Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                          {item.improvementSuggestion && (
+                            <div className="p-3 rounded-xl bg-sand-50/80 border border-sand-200/80 text-xs text-sand-800">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 block mb-1">
+                                Suggested Improvement
+                              </span>
+                              <p className="italic leading-relaxed text-sand-700">
+                                &quot;{item.improvementSuggestion}&quot;
+                              </p>
+                            </div>
+                          )}
+
+                          {item.featureIdeas && (
+                            <div className="p-3 rounded-xl bg-sand-50/80 border border-sand-200/80 text-xs text-sand-800">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-sky-800 block mb-1">
+                                What to Add or Remove
+                              </span>
+                              <p className="italic leading-relaxed text-sand-700">
+                                &quot;{item.featureIdeas}&quot;
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
           </div>
         )
       )}

@@ -21,6 +21,7 @@ import { CodePlayground } from '../components/CodePlayground';
 import { ProviderLogo } from '../components/ProviderLogo';
 import { QuickEndpointsCard } from '../components/QuickEndpointsCard';
 import { ProviderCopilotDrawer } from '../components/ProviderCopilotDrawer';
+import { GuideFeedbackWidget } from '../components/GuideFeedbackWidget';
 import { fetchGuide } from '../lib/api';
 import { getCurrentDeveloper, promptDeveloperAuth } from '../lib/auth';
 import { GuideVersion } from '../types';
@@ -489,6 +490,12 @@ ${guide.sources.map((src) => `- [${src.id}] ${src.url} (Hash: ${src.contentHash}
               ))}
             </div>
           )}
+
+          {/* Developer Feedback Loop */}
+          <GuideFeedbackWidget
+            providerSlug={guide.providerSlug}
+            providerName={guide.providerName}
+          />
         </div>
 
         {/* Right Column: Evidence Dossier Panel (33.3% width) */}
