@@ -54,7 +54,7 @@ export const Home: React.FC = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16 w-full">
 
         {/* ── Hero Section ── */}
-        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-12">
+        <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-14">
           <div className="inline-flex items-center px-3.5 py-1 rounded-full bg-sand-100 text-sand-700 text-xs font-semibold uppercase tracking-wider mb-5 border border-sand-200">
             Verified OAuth 2.0 Runbooks · Zero Hallucinations
           </div>
@@ -85,7 +85,7 @@ export const Home: React.FC = () => {
               <Link
                 key={item.slug}
                 to={`/guides/${item.slug}/v/1`}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-sand-200 hover:border-amber-400 text-sand-800 hover:text-amber-900 font-medium transition-all shadow-2xs hover:shadow-xs"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-sand-200 hover:border-sand-400 text-sand-800 hover:text-sand-950 font-medium transition-all shadow-2xs hover:shadow-xs"
               >
                 <ProviderLogo slug={item.slug} name={item.name} size="sm" />
                 <span>{item.name}</span>
@@ -94,44 +94,46 @@ export const Home: React.FC = () => {
           </div>
 
           {/* Top Quick Guide Generator Bar (Under Search Bar) */}
-          <div className="mt-6 max-w-2xl mx-auto">
-            <div className="bg-gradient-to-r from-sand-50 via-amber-50/70 to-sand-50 border border-amber-200/80 rounded-2xl p-3 sm:p-3.5 shadow-2xs text-left">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-auto">
-                  <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-700 shadow-2xs">
-                    <Zap className="w-4 h-4 fill-amber-500/20" />
+          <div className="mt-6 max-w-2xl mx-auto text-left">
+            <div className="bg-white border border-sand-200 hover:border-sand-300 rounded-2xl p-4 sm:p-4.5 shadow-2xs hover:shadow-xs transition-all">
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-700 flex items-center justify-center font-bold text-xs border border-amber-500/20 shrink-0">
+                    <Zap className="w-3.5 h-3.5 text-amber-600 fill-amber-500/20" />
                   </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-sand-900 tracking-tight">Need an unlisted provider?</span>
-                      <span className="text-[10px] font-semibold text-amber-800 bg-amber-100/80 border border-amber-200 px-1.5 py-0.5 rounded-md">
-                        AI Generator
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-sand-500 hidden sm:block">
-                      Extract verified OAuth 2.0 endpoints &amp; specs from any doc URL
-                    </p>
-                  </div>
+                  <span className="text-xs font-bold text-sand-900 tracking-tight">
+                    Need an unlisted provider?
+                  </span>
+                  <span className="text-[10px] font-semibold text-amber-800 bg-amber-50 border border-amber-200/80 px-1.5 py-0.2 rounded-md">
+                    AI Generator
+                  </span>
                 </div>
-
-                <form onSubmit={handleTopGenerateSubmit} className="flex items-center gap-2 w-full sm:w-auto">
-                  <input
-                    type="text"
-                    value={topGenerateInput}
-                    onChange={(e) => setTopGenerateInput(e.target.value)}
-                    placeholder="Enter provider (e.g. Asana, Loom, Zoho)..."
-                    className="w-full sm:w-64 bg-white border border-sand-300 rounded-xl px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-sand-900 transition-all shadow-2xs"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!topGenerateInput.trim()}
-                    className="shrink-0 inline-flex items-center gap-1 px-3.5 py-2 bg-sand-900 hover:bg-black disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
-                  >
-                    <span>Generate</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </form>
+                <span className="text-[11px] text-sand-400 font-mono hidden sm:inline">
+                  Crawls docs · ~60s
+                </span>
               </div>
+
+              <p className="text-xs text-sand-500 mb-3 leading-relaxed">
+                Enter any service name or docs URL to extract verified OAuth 2.0 endpoints, scopes, and callback rules.
+              </p>
+
+              <form onSubmit={handleTopGenerateSubmit} className="relative flex items-center bg-sand-50/80 border border-sand-200 rounded-xl pl-3.5 pr-1.5 py-1.5 focus-within:ring-2 focus-within:ring-amber-500/30 focus-within:border-amber-500 focus-within:bg-white transition-all shadow-2xs">
+                <input
+                  type="text"
+                  value={topGenerateInput}
+                  onChange={(e) => setTopGenerateInput(e.target.value)}
+                  placeholder="Enter provider or documentation link (e.g. Asana, Loom, Zoho)..."
+                  className="w-full bg-transparent text-xs sm:text-sm text-sand-900 placeholder-sand-400 outline-none pr-2 font-normal"
+                />
+                <button
+                  type="submit"
+                  disabled={!topGenerateInput.trim()}
+                  className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-sand-900 hover:bg-black disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg transition-all shadow-xs cursor-pointer"
+                >
+                  <span>Generate</span>
+                  <ArrowRight className="w-3 h-3 text-sand-300" />
+                </button>
+              </form>
             </div>
           </div>
         </div>
@@ -202,7 +204,7 @@ export const Home: React.FC = () => {
         )}
 
         {/* ── Curated Library ── */}
-        <div className="mb-12">
+        <div className="mb-14">
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="text-lg sm:text-xl font-bold text-sand-900 tracking-tight">
@@ -229,37 +231,69 @@ export const Home: React.FC = () => {
         </div>
 
         {/* ── Bottom Live Autonomous Research / Generator Banner ── */}
-        <div className="bg-gradient-to-r from-sand-100 to-amber-50 border border-sand-300/80 rounded-2xl p-6 sm:p-8 mb-12 shadow-2xs">
-          <div className="max-w-3xl">
-            <div className="flex items-center gap-2 text-amber-700 font-semibold text-xs uppercase tracking-wider mb-2">
-              <Zap className="w-4 h-4" />
+        <div className="bg-white border border-sand-200 hover:border-sand-300 rounded-2xl p-6 sm:p-8 mb-12 shadow-2xs hover:shadow-xs transition-all relative overflow-hidden">
+          {/* Subtle decorative background accent */}
+          <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-amber-50/70 via-sand-50/30 to-transparent rounded-full -mr-16 -mt-16 pointer-events-none" />
+
+          <div className="relative max-w-3xl">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[11px] font-semibold uppercase tracking-wider mb-2.5 border border-amber-200/70">
+              <Zap className="w-3 h-3 fill-amber-500/20" />
               <span>Live Autonomous Research</span>
             </div>
-            <h3 className="text-xl sm:text-2xl font-bold text-sand-900 mb-2">
+
+            <h3 className="text-xl sm:text-2xl font-extrabold text-sand-900 tracking-tight mb-2">
               Need a guide for another OAuth provider?
             </h3>
-            <p className="text-sm text-sand-700 mb-5 leading-relaxed">
-              Submit any provider name or website. Our research worker discovers official developer
-              documentation, extracts verified scopes and redirect rules, and synthesizes a cited runbook.
+
+            <p className="text-xs sm:text-sm text-sand-600 mb-4 leading-relaxed max-w-2xl">
+              Submit any provider name or developer documentation URL. Our research worker discovers official endpoints, extracts verified scopes, and synthesizes a cited runbook with 0% drift.
             </p>
 
-            <form onSubmit={handleBottomGenerateSubmit} className="flex flex-col sm:flex-row gap-2.5 max-w-xl">
+            {/* Quick Suggestions Chips */}
+            <div className="flex items-center gap-1.5 mb-3.5 flex-wrap text-xs">
+              <span className="text-[11px] text-sand-400 font-medium">Quick suggestions:</span>
+              {['Loom', 'Zoho', 'Asana', 'Shopify', 'Supabase', 'Dropbox'].map((sug) => (
+                <button
+                  key={sug}
+                  type="button"
+                  onClick={() => setBottomGenerateInput(sug)}
+                  className="px-2.5 py-0.5 rounded-lg bg-sand-100 hover:bg-amber-50 text-sand-700 hover:text-amber-900 text-[11px] font-medium transition-colors cursor-pointer border border-sand-200/80"
+                >
+                  {sug}
+                </button>
+              ))}
+            </div>
+
+            {/* Integrated Input Form */}
+            <form onSubmit={handleBottomGenerateSubmit} className="relative flex items-center bg-sand-50/80 border border-sand-300 rounded-xl pl-3.5 pr-1.5 py-1.5 focus-within:ring-2 focus-within:ring-amber-500/30 focus-within:border-amber-500 focus-within:bg-white transition-all max-w-2xl shadow-2xs">
               <input
                 type="text"
                 value={bottomGenerateInput}
                 onChange={(e) => setBottomGenerateInput(e.target.value)}
-                placeholder="Enter provider (e.g. Linear, Asana, Dropbox)..."
-                className="flex-1 bg-white border border-sand-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-600/30 focus:border-amber-600 text-sand-900 shadow-2xs"
+                placeholder="Enter provider name or developer portal link (e.g. Asana, Dropbox)..."
+                className="w-full bg-transparent text-xs sm:text-sm text-sand-900 placeholder-sand-400 outline-none pr-2 font-normal"
               />
               <button
                 type="submit"
                 disabled={!bottomGenerateInput.trim()}
-                className="bg-sand-900 hover:bg-black disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+                className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 bg-sand-900 hover:bg-black disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg transition-all shadow-xs cursor-pointer"
               >
                 <span>Research &amp; Generate</span>
-                <ArrowRight className="w-4 h-4 text-sand-300" />
+                <ArrowRight className="w-3.5 h-3.5 text-sand-300" />
               </button>
             </form>
+
+            {/* Micro Trust Indicators */}
+            <div className="flex items-center gap-3 sm:gap-4 mt-3.5 text-[11px] text-sand-500 flex-wrap">
+              <span className="flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <span>SSRF Guard Protected</span>
+              </span>
+              <span>•</span>
+              <span>RFC 6749 Compliant</span>
+              <span>•</span>
+              <span>SHA-256 Grounded</span>
+            </div>
           </div>
         </div>
       </div>
