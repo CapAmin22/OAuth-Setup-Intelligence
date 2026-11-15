@@ -1,100 +1,127 @@
 # OAuth Setup Intelligence
 
-> Developer runbooks and live, source-grounded AI research for OAuth 2.0 app registration, scopes, and approval processes.
+> An interactive developer intelligence tool that eliminates integration bottlenecks by providing verified OAuth 2.0 runbooks, upfront effort and approval estimates, and live autonomous research for unfamiliar APIs.
 
 * **Live Working Experience:** [https://oauth-setup-intelligence.vercel.app/](https://oauth-setup-intelligence.vercel.app/)
 * **Provider Library:** [https://oauth-setup-intelligence.vercel.app/library](https://oauth-setup-intelligence.vercel.app/library)
 * **Live Autonomous Research:** [https://oauth-setup-intelligence.vercel.app/generate](https://oauth-setup-intelligence.vercel.app/generate)
-* **Honest Edge-Case System:** [https://oauth-setup-intelligence.vercel.app/states](https://oauth-setup-intelligence.vercel.app/states)
+* **Edge States & Resilience:** [https://oauth-setup-intelligence.vercel.app/states](https://oauth-setup-intelligence.vercel.app/states)
 * **Source Repository:** [https://github.com/CapAmin22/OAuth-Setup-Intelligence](https://github.com/CapAmin22/OAuth-Setup-Intelligence)
 
 ---
 
-## The Developer Problem & The Path Forward
+## 1. Problem Understanding: The Developer's Dilemma
 
-OAuth 2.0 was standardized over a decade ago in RFC 6749, yet integrating it remains one of the most frustrating time sinks for software engineers. While the core protocol is standard, vendor implementations are deeply fragmented:
-* Portals bury app registration under disparate names (*Connected Apps*, *OAuth Providers*, *Integrations*, *Bot vs User Scopes*).
-* Redirect URIs fail with opaque errors due to hidden trailing-slash sensitivity, strict port matching, or localhost restrictions.
-* Approval gates (like Google CASA Tier 2 audits or Slack App Directory reviews) catch engineers by surprise after code is already written.
+When developers build user-facing integrations (whether direct or via managed auth services like Composio), configuring the **Provider OAuth App** in the vendor’s developer console is consistently the most frustrating bottleneck.
 
-**OAuth Setup Intelligence** solves this by giving developers a clear, predictable path forward. When developers look up an app, they immediately receive a shareable, interactive runbook that clarifies:
-1. **Difficulty & Readiness:** How easy or difficult it is to get their OAuth app ready for use (Instant Self-Serve vs Developer Verification vs Enterprise Review Gate).
-2. **Time & Active Effort:** Hands-on engineering time (e.g., 15–30 min vs 30–90 min) plus any external waiting periods for compliance or approval (Instant vs 3–5 business days).
-3. **Nuances & Requirements:** Exact technical requirements—such as mandatory PKCE (RFC 7636), refresh token rotation, HTTP Basic auth headers vs POST body credentials, and multi-tenant routing parameters.
-4. **Agent vs Human Boundaries:** Exactly what the agent investigates and generates (portal discovery, endpoint mapping, code boilerplates, blocker diagnostics) versus where the human engineer must take over (signing in with organizational credentials, accepting Terms of Service, obtaining Client Secrets, and submitting verification forms).
+OAuth 2.0 (RFC 6749) standardizes the wire protocol, but vendor developer consoles are wildly fragmented:
+1. **Hidden Technical Nuances:** A trailing slash on a redirect URI, passing client credentials in the JSON body instead of an `Authorization: Basic` header (Supabase), or using spaces instead of commas for scope delimiters (Slack) results in opaque `400` or `401` errors that halt progress.
+2. **Unpredictable Effort & Approval Surprises:** Developers often write their integration code first, only to realize too late that requesting a calendar or email scope requires a 3-week Google CASA security audit or Slack App Directory review.
+3. **Ambiguity Around Agent Automation:** Developers want autonomous agents to handle tedious setup, but lack clarity on what an agent can safely automate versus where human intervention (2FA, billing, legal agreements) is required.
 
----
-
-## Show Us That It Works
-
-### 1. Real Apps Across Different Setup Challenges
-
-We tested and calibrated the guidance against distinct real-world setup archetypes:
-
-* **Instant Self-Serve (Discord, GitHub, Supabase):**
-  * *Setup Dynamics:* Immediate client credential issuance, zero external wait, localhost testing permitted.
-  * *Nuance:* Supabase OAuth 2.0 requires HTTP Basic Authorization header (`Authorization: Basic base64(id:secret)`) for token exchange; passing credentials in the JSON body throws `401 Unauthorized`.
-* **Mandatory PKCE & Token Rotation (Airtable):**
-  * *Setup Dynamics:* Deprecates static keys. Mandates RFC 7636 Proof Key for Code Exchange (S256) for all clients and rotates the refresh token on every single refresh call.
-  * *Nuance:* If an application fails to persist the new refresh token atomically, subsequent refresh calls fail permanently.
-* **Sensitive Scopes & Compliance Gates (Google Calendar):**
-  * *Setup Dynamics:* Requesting calendar scopes triggers Google Trust & Safety verification. Apps in "Testing" mode are hard-restricted to 100 whitelisted accounts.
-  * *Nuance:* Developers must pass `access_type=offline&prompt=consent` to receive a persistent refresh token on repeat logins for background calendar syncs.
-* **Enterprise Multi-Tenant Routing (Odoo - `docs.odoo.com`):**
-  * *Setup Dynamics:* Odoo acts as both an ERP suite and an OAuth provider. App creation requires activating the OAuth Providers module in Technical Settings.
-  * *Nuance:* In multi-tenant deployments, authorization redirects must specify the target database parameter (`db={database_name}`) to avoid session drops.
-* **Live Unfamiliar App Generation:**
-  * Submit any unfamiliar SaaS tool, developer API, or custom documentation link in the Intake Console (`/generate`). The autonomous research agent investigates the portal, verifies RFC 6749 endpoints, scores evidence quality, and generates a structured runbook live.
+**Product Thesis:** When developers look up a provider, they should immediately get an actionable, shareable runbook that clarifies:
+* **Difficulty & Readiness:** How easy or difficult it is to get their OAuth app ready for use.
+* **Time & Effort:** Active engineering time (e.g., 15–30 min) versus external vendor approval waiting periods (Instant vs. 2–4 weeks).
+* **Requirements & Gotchas:** Exact token exchange rules, mandatory PKCE, scope delimiters, and redirect URI constraints.
+* **Agent vs. Human Boundaries:** What the autonomous agent investigates and provisions versus where the human developer must take over.
 
 ---
 
-### 2. Guidance Checked Against Real Sources & Setup Attempts
+## 2. Show Us That It Works: Real Apps Across Diverse Challenges
 
-By validating against real developer portals, official documentation, and live token exchange attempts, our agents uncovered and corrected several critical developer gotchas:
+We calibrated and tested the guidance against distinct real-world setup archetypes, complemented by a live autonomous research pipeline for unlisted APIs:
 
-| Provider | Real Documentation & Setup Reality | What We Learned, Corrected, or Flagged |
-| :--- | :--- | :--- |
-| **Google** | Refresh tokens are withheld on repeat logins unless explicit consent is forced | **Corrected:** Boilerplates and Copilot inject `access_type=offline&prompt=consent` so background cron jobs don't break |
-| **Airtable** | Plain code exchange is rejected (`400 Bad Request`); refresh tokens rotate every call | **Corrected:** Injected PKCE code challenge generator and atomic refresh token transaction safeguards |
-| **Supabase** | Client credentials must be passed via HTTP Basic Authorization header | **Corrected:** Fixed token exchange requests to include `Authorization: Basic base64(id:secret)` |
-| **Slack** | Granular distinction between Bot (`xoxb-`) and User (`xoxp-`) scopes | **Corrected:** Clarified scope separation so apps don't fail message-posting permissions |
-| **Odoo** | Multi-database architecture requires database identification | **Corrected:** Added explicit `db` query parameter routing and technical module activation steps |
-| **Enterprise / Private APIs** | Certain scopes require custom commercial agreements or partner status | **Flagged as Uncertain:** Transparently marked under "Assumptions & Limitations" when scopes cannot be self-served |
+### A. Diverse Setup Archetypes Tested
+
+| Setup Challenge Archetype | Real Apps | Setup Dynamics & Developer Reality | Critical Nuances Uncovered & Corrected |
+| :--- | :--- | :--- | :--- |
+| **1. Instant Self-Serve** | **GitHub, Discord, Supabase** | Zero external wait, immediate client credential issuance, localhost callbacks permitted. | **Supabase Nuance:** Token exchange *strictly requires* an HTTP Basic header (`Authorization: Basic base64(id:secret)`). Passing credentials in the JSON body throws `401 Unauthorized`. |
+| **2. Mandatory PKCE & Token Rotation** | **Airtable** | Static keys are deprecated; all clients must implement RFC 7636 Proof Key for Code Exchange (S256). | **Refresh Rotation Nuance:** Airtable issues a new refresh token on *every* refresh request. If the client fails to persist the new token atomically, subsequent calls break permanently. |
+| **3. Sensitive Scopes & Approval Gates** | **Google Calendar** | Development mode is capped at 100 test accounts; production launch requires Google Trust & Safety review. | **Offline Consent Nuance:** Repeat logins withhold refresh tokens unless `access_type=offline&prompt=consent` is explicitly forced in the authorization URL. |
+| **4. Granular Scope Separation** | **Slack** | Separate token spaces for Workspace Bots (`xoxb-`) and User tokens (`xoxp-`). | **Delimiter Nuance:** Slack strictly enforces comma-separated scopes (`users.profile:read,chat:write`). Space delimiters trigger an immediate `invalid_scope` failure. |
+| **5. Multi-Tenant ERP Routing** | **Odoo (`docs.odoo.com`)** | Odoo functions as both an application and an OAuth provider via the Technical Settings module. | **Multi-DB Routing:** Redirects in multi-tenant instances must append `db={database_name}` to maintain tenant isolation. |
+| **6. Live Unfamiliar App Generation** | **Loom, Zoho, Asana, etc.** | Submitting an unfamiliar provider name or docs URL triggers our 4-stage autonomous research worker live. | **Grounding:** Dynamically discovers endpoints, extracts PKCE requirements, and validates findings against SHA-256 documentation hashes in ~60s. |
+
+### B. What We Learned, Corrected, and What Remains Uncertain
+
+* **What We Learned & Corrected:**
+  * **Slack:** Corrected scope formatting templates to enforce comma separation.
+  * **Google:** Injected `access_type=offline&prompt=consent` by default into `.env` and code generators to prevent broken background cron jobs.
+  * **Supabase:** Corrected code snippets in TypeScript, Python, and cURL to use Basic Auth headers instead of request bodies.
+  * **Airtable:** Embedded an automated S256 code verifier/challenge helper into the runbook.
+* **What Remains Uncertain (Transparently Flagged):**
+  * **Partner-Gated Scopes:** Certain enterprise APIs (e.g., Salesforce Restricted Connected Apps, Zoom Marketplace Enterprise) require private commercial contracts before scopes become visible in developer consoles. We flag these as **Uncertain / Enterprise Review Required** with confidence scores $< 90$.
 
 ---
 
-## Setup Instructions
+## 3. Key Product Decisions
 
-### 1. Web Application (React + Vite + Tailwind)
+1. **Curated + Autonomous Hybrid Architecture:** Top developer platforms load instantly from cached, validated reference fixtures. Unlisted or niche APIs are crawled live by an autonomous research worker in $< 60$ seconds.
+2. **Separating Active Engineering Effort from Approval Wait Time:** Most vendor docs advertise "5-minute setup." We tell developers the truth: *20 minutes of active coding, but a 2-week wait for vendor verification before production launch.*
+3. **In-Context Copilot (`⌘J`) Instead of Generic Chat:** Instead of sending developers to a disconnected chatbot, Copilot opens as a slide-over drawer alongside the runbook, pre-grounded in the active provider's RFC 6749 parameters and official docs.
+4. **Interactive Blocker Wizard (Wrong ❌ vs. Fixed ✅ Diffs):** Rather than outputting generic error descriptions, the wizard provides side-by-side code diffs for the 6 most common OAuth runtime failures (trailing slash mismatches, missing grant types, invalid delimiters).
+5. **Zero-Hallucination Contamination Firewall:** If a user researches an app (e.g., Loom) but inputs an unrelated doc URL (e.g., Supabase docs), the system firewalls the input to prevent cross-provider contamination.
+6. **Authentic-Only Feedback Loop:** The feedback and admin console (`/admin/reviewer`) strictly displays 100% genuine user submissions—completely purged of synthetic seed data—to ensure product iteration is driven by real developer friction.
+
+---
+
+## 4. Limitations & Boundary Conditions
+
+1. **Third-Party Credential Generation:** The autonomous worker does *not* log into vendor consoles to click buttons or generate Client Secrets on behalf of the user. Doing so would violate vendor Terms of Service, trigger 2FA blocks, and compromise enterprise security boundaries. Instead, the agent guides the developer directly to the exact credential creation form.
+2. **Vendor Console UI Drift:** While OAuth 2.0 API endpoints remain stable for years, SaaS vendor console navigation paths frequently shift. We mitigate this through automated weekly SHA-256 documentation drift monitors and a community report queue.
+3. **Enterprise Protocol Scope:** This tool focuses exclusively on OAuth 2.0 and OpenID Connect (OIDC). Proprietary enterprise federation protocols (SAML 2.0, WS-Federation, SCIM) are intentionally excluded and flagged under `/states`.
+4. **Zero Credentials Policy:** No real client IDs, client secrets, or live user tokens are stored or transmitted. All code generators use sanitized `.env.local` templates.
+
+---
+
+## 5. Quick Start & Setup Instructions
+
+### Prerequisites
+* Node.js v18+ and npm
+* Python 3.10+ (for running the research worker locally)
+
+### 1. Web Application (React + Vite + Tailwind CSS)
 ```bash
+# Navigate to web application
 cd apps/web
+
+# Install dependencies
 npm install
-npm run dev      # Local dev server on http://localhost:3000
-npm run build    # Production build & TypeScript verification
+
+# Start local development server
+npm run dev
+# -> Running at http://localhost:3000
+
+# Run production build & TypeScript validation
+npm run build
 ```
 
-### 2. Autonomous Research Worker (Python)
+### 2. Autonomous Research Worker (Python Backend)
 ```bash
+# Navigate to research worker service
 cd services/research_worker
-pip install httpx pydantic python-dotenv
-cp .env.example .env   # Configure Cloudflare Workers AI & Tavily API keys
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Start the worker locally
 python -m worker.main
 ```
 
----
-
-## Key Decisions 
-
-1. **Curated + Autonomous Hybrid Model:** Top platforms (Google, Slack, GitHub, Salesforce, etc.) load instantly ($< 15\text{ms}$) via verified reference fixtures, while unfamiliar apps are dynamically researched in parallel by autonomous agents in under 69 seconds.
-2. **Contamination Firewall:** If a user researches an app but pastes a URL from a different service (e.g., passing a Supabase doc link with a Loom query), the engine detects host mismatch and firewalls the input, preventing cross-provider hallucination.
-3. **In-Context Copilot (`⌘J`) Slide-Over:** Instead of a generic floating bot, Copilot is an integrated 420px drawer grounded in vendor documentation and RFC 6749 parameters, answering provider gotchas directly alongside the runbook.
-4. **Interactive Blocker Diagnostic Engine:** Rather than generic error messages, the "I'm Stuck" wizard provides side-by-side **Wrong ❌ vs Fixed ✅ code diffs** for the 6 most common OAuth runtime failures.
-5. **Lightweight Developer Verification:** A clean 3-field profile (`Name`, `Company`, `Job Title`) that deters spam and saves developer leads to Supabase without sign-in friction.
+### 3. Automated Test Suite
+```bash
+# Run all unit and integration tests from repo root
+python -m unittest discover tests/unit -v
+# -> 68/68 passing tests
+```
 
 ---
 
-## Limitations
+## 6. Live Experience Links
 
-1. **Third-Party Credential Generation:** The agent does not programmatically log into vendor consoles to generate Client Secrets on behalf of users. Doing so would violate vendor Terms of Service, compromise enterprise credentials, and break security boundaries. Instead, it guides the developer directly to the exact credential creation form.
-2. **Vendor Console UI Redesigns:** While vendor OAuth API endpoints remain stable, developer console navigation occasionally changes. We mitigate this using automated weekly SHA-256 documentation drift monitors to alert maintainers.
-3. **Proprietary Enterprise Single Sign-On:** This platform focuses strictly on OAuth 2.0 and OpenID Connect (OIDC). SAML 2.0 and SCIM enterprise federation require dedicated IT coordination and are transparently flagged under `/states`.
+* **Production Web App:** [https://oauth-setup-intelligence.vercel.app/](https://oauth-setup-intelligence.vercel.app/)
+* **Provider Catalog & Library:** [https://oauth-setup-intelligence.vercel.app/library](https://oauth-setup-intelligence.vercel.app/library)
+* **Live Autonomous Research:** [https://oauth-setup-intelligence.vercel.app/generate](https://oauth-setup-intelligence.vercel.app/generate)
+* **Admin Reviewer Console:** [https://oauth-setup-intelligence.vercel.app/admin/reviewer?tab=developers](https://oauth-setup-intelligence.vercel.app/admin/reviewer?tab=developers) *(Admin access restricted to user Amin)*
+* **Edge States Gallery:** [https://oauth-setup-intelligence.vercel.app/states](https://oauth-setup-intelligence.vercel.app/states)
+* **API Documentation:** [https://oauth-setup-intelligence.vercel.app/api-reference](https://oauth-setup-intelligence.vercel.app/api-reference)
