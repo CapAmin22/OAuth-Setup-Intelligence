@@ -25,6 +25,7 @@ import {
   isAdminDeveloper,
   DeveloperProfile,
 } from '../lib/auth';
+import { BrandLogo } from './BrandLogo';
 
 interface HeaderProps {
   onOpenTour?: () => void;
@@ -86,9 +87,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTour }) => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         {/* Brand Logo & Clean Name */}
         <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-700 flex items-center justify-center font-bold text-base border border-amber-500/20 group-hover:scale-105 transition-transform shadow-2xs">
-            ⚡
-          </div>
+          <BrandLogo size="md" />
           <span className="font-bold text-sand-900 tracking-tight text-base sm:text-lg">
             OAuth Setup Intelligence
           </span>

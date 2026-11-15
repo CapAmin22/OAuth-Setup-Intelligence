@@ -4,6 +4,7 @@ import { ArrowRight, ShieldCheck, Zap, Terminal, Bot } from 'lucide-react';
 import { SearchBar } from '../components/SearchBar';
 import { ProviderCard } from '../components/ProviderCard';
 import { ProviderLogo } from '../components/ProviderLogo';
+import { BrandLogo } from '../components/BrandLogo';
 import { fetchProviders, fetchAllGuides } from '../lib/api';
 import { Provider, GuideVersion } from '../types';
 
@@ -301,7 +302,10 @@ export const Home: React.FC = () => {
       {/* ── Footer ── */}
       <footer className="border-t border-sand-200 bg-white py-6">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-sand-700">
-          <span className="font-medium text-sand-800">OAuth Setup Intelligence</span>
+          <div className="flex items-center gap-2">
+            <BrandLogo size="xs" />
+            <span className="font-semibold text-sand-900">OAuth Setup Intelligence</span>
+          </div>
           <div className="flex items-center gap-4">
             <Link to="/library" className="hover:text-sand-900 transition-colors">Library</Link>
             <Link to="/generate" className="hover:text-sand-900 transition-colors">AI Generator</Link>

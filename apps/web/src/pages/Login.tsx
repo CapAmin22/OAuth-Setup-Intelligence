@@ -6,6 +6,7 @@ import {
   getCurrentDeveloper,
   DeveloperProfile,
 } from '../lib/auth';
+import { BrandLogo } from '../components/BrandLogo';
 
 interface LoginProps {
   onLoginSuccess?: (profile: DeveloperProfile) => void;
@@ -72,9 +73,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       <div className="bg-white rounded-2xl max-w-md w-full border border-sand-200/90 shadow-xl p-7 sm:p-8 relative">
         {/* Header */}
         <div className="mb-6">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-700 border border-amber-500/20 flex items-center justify-center font-bold text-base mb-4 shadow-2xs">
-            ⚡
-          </div>
+          <BrandLogo size="lg" className="mb-4" />
           <h1 className="text-2xl font-bold text-sand-900 tracking-tight">
             Developer Sign In
           </h1>

@@ -16,6 +16,7 @@ import {
   Code,
   BookOpen,
 } from 'lucide-react';
+import { BrandLogo } from './BrandLogo';
 
 interface WelcomeModalProps {
   isOpen: boolean;
@@ -94,7 +95,8 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({
 
         {/* Top Header Badge & User Welcome */}
         <div className="flex items-center justify-between gap-2 mb-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
+            <BrandLogo size="xs" />
             <span className="text-[11px] font-bold uppercase tracking-wider text-amber-900 bg-amber-500/10 border border-amber-500/25 px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
               <Zap className="w-3 h-3 text-amber-700" />
               <span>Developer Masterclass · Step {step} of {totalSteps}</span>

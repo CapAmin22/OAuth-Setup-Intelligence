@@ -5,6 +5,7 @@ import {
   DeveloperProfile,
   getCurrentDeveloper,
 } from '../lib/auth';
+import { BrandLogo } from './BrandLogo';
 
 interface DeveloperAuthModalProps {
   isOpen: boolean;
@@ -105,9 +106,12 @@ export const DeveloperAuthModal: React.FC<DeveloperAuthModalProps> = ({
 
         {/* Top Value Banner */}
         <div className="bg-gradient-to-r from-sand-900 to-sand-950 text-white p-6 sm:p-7 border-b border-sand-800">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[11px] font-bold uppercase tracking-wider mb-2.5 border border-amber-500/30">
-            <Zap className="w-3 h-3 text-amber-400" />
-            <span>Developer Onboarding</span>
+          <div className="flex items-center gap-2.5 mb-2.5">
+            <BrandLogo size="sm" className="bg-sand-800/80 border-sand-700" />
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[11px] font-bold uppercase tracking-wider border border-amber-500/30">
+              <Zap className="w-3 h-3 text-amber-400" />
+              <span>Developer Onboarding</span>
+            </div>
           </div>
 
           <h2 id="auth-modal-title" className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
