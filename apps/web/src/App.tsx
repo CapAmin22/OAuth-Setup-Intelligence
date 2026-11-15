@@ -10,7 +10,6 @@ import { Intake } from './pages/Intake';
 import { Job } from './pages/Job';
 import { Reviewer } from './pages/Reviewer';
 import { Feedback } from './pages/Feedback';
-import { ApiRef } from './pages/ApiRef';
 import { States } from './pages/States';
 import { Login } from './pages/Login';
 import { getCurrentDeveloper, DeveloperProfile } from './lib/auth';
@@ -113,7 +112,7 @@ export const App: React.FC = () => {
             <Route path="/states" element={<States />} />
             <Route path="/admin/reviewer" element={<Reviewer />} />
             <Route path="/feedback" element={<Feedback />} />
-            <Route path="/api-reference" element={<ApiRef />} />
+            <Route path="/api-reference" element={<Navigate to="/library" replace />} />
             <Route
               path="/login"
               element={

@@ -124,4 +124,3 @@ python -m unittest discover tests/unit -v
 * **Live Autonomous Research:** [https://oauth-setup-intelligence.vercel.app/generate](https://oauth-setup-intelligence.vercel.app/generate)
 * **Admin Reviewer Console:** [https://oauth-setup-intelligence.vercel.app/admin/reviewer?tab=developers](https://oauth-setup-intelligence.vercel.app/admin/reviewer?tab=developers) *(Admin access restricted to user Amin)*
 * **Edge States Gallery:** [https://oauth-setup-intelligence.vercel.app/states](https://oauth-setup-intelligence.vercel.app/states)
-* **API Documentation:** [https://oauth-setup-intelligence.vercel.app/api-reference](https://oauth-setup-intelligence.vercel.app/api-reference)

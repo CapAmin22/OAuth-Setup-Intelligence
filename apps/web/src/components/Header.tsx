@@ -6,7 +6,6 @@ import {
   HelpCircle,
   ChevronDown,
   Layers,
-  FileCode,
   ShieldCheck,
   MessageSquare,
   Github,
@@ -122,7 +121,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTour }) => {
             <button
               onClick={() => setToolsOpen(!toolsOpen)}
               className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-                toolsOpen || ['/api-reference', '/states', '/feedback', '/admin/reviewer'].includes(location.pathname)
+                toolsOpen || ['/states', '/feedback', '/admin/reviewer'].includes(location.pathname)
                   ? 'bg-sand-100 text-sand-900'
                   : 'text-sand-700 hover:text-sand-900 hover:bg-sand-50'
               }`}
@@ -135,13 +134,6 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTour }) => {
             {toolsOpen && (
               <div className="absolute right-0 mt-2 w-56 bg-white border border-sand-200 rounded-xl shadow-xl z-50 py-1.5 divide-y divide-sand-100 animate-in fade-in slide-in-from-top-1 duration-150">
                 <div className="py-1">
-                  <Link
-                    to="/api-reference"
-                    className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-sand-800 hover:text-sand-900 hover:bg-sand-50 transition-colors"
-                  >
-                    <FileCode className="w-4 h-4 text-sand-500" />
-                    <span>API Reference</span>
-                  </Link>
                   <Link
                     to="/states"
                     className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-sand-800 hover:text-sand-900 hover:bg-sand-50 transition-colors"

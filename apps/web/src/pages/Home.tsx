@@ -309,7 +309,7 @@ export const Home: React.FC = () => {
           <div className="flex items-center gap-4">
             <Link to="/library" className="hover:text-sand-900 transition-colors">Library</Link>
             <Link to="/generate" className="hover:text-sand-900 transition-colors">AI Generator</Link>
-            <Link to="/api-reference" className="hover:text-sand-900 transition-colors">API Documentation</Link>
+            <Link to="/states" className="hover:text-sand-900 transition-colors">System States</Link>
             <a
               href="https://github.com/CapAmin22/OAuth-Setup-Intelligence"
               target="_blank"
