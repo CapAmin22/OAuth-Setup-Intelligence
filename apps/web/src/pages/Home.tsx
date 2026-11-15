@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, ShieldCheck, Zap, Layers, BookOpen } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Zap, Terminal, Bot } from 'lucide-react';
 import { SearchBar } from '../components/SearchBar';
 import { ProviderCard } from '../components/ProviderCard';
 import { ProviderLogo } from '../components/ProviderLogo';
@@ -11,7 +11,6 @@ export const Home: React.FC = () => {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [guides, setGuides] = useState<GuideVersion[]>([]);
   const [loading, setLoading] = useState(true);
-  const [generateInput, setGenerateInput] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -34,33 +33,27 @@ export const Home: React.FC = () => {
   const curatedProviders = providers.filter((p) => p.isCurated);
   const generatedProviders = providers.filter((p) => !p.isCurated);
 
-  const handleGenerateSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (generateInput.trim()) {
-      navigate(`/generate?query=${encodeURIComponent(generateInput.trim())}`);
-    }
-  };
-
   return (
     <div className="min-h-[calc(100vh-4rem)] flex flex-col justify-between">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16 w-full">
-        {/* Hero Section */}
+
+        {/* ── Hero ── */}
         <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-12">
-          <div className="inline-flex items-center px-3.5 py-1 rounded-full bg-sand-100 text-sand-800 text-xs font-semibold uppercase tracking-wider mb-5 border border-sand-200">
+          <div className="inline-flex items-center px-3.5 py-1 rounded-full bg-sand-100 text-sand-700 text-xs font-semibold uppercase tracking-wider mb-5 border border-sand-200">
             Verified OAuth 2.0 Runbooks · Zero Hallucinations
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-extrabold text-sand-900 tracking-tight leading-[1.15] mb-4">
-            Setup & Approval Intelligence for OAuth Apps
+            Setup &amp; Approval Intelligence<br className="hidden sm:block" /> for OAuth Apps
           </h1>
 
-          <p className="text-base sm:text-lg text-sand-700 max-w-2xl mx-auto leading-relaxed mb-8">
-            Battle-tested runbooks, 1-click endpoints, and ready-to-run code snippets for popular OAuth providers — with autonomous AI research for unfamiliar APIs.
+          <p className="text-sm sm:text-base text-sand-600 max-w-2xl mx-auto leading-relaxed mb-8">
+            Battle-tested runbooks, 1-click endpoints, and ready-to-run code snippets for popular OAuth providers — with autonomous AI research for any unlisted API.
           </p>
 
           <SearchBar size="large" autoFocus={true} />
 
-          {/* Popular Providers Quick-Launch Pills */}
+          {/* Popular Quick-Launch */}
           <div className="flex items-center justify-center gap-2 mt-4 flex-wrap text-xs">
             <span className="text-sand-500 font-medium mr-1">Popular:</span>
             {[
@@ -75,7 +68,7 @@ export const Home: React.FC = () => {
               <Link
                 key={item.slug}
                 to={`/guides/${item.slug}/v/1`}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-sand-200 hover:border-amber-500 text-sand-800 hover:text-amber-900 font-medium transition-all shadow-2xs hover:shadow-xs group"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-sand-200 hover:border-amber-400 text-sand-800 hover:text-amber-900 font-medium transition-all shadow-2xs hover:shadow-xs"
               >
                 <ProviderLogo slug={item.slug} name={item.name} size="sm" />
                 <span>{item.name}</span>
@@ -84,56 +77,60 @@ export const Home: React.FC = () => {
           </div>
         </div>
 
-        {/* Value Proposition & 3-Step Pro Workflow Strip */}
+        {/* ── 3-Step How it Works ── */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 sm:mb-14">
-          <div className="p-4 sm:p-5 rounded-2xl bg-white border border-sand-200 shadow-2xs hover:shadow-xs transition-shadow">
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-800 flex items-center justify-center font-bold text-xs mb-3 border border-emerald-200/60">
-              1
+          {[
+            {
+              step: '1',
+              colorClass: 'bg-emerald-50 border-emerald-200',
+              icon: <ShieldCheck className="w-5 h-5 text-emerald-700" />,
+              title: 'Pick or Synthesize',
+              desc: 'Select a pre-verified provider or submit any API doc URL to autonomously crawl and extract OAuth 2.0 specifications.',
+            },
+            {
+              step: '2',
+              colorClass: 'bg-amber-50 border-amber-200',
+              icon: <Terminal className="w-5 h-5 text-amber-700" />,
+              title: 'Drop-in Code & .env',
+              desc: 'Export verified callback rules, scope delimiters (space vs comma), and production code in TypeScript, Python, or cURL.',
+            },
+            {
+              step: '3',
+              colorClass: 'bg-sky-50 border-sky-200',
+              icon: <Bot className="w-5 h-5 text-sky-700" />,
+              title: 'Solve Gotchas with Copilot',
+              desc: 'Press ⌘J on any guide for in-context gotcha triage. Use the Blocker Wizard for side-by-side wrong vs. fixed diffs.',
+            },
+          ].map(({ step, colorClass, icon, title, desc }) => (
+            <div key={step} className="p-5 rounded-2xl bg-white border border-sand-200 shadow-2xs hover:shadow-xs transition-shadow flex gap-4">
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${colorClass}`}>
+                {icon}
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-sand-900 mb-1">{title}</h3>
+                <p className="text-xs text-sand-600 leading-relaxed">{desc}</p>
+              </div>
             </div>
-            <h3 className="text-sm font-bold text-sand-900 mb-1">Pick or Synthesize</h3>
-            <p className="text-xs text-sand-600 leading-relaxed">
-              Select pre-verified providers or submit any unlisted API doc URL to autonomously crawl and extract OAuth 2.0 specifications.
-            </p>
-          </div>
-
-          <div className="p-4 sm:p-5 rounded-2xl bg-white border border-sand-200 shadow-2xs hover:shadow-xs transition-shadow">
-            <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-800 flex items-center justify-center font-bold text-xs mb-3 border border-amber-200/60">
-              2
-            </div>
-            <h3 className="text-sm font-bold text-sand-900 mb-1">Drop-in Code &amp; .env</h3>
-            <p className="text-xs text-sand-600 leading-relaxed">
-              Export verified callback rules, scope delimiters (space vs comma), and production code in TypeScript, Python, or cURL.
-            </p>
-          </div>
-
-          <div className="p-4 sm:p-5 rounded-2xl bg-white border border-sand-200 shadow-2xs hover:shadow-xs transition-shadow">
-            <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-800 flex items-center justify-center font-bold text-xs mb-3 border border-sky-200/60">
-              3
-            </div>
-            <h3 className="text-sm font-bold text-sand-900 mb-1">Solve Gotchas with Copilot</h3>
-            <p className="text-xs text-sand-600 leading-relaxed">
-              Press <kbd className="px-1 py-0.5 rounded bg-sand-100 font-mono text-[10px] font-semibold text-sand-800 border border-sand-200">⌘J</kbd> on any guide for in-context gotcha triage or use the Blocker Wizard for side-by-side diffs.
-            </p>
-          </div>
+          ))}
         </div>
 
-        {/* AI Researched Guides Section (shows immediately when any custom provider is researched) */}
+        {/* ── AI Researched Guides (only when present) ── */}
         {generatedProviders.length > 0 && (
           <div className="mb-14">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-5">
               <div>
-                <div className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-sand-100 text-sand-800 text-xs font-semibold uppercase tracking-wider mb-1.5 border border-sand-200">
-                  AI Researched Guides
+                <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 text-xs font-semibold uppercase tracking-wider mb-1.5 border border-amber-200">
+                  <Zap className="w-3 h-3" />
+                  AI Researched
                 </div>
                 <h2 className="text-lg sm:text-xl font-bold text-sand-900 tracking-tight">
                   Recently Researched Providers
                 </h2>
-                <p className="text-xs sm:text-sm text-sand-700">
-                  Dynamically synthesized and verified runbooks for requested OAuth providers.
+                <p className="text-xs sm:text-sm text-sand-600">
+                  Dynamically synthesized and verified runbooks.
                 </p>
               </div>
             </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {generatedProviders.map((p) => {
                 const matchedGuide = guides.find(
@@ -145,26 +142,25 @@ export const Home: React.FC = () => {
           </div>
         )}
 
-        {/* Curated Guides Library Grid */}
-        <div className="mb-14">
-          <div className="flex items-center justify-between mb-6">
+        {/* ── Curated Library ── */}
+        <div className="mb-10">
+          <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="text-lg sm:text-xl font-bold text-sand-900 tracking-tight">
-                Curated & Verified Providers
+                Curated &amp; Verified Providers
               </h2>
-              <p className="text-xs sm:text-sm text-sand-700">
-                Hand-verified integration runbooks with citations and time estimates.
+              <p className="text-xs sm:text-sm text-sand-600">
+                Hand-verified runbooks with citations and time estimates.
               </p>
             </div>
             <Link
               to="/library"
-              className="text-xs sm:text-sm font-semibold text-amber-700 hover:text-amber-800 inline-flex items-center gap-1 transition-colors"
+              className="text-xs sm:text-sm font-semibold text-amber-700 hover:text-amber-900 inline-flex items-center gap-1 transition-colors"
             >
-              <span>View all guides</span>
+              <span>View all</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {curatedProviders.map((p) => {
               const matchedGuide = guides.find((g) => g.providerSlug === p.slug);
@@ -173,55 +169,37 @@ export const Home: React.FC = () => {
           </div>
         </div>
 
-        {/* Live Research / Generator Banner */}
-        <div className="bg-gradient-to-r from-sand-100 to-amber-50 border border-sand-300/80 rounded-2xl p-6 sm:p-8">
-          <div className="max-w-3xl">
-            <div className="flex items-center gap-2 text-amber-700 font-semibold text-xs uppercase tracking-wider mb-2">
-              <Zap className="w-4 h-4" />
-              Live Autonomous Research
-            </div>
-            <h3 className="text-xl sm:text-2xl font-bold text-sand-900 mb-2">
-              Need a guide for another OAuth provider?
-            </h3>
-            <p className="text-sm text-sand-700 mb-5 leading-relaxed">
-              Submit any provider name or website. Our research worker discovers official developer
-              documentation, extracts verified scopes and redirect rules, and synthesizes a cited runbook.
-            </p>
-
-            <form onSubmit={handleGenerateSubmit} className="flex flex-col sm:flex-row gap-2.5 max-w-xl">
-              <input
-                type="text"
-                value={generateInput}
-                onChange={(e) => setGenerateInput(e.target.value)}
-                placeholder="Enter provider (e.g. Linear, Asana, Dropbox)..."
-                className="flex-1 bg-white border border-sand-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-600/30 focus:border-amber-600 text-sand-900"
-              />
-              <button
-                type="submit"
-                className="bg-sand-900 hover:bg-black text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 shrink-0 cursor-pointer"
-              >
-                <span>Research & Generate</span>
-                <ArrowRight className="w-4 h-4 text-sand-300" />
-              </button>
-            </form>
+        {/* ── CTA Strip ── */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-sand-900 rounded-2xl px-6 py-5 shadow-sm">
+          <div>
+            <h3 className="text-white font-bold text-sm mb-0.5">Need a guide for a provider not listed here?</h3>
+            <p className="text-sand-400 text-xs">Our AI research agent synthesizes a verified runbook from official docs in ~60s.</p>
           </div>
+          <Link
+            to="/library"
+            className="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-sand-950 text-xs font-bold rounded-xl transition-all shadow-xs"
+          >
+            <Zap className="w-3.5 h-3.5" />
+            <span>Open Library &amp; Generate</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="border-t border-sand-200 bg-white py-6">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-sand-700">
-          <span>OAuth Setup Intelligence · Phase 1 MVP</span>
+      {/* ── Footer ── */}
+      <footer className="border-t border-sand-200 bg-white py-5 mt-10">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-sand-500">
+          <span className="font-medium">OAuth Setup Intelligence</span>
           <div className="flex items-center gap-4">
-            <Link to="/library" className="hover:text-sand-900">Library</Link>
-            <Link to="/api-reference" className="hover:text-sand-900">API Documentation</Link>
+            <Link to="/library" className="hover:text-sand-900 transition-colors">Library</Link>
+            <Link to="/api-reference" className="hover:text-sand-900 transition-colors">API Docs</Link>
             <a
               href="https://github.com/CapAmin22/OAuth-Setup-Intelligence"
               target="_blank"
               rel="noreferrer"
-              className="hover:text-sand-900"
+              className="hover:text-sand-900 transition-colors"
             >
-              GitHub Repository
+              GitHub
             </a>
           </div>
         </div>
@@ -229,4 +207,3 @@ export const Home: React.FC = () => {
     </div>
   );
 };
-
